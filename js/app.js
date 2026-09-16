@@ -1,8 +1,9 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js';
 import {initAuth,bootstrapAuth} from './auth.js';
-import {initEvents,loadRemote,render,renderPeople,applyEventRoute} from './events.js';
+import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
 import {initUsers,loadUsers} from './users.js';
+import {initSocial,loadSocial} from './social.js';
 
 async function onAuthorized(){
   await loadRemote();
@@ -19,11 +20,12 @@ function initShell(){
   $('exportCsv').onclick=()=>{const e=app.state.events.find(x=>x.id===app.state.selected);if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
 }
 
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute});
+configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial});
 initRouter();
 initShell();
 initEvents();
 initUsers();
+initSocial();
 initAuth(onAuthorized);
 render();
 bootstrapAuth(onAuthorized);
