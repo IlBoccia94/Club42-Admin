@@ -9,6 +9,8 @@ import {initSocialExtras} from './social-extras.js';
 import {initSocialFormats} from './social-formats.js';
 import {buildMembersUi} from './members-ui.js';
 import {initMembers,loadMembers} from './members.js';
+import {buildProjectsUi} from './projects-ui.js';
+import {initProjects,loadProjects} from './projects.js';
 import {initDashboardNav} from './dashboard-nav.js';
 
 async function onAuthorized(){
@@ -28,8 +30,9 @@ function initShell(){
 
 buildSocialUi();
 buildMembersUi();
+buildProjectsUi();
 initSocialExtras();
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers});
+configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers,onProjects:loadProjects});
 initRouter();
 initShell();
 initEvents();
@@ -37,6 +40,7 @@ initUsers();
 initSocial();
 initSocialFormats();
 initMembers();
+initProjects();
 initDashboardNav();
 initAuth(onAuthorized);
 render();
