@@ -3,7 +3,7 @@ import {$,app,db,esc,fmtDate,toast} from './core.js';
 let tasks=[],users=[],projects=[],events=[],editTaskId=null,activeTab='focus',dragTaskId=null;
 const statusLabels={backlog:'Backlog',todo:'Da fare',doing:'In corso',blocked:'Bloccato',done:'Fatto'};
 const priorityLabels={urgent:'Urgente',high:'Alta',medium:'Media',low:'Bassa'};
-const categoryLabels={general:'Generale',project:'Progetto',event:'Evento',admin:'Amministrazione',social:'Social',communication:'Comunicazione',finance:'Finanze',other:'Altro'};
+const categoryLabels={general:'Generale',project:'Progetto',event:'Evento',admin:'Amministrazione',social:'Social',communication:'Comunicazione',finance:'Finanze'};
 const priorityRank={urgent:4,high:3,medium:2,low:1};
 
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
