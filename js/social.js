@@ -10,12 +10,9 @@ const checklistItems=[
  ['hook','Hook forte nel primo secondo'],['clear','Si capisce subito il tema'],['human','Persona, storia o emozione'],['outsider','Comprensibile a un non follower'],['share','Ha un motivo per essere condiviso'],['local','Rilevante per il pubblico locale'],['cta','CTA sensata e contestuale'],['identity','Rafforza l’identità Club42'],['desire','Fa desiderare di partecipare/seguire'],['repurpose','Può generare altri tagli o Stories']
 ];
 
-function socialStatus(s){return `<span class="social-status social-status-${s}">${statusLabels[s]||s}</span>`}
 function typeBadge(t){return `<span class="social-type">${typeLabels[t]||t}</span>`}
 function byId(id){return contents.find(x=>x.id===id)}
 function personName(id){return socialUsers.find(x=>x.user_id===id)?.display_name||''}
-function eventName(id){return app.state.events.find(x=>x.id===id)?.name||''}
-function formatName(id){return formats.find(x=>x.id===id)?.name||''}
 function localDate(d){if(!d)return'';return fmtDate(d)}
 
 export async function loadSocial(){
@@ -89,7 +86,15 @@ function renderAnalytics(){
 
 function showSocialTab(tab,update=true){activeTab=tab;document.querySelectorAll('[data-social-tab]').forEach(b=>b.classList.toggle('active',b.dataset.socialTab===tab));document.querySelectorAll('.social-tab-panel').forEach(p=>p.classList.toggle('active',p.id==='social-tab-'+tab));if(update)sessionStorage.setItem('club42_social_tab',tab)}
 
-function clearContentForm(){editContentId=null;$('socialContentDlgTitle').textContent='Nuovo contenuto';$('socialContentForm').reset();$('scPlatform').value='instagram';$('scType').value='reel';$('scObjective').value='discovery';$('scPillar').value='locality';$('scStatus').value='idea';$('scPriority').value='medium';checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=false})}
+function clearContentForm(){
+ editContentId=null;
+ $('socialContentDlgTitle').textContent='Nuovo contenuto';
+ $('socialContentForm').reset();
+ $('scPlatform').value='instagram';$('scType').value='reel';$('scObjective').value='discovery';$('scPillar').value='locality';$('scStatus').value='idea';$('scPriority').value='medium';
+ $('socialDeleteBtn').style.display='none';
+ $('socialMetricsBtn').style.display='none';
+ checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=false});
+}
 window.newSocialContent=(date='')=>{clearContentForm();$('scDate').value=date;$('socialContentDlg').showModal()};
 window.newFromFormat=id=>{clearContentForm();const f=formats.find(x=>x.id===id);if(f){$('scFormat').value=f.id;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar;$('scTitle').value=f.name}$('socialContentDlg').showModal()};
 window.openSocialContent=id=>{const c=byId(id);if(!c)return;editContentId=id;$('socialContentDlgTitle').textContent='Modifica contenuto';$('scTitle').value=c.title;$('scPlatform').value=c.platform;$('scType').value=c.content_type;$('scObjective').value=c.objective;$('scPillar').value=c.pillar;$('scStatus').value=c.status;$('scPriority').value=c.priority;$('scDate').value=c.scheduled_date||'';$('scTime').value=(c.scheduled_time||'').slice(0,5);$('scFormat').value=c.format_id||'';$('scEvent').value=c.event_id||'';$('scAssigned').value=c.assigned_to||'';$('scHook').value=c.hook||'';$('scCta').value=c.cta||'';$('scCaption').value=c.caption||'';$('scNotes').value=c.production_notes||'';$('scAsset').value=c.asset_url||'';$('scPublishedUrl').value=c.published_url||'';checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=!!c.checklist?.[k]});$('socialDeleteBtn').style.display='inline-flex';$('socialMetricsBtn').style.display=c.status==='published'?'inline-flex':'none';$('socialContentDlg').showModal()};
