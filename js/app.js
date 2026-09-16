@@ -11,6 +11,8 @@ import {buildMembersUi} from './members-ui.js';
 import {initMembers,loadMembers} from './members.js';
 import {buildProjectsUi} from './projects-ui.js';
 import {initProjects,loadProjects} from './projects.js';
+import {buildTasksUi} from './tasks-ui.js';
+import {initTasks,loadTasks} from './tasks.js';
 import {initDashboardNav} from './dashboard-nav.js';
 
 async function onAuthorized(){
@@ -31,8 +33,9 @@ function initShell(){
 buildSocialUi();
 buildMembersUi();
 buildProjectsUi();
+buildTasksUi();
 initSocialExtras();
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers,onProjects:loadProjects});
+configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers,onProjects:loadProjects,onTasks:loadTasks});
 initRouter();
 initShell();
 initEvents();
@@ -41,6 +44,7 @@ initSocial();
 initSocialFormats();
 initMembers();
 initProjects();
+initTasks();
 initDashboardNav();
 initAuth(onAuthorized);
 render();
