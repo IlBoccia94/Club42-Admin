@@ -4,7 +4,7 @@ export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
   events:['Eventi','Iscrizioni, partecipanti e organizzazione'],
   users:['Utenti','Accessi, ruoli e richieste di autorizzazione'],
-  members:['Soci','Anagrafica e tesseramento'],
+  members:['Soci','Anagrafica, tessere e quote associative'],
   cash:['Cassa','Entrate, uscite e rendiconto'],
   projects:['Progetti','Dalle idee alla realizzazione'],
   tasks:['Task','Attività e responsabilità del direttivo'],
@@ -15,11 +15,13 @@ export const viewMeta={
 let usersHandler=null;
 let eventHandler=null;
 let socialHandler=null;
+let membersHandler=null;
 
-export function configureRouter({onUsers,onEvent,onSocial}={}){
+export function configureRouter({onUsers,onEvent,onSocial,onMembers}={}){
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
+  membersHandler=onMembers||null;
 }
 
 function isSupabaseCallbackHash(hash=location.hash){
@@ -46,6 +48,7 @@ async function applyRoute(){
   if(route.view==='users'&&usersHandler)await usersHandler();
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
   if(route.view==='social'&&socialHandler)await socialHandler();
+  if(route.view==='members'&&membersHandler)await membersHandler();
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
