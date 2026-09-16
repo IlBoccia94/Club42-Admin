@@ -5,6 +5,7 @@ import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
 import {initUsers,loadUsers} from './users.js';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
+import {initSocialExtras} from './social-extras.js';
 
 async function onAuthorized(){
   await loadRemote();
@@ -22,6 +23,7 @@ function initShell(){
 }
 
 buildSocialUi();
+initSocialExtras();
 configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial});
 initRouter();
 initShell();
