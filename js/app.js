@@ -6,6 +6,7 @@ import {initUsers,loadUsers} from './users.js';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
+import {initSocialFormats} from './social-formats.js';
 
 async function onAuthorized(){
   await loadRemote();
@@ -30,6 +31,7 @@ initShell();
 initEvents();
 initUsers();
 initSocial();
+initSocialFormats();
 initAuth(onAuthorized);
 render();
 bootstrapAuth(onAuthorized);
