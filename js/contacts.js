@@ -8,7 +8,6 @@ function contactName(id){return contacts.find(c=>c.id===id)?.name||'Contatto'}
 function eventName(id){return events.find(e=>e.id===id)?.name||''}
 function projectName(id){return projects.find(p=>p.id===id)?.title||''}
 function collabContext(c){return c.event_id?eventName(c.event_id):c.project_id?projectName(c.project_id):''}
-function latestCollab(id){return collabsFor(id)[0]||null}
 
 export async function loadContacts(){
  const [cr,hr,er,pr]=await Promise.all([
@@ -18,11 +17,11 @@ export async function loadContacts(){
   db.from('projects').select('id,title,status,target_date').order('updated_at',{ascending:false})
  ]);
  if(cr.error||hr.error||er.error||pr.error){console.error(cr.error||hr.error||er.error||pr.error);toast('Errore caricamento contatti');return}
- contacts=cr.data||[];collaborations=hr.data||[];events=er.data||[];projects=pr.data||[];fillCollaborationSelects();renderContacts();
+ contacts=cr.data||[];collaborations=hr.data||[];events=er.data||[];projects=pr.data||[];fillCollaborationSelects();renderContacts();document.dispatchEvent(new CustomEvent('club42:contacts-changed'));
 }
 
 function fillCollaborationSelects(){
- $('ccContact').innerHTML=['<option value="">Seleziona…</option>',...contacts.filter(c=>c.active).map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}</option>`)].join('');
+ $('ccContact').innerHTML=['<option value="">Seleziona…</option>',...contacts.map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}${c.active?'':' · archiviato'}</option>`)].join('');
  $('ccEvent').innerHTML=['<option value="">Nessuno</option>',...events.map(e=>`<option value="${e.id}">${esc(e.name)}${e.event_date?' · '+fmtDate(e.event_date):''}</option>`)].join('');
  $('ccProject').innerHTML=['<option value="">Nessuno</option>',...projects.map(p=>`<option value="${p.id}">${esc(p.title)}</option>`)].join('');
 }
