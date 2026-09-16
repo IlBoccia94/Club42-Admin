@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#216277">
+<title>Conferma account · Club42 Admin</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
+<style>
+body{min-height:100vh;display:grid;place-items:center;padding:18px}.confirm-card{width:min(460px,100%);padding:26px}.confirm-brand{display:flex;align-items:center;gap:13px;margin-bottom:18px}.confirm-brand img{width:62px;height:62px;object-fit:contain;border-radius:17px}.confirm-card h1{font-family:var(--font-title);font-weight:400;color:var(--blue);font-size:34px;margin:0}.confirm-card p{color:var(--muted);font-size:12px;line-height:1.65}.confirm-form{display:grid;gap:11px;margin-top:18px}.message{display:none;padding:11px 12px;border-radius:12px;font-size:11px;line-height:1.55}.message.show{display:block}.message.ok{background:var(--blue-soft);color:var(--blue)}.message.err{background:var(--coral-soft);color:#9b3d38}.back{display:block;text-align:center;margin-top:14px;color:var(--blue);font-family:var(--font-subtitle);font-weight:700;font-size:12px;text-decoration:none}
+</style>
+</head>
+<body>
+<section class="card confirm-card">
+  <div class="confirm-brand"><img src="assets/IMG-20260914-WA0014.jpg" alt="Club42"><div><h1>Conferma account</h1><p>Club42 Admin</p></div></div>
+  <p>Inserisci l'email con cui hai creato l'account. Ti invieremo una nuova mail di conferma con il collegamento corretto a Club42 Admin.</p>
+  <div class="message" id="message"></div>
+  <form class="confirm-form" id="form">
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" required></div>
+    <button class="btn primary" id="sendBtn">Reinvia email di conferma</button>
+  </form>
+  <a class="back" href="./">← Torna a Club42 Admin</a>
+</section>
+<script>
+const SUPABASE_URL='https://whqpryabjwpnrzyappir.supabase.co';
+const SUPABASE_KEY='sb_publishable_N9hO5f1-Z4iDBLOJhxlnsA_UAfHsxhC';
+const APP_URL='https://ilboccia94.github.io/Club42-Admin/';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const form=document.getElementById('form'),email=document.getElementById('email'),message=document.getElementById('message'),sendBtn=document.getElementById('sendBtn');
+function show(text,type){message.textContent=text;message.className='message show '+type}
+form.addEventListener('submit',async e=>{e.preventDefault();sendBtn.disabled=true;sendBtn.textContent='Invio…';message.className='message';const {error}=await db.auth.resend({type:'signup',email:email.value.trim(),options:{emailRedirectTo:APP_URL}});sendBtn.disabled=false;sendBtn.textContent='Reinvia email di conferma';if(error){show(error.message,'err');return}show('Email inviata. Apri il messaggio più recente e premi il pulsante di conferma: verrai riportato direttamente a Club42 Admin.','ok')});
+</script>
+</body>
+</html>
