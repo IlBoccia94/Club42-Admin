@@ -13,6 +13,8 @@ import {buildProjectsUi} from './projects-ui.js';
 import {initProjects,loadProjects} from './projects.js';
 import {buildTasksUi} from './tasks-ui.js';
 import {initTasks,loadTasks} from './tasks.js';
+import {buildContactsUi} from './contacts-ui.js';
+import {initContacts,loadContacts} from './contacts.js';
 import {initDashboardNav} from './dashboard-nav.js';
 
 async function onAuthorized(){
@@ -34,8 +36,9 @@ buildSocialUi();
 buildMembersUi();
 buildProjectsUi();
 buildTasksUi();
+buildContactsUi();
 initSocialExtras();
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers,onProjects:loadProjects,onTasks:loadTasks});
+configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
 initRouter();
 initShell();
 initEvents();
@@ -45,6 +48,7 @@ initSocialFormats();
 initMembers();
 initProjects();
 initTasks();
+initContacts();
 initDashboardNav();
 initAuth(onAuthorized);
 render();
