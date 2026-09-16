@@ -6,7 +6,7 @@ export const viewMeta={
   users:['Utenti','Accessi, ruoli e richieste di autorizzazione'],
   members:['Soci','Anagrafica, tessere e quote associative'],
   cash:['Cassa','Entrate, uscite e rendiconto'],
-  projects:['Progetti','Dalle idee alla realizzazione'],
+  projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Attività e responsabilità del direttivo'],
   social:['Social','Calendario editoriale, produzione e risultati'],
   contacts:['Contatti','Collaboratori, partner e fornitori']
@@ -16,12 +16,14 @@ let usersHandler=null;
 let eventHandler=null;
 let socialHandler=null;
 let membersHandler=null;
+let projectsHandler=null;
 
-export function configureRouter({onUsers,onEvent,onSocial,onMembers}={}){
+export function configureRouter({onUsers,onEvent,onSocial,onMembers,onProjects}={}){
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
   membersHandler=onMembers||null;
+  projectsHandler=onProjects||null;
 }
 
 function isSupabaseCallbackHash(hash=location.hash){
@@ -49,6 +51,7 @@ async function applyRoute(){
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
   if(route.view==='social'&&socialHandler)await socialHandler();
   if(route.view==='members'&&membersHandler)await membersHandler();
+  if(route.view==='projects'&&projectsHandler)await projectsHandler();
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
