@@ -3,30 +3,205 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#6d4aff">
-<title>Club42 · Iscrizioni</title>
-<style>
-:root{
-  --bg:#fffaf4;--ink:#202033;--muted:#77758a;--surface:#ffffff;--line:#ebe7f2;
-  --purple:#6d4aff;--purple2:#8b6cff;--pink:#ff6f91;--yellow:#ffc857;--cyan:#56d6d2;
-  --green:#35b47d;--red:#e95b6a;--shadow:0 18px 50px rgba(72,49,120,.10);--r:24px;
-}
-*{box-sizing:border-box}
-html{background:var(--bg)}
-body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);min-height:100vh;background:radial-gradient(circle at 0 0,rgba(255,200,87,.22),transparent 30rem),radial-gradient(circle at 100% 5%,rgba(109,74,255,.14),transparent 34rem),linear-gradient(180deg,#fffdf9 0,#fff8f2 100%)}
-button,input,select,textarea{font:inherit}button{cursor:pointer}.app{max-width:1500px;margin:auto;padding:24px}.head{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:14px}.brand-logo{width:68px;height:68px;object-fit:contain;border-radius:20px;background:white;padding:5px;box-shadow:0 12px 28px rgba(53,39,96,.10);border:1px solid rgba(32,32,51,.06)}.brand h1{margin:0;font-size:24px;letter-spacing:-.03em}.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}.actions,.row{display:flex;gap:10px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:rgba(255,255,255,.9);color:var(--ink);padding:11px 15px;border-radius:14px;font-weight:800;box-shadow:0 6px 16px rgba(50,40,80,.05);transition:.18s transform,.18s box-shadow,.18s filter}.btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(50,40,80,.09)}.btn.primary{border:0;color:#fff;background:linear-gradient(135deg,var(--purple),var(--purple2));box-shadow:0 12px 26px rgba(109,74,255,.25)}.layout{display:grid;grid-template-columns:315px minmax(0,1fr);gap:18px}.card{background:rgba(255,255,255,.86);border:1px solid rgba(80,58,130,.08);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:blur(12px)}.side{padding:18px;height:calc(100vh - 124px);position:sticky;top:20px;overflow:auto}.side-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}.side-top h2{margin:0;font-size:17px}.mini{padding:8px 10px;border-radius:11px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:800}.event{padding:15px;border:1px solid var(--line);border-radius:18px;background:#fff;margin-bottom:10px;transition:.18s;position:relative;overflow:hidden}.event:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:transparent}.event:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(55,42,90,.08)}.event.active{border-color:#d9cffd;background:linear-gradient(135deg,#fff,#f8f5ff)}.event.active:before{background:linear-gradient(var(--purple),var(--pink))}.event-title{font-weight:900;margin-bottom:5px}.event-meta{font-size:12px;color:var(--muted);line-height:1.55}.event-actions{display:flex;gap:7px;margin-top:11px}.main{min-width:0}.hero{padding:22px;position:relative;overflow:hidden;margin-bottom:16px}.hero:after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:-70px;top:-95px;background:linear-gradient(135deg,rgba(255,200,87,.28),rgba(255,111,145,.22));pointer-events:none}.hero-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;position:relative;z-index:1}.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);background:#f1edff;padding:7px 10px;border-radius:999px;margin-bottom:10px}.hero h2{font-size:34px;letter-spacing:-.045em;margin:0}.hero p{margin:7px 0 0;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px;position:relative;z-index:1}.stat{border-radius:20px;padding:16px 17px;border:1px solid rgba(255,255,255,.5);min-height:100px;position:relative;overflow:hidden}.stat:nth-child(1){background:#eee9ff}.stat:nth-child(2){background:#e8fbfa}.stat:nth-child(3){background:#fff2d6}.stat:nth-child(4){background:#ffe9ef}.stat span{font-size:12px;color:#656278;font-weight:800}.stat b{display:block;font-size:30px;margin-top:7px;letter-spacing:-.04em}.panel{padding:18px}.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.panel-head h3{margin:0;font-size:18px}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:13px}.toolbar input{flex:1;min-width:220px}input,select,textarea{width:100%;background:#fff;border:1px solid #e7e2ef;color:var(--ink);border-radius:13px;padding:11px 12px;outline:none;transition:.15s}input:focus,select:focus,textarea:focus{border-color:#b9a9ff;box-shadow:0 0 0 4px rgba(109,74,255,.09)}.field{display:grid;gap:6px}.field label{font-size:12px;font-weight:800;color:var(--muted)}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:12px;border-bottom:1px solid #f0edf5;text-align:left;font-size:13px}th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#827f91;background:#fbf9fd;position:sticky;top:0}tr:last-child td{border-bottom:0}tbody tr:hover{background:#fdfbff}.badge{display:inline-block;padding:6px 9px;border-radius:999px;font-size:11px;font-weight:900}.ok{background:#e8f8ef;color:#22835a}.wait{background:#e7f9f8;color:#1e8581}.off{background:#f0eef3;color:#706d7d}.warn{background:#fff1df;color:#ad641a}.empty{padding:30px;text-align:center;color:var(--muted)}.muted{color:var(--muted)}.foot{margin-top:11px;font-size:12px;color:var(--muted)}dialog{border:0;border-radius:24px;background:#fff;color:var(--ink);padding:0;width:min(650px,calc(100% - 24px));box-shadow:0 30px 90px rgba(40,30,70,.24)}dialog::backdrop{background:rgba(38,28,62,.34);backdrop-filter:blur(5px)}.modal{padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.modal-head h3{margin:0;font-size:22px}.close{border:0;background:#f5f2f8;color:#6f6b7e;border-radius:12px;width:36px;height:36px;font-size:22px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:17px}.toast{position:fixed;right:20px;bottom:20px;padding:12px 15px;border-radius:14px;background:#27243a;color:white;box-shadow:0 14px 34px rgba(39,36,58,.25);opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:50}.toast.show{opacity:1;transform:none}@media(max-width:950px){.layout{grid-template-columns:1fr}.side{height:auto;position:static}.events-scroll{display:flex;overflow:auto;gap:9px;padding-bottom:4px}.event{min-width:255px;margin:0}.stats{grid-template-columns:1fr 1fr}.app{padding:14px}.head{align-items:flex-start}.brand-logo{width:58px;height:58px}}@media(max-width:680px){.head,.hero-top{flex-direction:column}.actions{width:100%}.actions .btn,.actions label{flex:1;text-align:center}.hero h2{font-size:28px}.stats{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.toolbar>*{width:100%}.toolbar .btn{width:auto}.brand h1{font-size:21px}}
-</style>
+<meta name="theme-color" content="#242232">
+<title>Club42 Admin</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="app"><header class="head"><div class="brand"><img class="brand-logo" src="assets/club42-logo.jpg" alt="Logo Club42"><div><h1>Club42 · Gestione iscrizioni</h1><p>Più semplice, più chiaro, più Club42 ✨</p></div></div><div class="actions"><button class="btn" id="backupBtn">Backup JSON</button><label class="btn">Importa<input id="importFile" type="file" accept="application/json" hidden></label><button class="btn primary" id="newEventBtn">＋ Nuovo evento</button></div></header><div class="layout"><aside class="card side"><div class="side-top"><h2>🗓️ I tuoi eventi</h2><button class="mini" id="sideNewEvent">＋</button></div><div class="events-scroll" id="events"></div></aside><main class="main"><section class="card hero"><div class="hero-top"><div><div class="eyebrow">● Evento selezionato</div><h2 id="eventName">Nessun evento</h2><p id="eventMeta">Crea un evento per iniziare.</p></div><div class="row"><button class="btn" id="exportCsv">Esporta CSV</button><button class="btn primary" id="addPerson">＋ Aggiungi iscritto</button></div></div><div class="stats"><div class="stat"><span>👥 Confermati</span><b id="sConfirmed">0</b></div><div class="stat"><span>⏳ Lista d’attesa</span><b id="sWait">0</b></div><div class="stat"><span>💳 Pagati</span><b id="sPaid">0</b></div><div class="stat"><span>🪪 Soci Club42</span><b id="sMembers">0</b></div></div></section><section class="card panel"><div class="panel-head"><h3>Partecipanti</h3><span class="muted">Gestisci iscrizioni, pagamenti e tessere</span></div><div class="toolbar"><input id="search" placeholder="🔎 Cerca nome, telefono, email, note…"><select id="statusFilter"><option value="all">Tutti gli stati</option><option value="confirmed">Confermati</option><option value="waitlist">Lista d’attesa</option><option value="cancelled">Annullati</option></select></div><div class="table-wrap"><table><thead><tr><th>Nome</th><th>Contatti</th><th>Stato</th><th>Socio</th><th>Pagamento</th><th>Esigenze / note</th><th></th></tr></thead><tbody id="people"></tbody></table></div><div class="foot">💡 I dati restano salvati nel browser di questo dispositivo. Fai un backup JSON periodicamente.</div></section></main></div></div>
-<dialog id="eventDlg"><form class="modal" id="eventForm"><div class="modal-head"><h3 id="eventDlgTitle">Nuovo evento</h3><button type="button" class="close" data-close="eventDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome evento *</label><input id="eName" required></div><div class="field"><label>Data *</label><input id="eDate" type="date" required></div><div class="field"><label>Ora</label><input id="eTime" type="time"></div><div class="field full"><label>Luogo</label><input id="ePlace"></div><div class="field"><label>Capienza</label><input id="eCapacity" type="number" min="0" value="0"></div><div class="field"><label>Prezzo</label><input id="ePrice" type="number" min="0" step="0.01"></div><div class="field full"><label>Note</label><textarea id="eNotes" rows="3"></textarea></div></div><div class="modal-actions"><button type="button" class="btn" data-close="eventDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog><dialog id="personDlg"><form class="modal" id="personForm"><div class="modal-head"><h3 id="personDlgTitle">Aggiungi iscritto</h3><button type="button" class="close" data-close="personDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome e cognome *</label><input id="pName" required></div><div class="field"><label>Telefono</label><input id="pPhone"></div><div class="field"><label>Email</label><input id="pEmail" type="email"></div><div class="field"><label>Stato</label><select id="pStatus"><option value="confirmed">Confermato</option><option value="waitlist">Lista d’attesa</option><option value="cancelled">Annullato</option></select></div><div class="field"><label>Pagamento</label><select id="pPaid"><option value="no">Da pagare</option><option value="yes">Pagato</option></select></div><div class="field"><label>Socio Club42</label><select id="pMember"><option value="no">No</option><option value="yes">Sì</option></select></div><div class="field"><label>Esigenze alimentari</label><input id="pDiet" placeholder="Celiachia, vegetariano…"></div><div class="field full"><label>Note</label><textarea id="pNotes" rows="3"></textarea></div></div><div class="modal-actions"><button type="button" class="btn" data-close="personDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog><div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"></div>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="brand-logo" src="assets/club42-logo.jpg" alt="Logo Club42">
+      <div class="brand-copy"><strong>Club42 Admin</strong><span>Area gestionale</span></div>
+    </div>
+
+    <div class="nav-label">Workspace</div>
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard"><span class="nav-icon">⌂</span>Dashboard</button>
+      <button class="nav-item" data-view="events"><span class="nav-icon">◫</span>Eventi</button>
+      <button class="nav-item" data-view="members"><span class="nav-icon">♙</span>Soci <span class="nav-badge">Presto</span></button>
+      <button class="nav-item" data-view="cash"><span class="nav-icon">€</span>Cassa <span class="nav-badge">Presto</span></button>
+    </nav>
+
+    <div class="nav-label">Organizzazione</div>
+    <nav class="nav">
+      <button class="nav-item" data-view="projects"><span class="nav-icon">◇</span>Progetti <span class="nav-badge">Presto</span></button>
+      <button class="nav-item" data-view="tasks"><span class="nav-icon">✓</span>Task <span class="nav-badge">Presto</span></button>
+      <button class="nav-item" data-view="social"><span class="nav-icon">◎</span>Social <span class="nav-badge">Presto</span></button>
+      <button class="nav-item" data-view="contacts"><span class="nav-icon">☏</span>Contatti <span class="nav-badge">Presto</span></button>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-foot"><b>Club42</b><br>Centro operativo interno<br>v0.2 · prototipo</div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu" id="mobileMenu">☰</button>
+        <div class="page-title"><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Panoramica operativa del Club42</p></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn desktop-only" id="backupBtn">Backup JSON</button>
+        <label class="btn desktop-only">Importa<input id="importFile" type="file" accept="application/json" hidden></label>
+        <button class="btn primary" id="globalNewEvent">＋ Nuovo evento</button>
+      </div>
+    </header>
+
+    <section class="view active" id="view-dashboard">
+      <div class="card dashboard-hero">
+        <div class="hero-content">
+          <div class="hero-eyebrow">Club42 · Centro operativo</div>
+          <h2>Tutto il Club, in un solo posto.</h2>
+          <p>Una base unica per coordinare eventi, soci, cassa, progetti e comunicazione. Partiamo dagli eventi e costruiamo il resto modulo dopo modulo.</p>
+          <div class="hero-actions">
+            <button class="btn primary" onclick="showView('events')">Gestisci eventi</button>
+            <button class="btn" id="heroNewEvent">＋ Crea evento</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="card metric-card"><div class="metric-icon">◫</div><span>Eventi</span><strong id="dashEvents">0</strong><small>presenti in archivio</small></div>
+        <div class="card metric-card"><div class="metric-icon">♙</div><span>Iscritti</span><strong id="dashPeople">0</strong><small>confermati complessivi</small></div>
+        <div class="card metric-card"><div class="metric-icon">€</div><span>Pagamenti</span><strong id="dashPaid">0</strong><small>registrati come pagati</small></div>
+        <div class="card metric-card"><div class="metric-icon">🪪</div><span>Soci</span><strong id="dashMembers">0</strong><small>segnati come soci</small></div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="card section-card">
+          <div class="section-head"><div><h3>Prossimo evento</h3><p>Il primo appuntamento futuro in calendario</p></div><button class="btn soft" onclick="showView('events')">Apri eventi</button></div>
+          <div id="nextEventBox"></div>
+        </div>
+        <div class="card section-card">
+          <div class="section-head"><div><h3>Azioni rapide</h3><p>Scorciatoie operative</p></div></div>
+          <div class="quick-grid">
+            <button class="quick-action" id="quickEvent"><span>＋</span>Nuovo evento<small>Crea un nuovo appuntamento</small></button>
+            <button class="quick-action" id="quickPerson"><span>♙</span>Aggiungi iscritto<small>All'evento selezionato</small></button>
+            <button class="quick-action" onclick="showView('members')"><span>🪪</span>Gestione soci<small>Modulo in preparazione</small></button>
+            <button class="quick-action" onclick="showView('cash')"><span>€</span>Movimento cassa<small>Modulo in preparazione</small></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-events">
+      <div class="module-grid">
+        <aside class="card event-list-panel">
+          <div class="panel-kicker">Calendario</div>
+          <div class="panel-title-row"><h2>Eventi</h2><button class="icon-btn" id="sideNewEvent">＋</button></div>
+          <div class="events-scroll" id="events"></div>
+        </aside>
+
+        <div class="event-main">
+          <section class="card event-hero">
+            <div class="event-hero-top">
+              <div><div class="eyebrow">● Evento selezionato</div><h2 id="eventName">Nessun evento</h2><p id="eventMeta">Crea un evento per iniziare.</p></div>
+              <div class="row"><button class="btn" id="exportCsv">Esporta CSV</button><button class="btn primary" id="addPerson">＋ Aggiungi iscritto</button></div>
+            </div>
+            <div class="event-stats">
+              <div class="event-stat"><span>👥 Confermati</span><b id="sConfirmed">0</b></div>
+              <div class="event-stat"><span>⏳ Lista d'attesa</span><b id="sWait">0</b></div>
+              <div class="event-stat"><span>💳 Pagati</span><b id="sPaid">0</b></div>
+              <div class="event-stat"><span>🪪 Soci Club42</span><b id="sMembers">0</b></div>
+            </div>
+          </section>
+
+          <section class="card panel">
+            <div class="panel-head"><div><h3>Partecipanti</h3><span class="muted">Gestisci iscrizioni, pagamenti e tessere</span></div></div>
+            <div class="toolbar"><input id="search" placeholder="🔎 Cerca nome, telefono, email, note…"><select id="statusFilter"><option value="all">Tutti gli stati</option><option value="confirmed">Confermati</option><option value="waitlist">Lista d'attesa</option><option value="cancelled">Annullati</option></select></div>
+            <div class="table-wrap"><table><thead><tr><th>Nome</th><th>Contatti</th><th>Stato</th><th>Socio</th><th>Pagamento</th><th>Esigenze / note</th><th></th></tr></thead><tbody id="people"></tbody></table></div>
+            <div class="foot">💡 Per ora i dati restano salvati nel browser di questo dispositivo. Il prossimo salto sarà collegare un database condiviso.</div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-members"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">🪪</div><span class="coming-pill">Prossimo modulo</span><h2>Gestione soci</h2><p>Anagrafica soci, numeri tessera, rinnovi, quote associative, storico e ricerca. La grafica è già predisposta per entrare nella stessa suite.</p></div></div></section>
+    <section class="view" id="view-cash"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">€</div><span class="coming-pill">In progettazione</span><h2>Cassa e rendiconto</h2><p>Entrate, uscite, categorie, eventi collegati, saldo, riepiloghi mensili e annuali.</p></div></div></section>
+    <section class="view" id="view-projects"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">◇</div><span class="coming-pill">In progettazione</span><h2>Pipeline progetti</h2><p>Dall'idea alla realizzazione: concept, responsabili, partner, budget, stato e prossime azioni.</p></div></div></section>
+    <section class="view" id="view-tasks"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">✓</div><span class="coming-pill">In progettazione</span><h2>Task del direttivo</h2><p>Attività, assegnatari, scadenze, priorità e collegamento diretto agli eventi.</p></div></div></section>
+    <section class="view" id="view-social"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">◎</div><span class="coming-pill">In progettazione</span><h2>Calendario social</h2><p>Reel, caroselli, storie, hook, CTA, stato di produzione e risultati dei contenuti.</p></div></div></section>
+    <section class="view" id="view-contacts"><div class="card placeholder"><div class="placeholder-inner"><div class="placeholder-icon">☏</div><span class="coming-pill">In progettazione</span><h2>Contatti e collaboratori</h2><p>Partner, artisti, fornitori, associazioni, location e storico delle collaborazioni.</p></div></div></section>
+  </main>
+</div>
+
+<dialog id="eventDlg"><form class="modal" id="eventForm"><div class="modal-head"><h3 id="eventDlgTitle">Nuovo evento</h3><button type="button" class="close" data-close="eventDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome evento *</label><input id="eName" required></div><div class="field"><label>Data *</label><input id="eDate" type="date" required></div><div class="field"><label>Ora</label><input id="eTime" type="time"></div><div class="field full"><label>Luogo</label><input id="ePlace"></div><div class="field"><label>Capienza</label><input id="eCapacity" type="number" min="0" value="0"></div><div class="field"><label>Prezzo</label><input id="ePrice" type="number" min="0" step="0.01"></div><div class="field full"><label>Note</label><textarea id="eNotes" rows="3"></textarea></div></div><div class="modal-actions"><button type="button" class="btn" data-close="eventDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
+<dialog id="personDlg"><form class="modal" id="personForm"><div class="modal-head"><h3 id="personDlgTitle">Aggiungi iscritto</h3><button type="button" class="close" data-close="personDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome e cognome *</label><input id="pName" required></div><div class="field"><label>Telefono</label><input id="pPhone"></div><div class="field"><label>Email</label><input id="pEmail" type="email"></div><div class="field"><label>Stato</label><select id="pStatus"><option value="confirmed">Confermato</option><option value="waitlist">Lista d'attesa</option><option value="cancelled">Annullato</option></select></div><div class="field"><label>Pagamento</label><select id="pPaid"><option value="no">Da pagare</option><option value="yes">Pagato</option></select></div><div class="field"><label>Socio Club42</label><select id="pMember"><option value="no">No</option><option value="yes">Sì</option></select></div><div class="field"><label>Esigenze alimentari</label><input id="pDiet" placeholder="Celiachia, vegetariano…"></div><div class="field full"><label>Note</label><textarea id="pNotes" rows="3"></textarea></div></div><div class="modal-actions"><button type="button" class="btn" data-close="personDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
+<div class="toast" id="toast"></div>
+
 <script>
-const KEY='club42_iscrizioni_v2';const starter={events:[{id:'evt_ast2026',name:'Club42 × Astrofili',date:'2026-09-25',time:'18:30',place:'Osservatorio Astronomico Monte Viseggi',capacity:60,price:'',notes:''}],people:[],selected:'evt_ast2026'};let state=load(),editEventId=null,editPersonId=null;
-function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.events)&&Array.isArray(x.people))return x}catch{}return structuredClone(starter)}function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}function uid(p){return p+'_'+Math.random().toString(36).slice(2,9)}function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}function selected(){return state.events.find(e=>e.id===state.selected)||state.events[0]||null}function list(eid){return state.people.filter(p=>p.eventId===eid)}function fmtDate(d){if(!d)return'';return new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00'))}function toast(t){const x=document.getElementById('toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1800)}function badge(v){return v==='confirmed'?'<span class="badge ok">Confermato</span>':v==='waitlist'?'<span class="badge wait">Attesa</span>':'<span class="badge off">Annullato</span>'}
-function render(){const e=selected();if(e&&!state.selected)state.selected=e.id;events.innerHTML=state.events.length?state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;return `<div class="event ${x.id===state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-title">${esc(x.name)}</div><div class="event-meta">${fmtDate(x.date)}${x.time?' · '+x.time:''}<br>${esc(x.place||'Luogo da definire')}<br>${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-actions"><button class="mini" onclick="event.stopPropagation();openEvent('${x.id}')">Modifica</button><button class="mini" onclick="event.stopPropagation();deleteEvent('${x.id}')">Elimina</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';if(!e){eventName.textContent='Nessun evento';eventMeta.textContent='Crea un evento per iniziare.';people.innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>document.getElementById(id).textContent='0');return}eventName.textContent=e.name;eventMeta.textContent=`${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.place?' · '+e.place:''}${e.capacity?' · capienza '+e.capacity:''}`;const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');sConfirmed.textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');sWait.textContent=pp.filter(p=>p.status==='waitlist').length;sPaid.textContent=confirmed.filter(p=>p.paid==='yes').length;sMembers.textContent=confirmed.filter(p=>p.member==='yes').length;renderPeople()}
-function renderPeople(){const e=selected();if(!e)return;const q=search.value.toLowerCase().trim(),sf=statusFilter.value;let pp=list(e.id);if(sf!=='all')pp=pp.filter(p=>p.status===sf);if(q)pp=pp.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>(v||'').toLowerCase().includes(q)));pp.sort((a,b)=>a.name.localeCompare(b.name,'it'));people.innerHTML=pp.length?pp.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.phone||'')}${p.phone&&p.email?'<br>':''}${esc(p.email||'')}</td><td>${badge(p.status)}</td><td>${p.member==='yes'?'<span class="badge ok">Socio</span>':'<span class="badge off">No</span>'}</td><td>${p.paid==='yes'?'<span class="badge ok">Pagato</span>':'<span class="badge warn">Da pagare</span>'}</td><td>${p.diet?`🍽 ${esc(p.diet)}<br>`:''}<span class="muted">${esc(p.notes||'')}</span></td><td><div class="row"><button class="mini" onclick="openPerson('${p.id}')">✎</button><button class="mini" onclick="deletePerson('${p.id}')">×</button></div></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Nessun iscritto trovato.</td></tr>'}
-window.selectEvent=id=>{state.selected=id;localStorage.setItem(KEY,JSON.stringify(state));render()};function openEvent(id=null){editEventId=id;const e=id?state.events.find(x=>x.id===id):null;eventDlgTitle.textContent=e?'Modifica evento':'Nuovo evento';eName.value=e?.name||'';eDate.value=e?.date||'';eTime.value=e?.time||'';ePlace.value=e?.place||'';eCapacity.value=e?.capacity??0;ePrice.value=e?.price??'';eNotes.value=e?.notes||'';eventDlg.showModal()}window.openEvent=openEvent;
-window.deleteEvent=id=>{const e=state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni?`))return;state.events=state.events.filter(x=>x.id!==id);state.people=state.people.filter(p=>p.eventId!==id);if(state.selected===id)state.selected=state.events[0]?.id||null;save();toast('Evento eliminato')};eventForm.addEventListener('submit',ev=>{ev.preventDefault();const obj={id:editEventId||uid('evt'),name:eName.value.trim(),date:eDate.value,time:eTime.value,place:ePlace.value.trim(),capacity:Number(eCapacity.value)||0,price:ePrice.value,notes:eNotes.value.trim()};if(editEventId)state.events=state.events.map(x=>x.id===editEventId?obj:x);else{state.events.push(obj);state.selected=obj.id}save();eventDlg.close();toast(editEventId?'Evento aggiornato':'Evento creato')});
-function openPerson(id=null){const e=selected();if(!e){openEvent();return}editPersonId=id;const p=id?state.people.find(x=>x.id===id):null;personDlgTitle.textContent=p?'Modifica iscritto':'Aggiungi iscritto';pName.value=p?.name||'';pPhone.value=p?.phone||'';pEmail.value=p?.email||'';pStatus.value=p?.status||'confirmed';pPaid.value=p?.paid||'no';pMember.value=p?.member||'no';pDiet.value=p?.diet||'';pNotes.value=p?.notes||'';personDlg.showModal()}window.openPerson=openPerson;window.deletePerson=id=>{const p=state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;state.people=state.people.filter(x=>x.id!==id);save();toast('Iscritto eliminato')};personForm.addEventListener('submit',ev=>{ev.preventDefault();const e=selected();const old=state.people.find(x=>x.id===editPersonId);const obj={id:editPersonId||uid('p'),eventId:e.id,name:pName.value.trim(),phone:pPhone.value.trim(),email:pEmail.value.trim(),status:pStatus.value,paid:pPaid.value,member:pMember.value,diet:pDiet.value.trim(),notes:pNotes.value.trim(),createdAt:old?.createdAt||new Date().toISOString()};if(editPersonId)state.people=state.people.map(x=>x.id===editPersonId?obj:x);else state.people.push(obj);save();personDlg.close();toast(editPersonId?'Iscritto aggiornato':'Iscritto aggiunto')});
-function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),700)}backupBtn.onclick=()=>download(`club42-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(state,null,2),'application/json');exportCsv.onclick=()=>{const e=selected();if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};importFile.onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.events)||!Array.isArray(d.people))throw 0;if(confirm('Sostituire i dati attuali con questo backup?')){state=d;save();toast('Backup importato')}}catch{alert('File non valido')}ev.target.value=''};newEventBtn.onclick=sideNewEvent.onclick=()=>openEvent();addPerson.onclick=()=>openPerson();search.oninput=renderPeople;statusFilter.onchange=renderPeople;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).close());render();
-</script></body></html>
+const KEY='club42_iscrizioni_v2';
+const starter={events:[{id:'evt_ast2026',name:'Club42 × Astrofili',date:'2026-09-25',time:'18:30',place:'Osservatorio Astronomico Monte Viseggi',capacity:60,price:'',notes:''}],people:[],selected:'evt_ast2026'};
+let state=load(),editEventId=null,editPersonId=null;
+const $=id=>document.getElementById(id);
+
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY));if(x&&Array.isArray(x.events)&&Array.isArray(x.people))return x}catch{}return structuredClone(starter)}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function uid(p){return p+'_'+Math.random().toString(36).slice(2,9)}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function selected(){return state.events.find(e=>e.id===state.selected)||state.events[0]||null}
+function list(eid){return state.people.filter(p=>p.eventId===eid)}
+function fmtDate(d){if(!d)return'';return new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00'))}
+function toast(t){const x=$('toast');x.textContent=t;x.classList.add('show');setTimeout(()=>x.classList.remove('show'),1800)}
+function badge(v){return v==='confirmed'?'<span class="badge ok">Confermato</span>':v==='waitlist'?'<span class="badge wait">Attesa</span>':'<span class="badge off">Annullato</span>'}
+
+const viewMeta={
+ dashboard:['Dashboard','Panoramica operativa del Club42'],events:['Eventi','Iscrizioni, partecipanti e organizzazione'],members:['Soci','Anagrafica e tesseramento'],cash:['Cassa','Entrate, uscite e rendiconto'],projects:['Progetti','Dalle idee alla realizzazione'],tasks:['Task','Attività e responsabilità del direttivo'],social:['Social','Pianificazione dei contenuti'],contacts:['Contatti','Collaboratori, partner e fornitori']
+};
+window.showView=function(name){
+ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
+ document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===name));
+ $('pageTitle').textContent=viewMeta[name][0];$('pageSubtitle').textContent=viewMeta[name][1];
+ document.body.classList.remove('sidebar-open');
+};
+document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>showView(n.dataset.view));
+$('mobileMenu').onclick=()=>document.body.classList.toggle('sidebar-open');$('overlay').onclick=()=>document.body.classList.remove('sidebar-open');
+
+function renderDashboard(){
+ const confirmed=state.people.filter(p=>p.status==='confirmed');
+ $('dashEvents').textContent=state.events.length;
+ $('dashPeople').textContent=confirmed.length;
+ $('dashPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;
+ $('dashMembers').textContent=confirmed.filter(p=>p.member==='yes').length;
+ const today=new Date().toISOString().slice(0,10);
+ const next=state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0]||state.events.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+ const box=$('nextEventBox');
+ if(!next){box.innerHTML='<div class="empty">Nessun evento presente. Creane uno per iniziare.</div>';return}
+ const dt=new Date(next.date+'T12:00:00'),day=String(dt.getDate()).padStart(2,'0'),month=dt.toLocaleDateString('it-IT',{month:'short'}).replace('.','').toUpperCase();
+ const n=list(next.id).filter(p=>p.status==='confirmed').length;
+ box.innerHTML=`<div class="upcoming-event"><div class="date-tile"><div><b>${day}</b><span>${month}</span></div></div><div><h4>${esc(next.name)}</h4><p>${next.time?next.time+' · ':''}${esc(next.place||'Luogo da definire')}<br>${next.capacity?`${n}/${next.capacity} posti occupati`:`${n} confermati`}</p></div><button class="btn" onclick="state.selected='${next.id}';localStorage.setItem(KEY,JSON.stringify(state));render();showView('events')">Gestisci</button></div>`;
+}
+
+function render(){
+ const e=selected();if(e&&!state.selected)state.selected=e.id;
+ $('events').innerHTML=state.events.length?state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;return `<div class="event-card ${x.id===state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}</div><div class="event-card-meta">${fmtDate(x.date)}${x.time?' · '+x.time:''}<br>${esc(x.place||'Luogo da definire')}<br>${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-card-actions"><button class="icon-btn" title="Modifica" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" title="Elimina" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
+ renderDashboard();
+ if(!e){$('eventName').textContent='Nessun evento';$('eventMeta').textContent='Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
+ $('eventName').textContent=e.name;$('eventMeta').textContent=`${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.place?' · '+e.place:''}${e.capacity?' · capienza '+e.capacity:''}`;
+ const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');$('sConfirmed').textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');$('sWait').textContent=pp.filter(p=>p.status==='waitlist').length;$('sPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('sMembers').textContent=confirmed.filter(p=>p.member==='yes').length;renderPeople();
+}
+function renderPeople(){const e=selected();if(!e)return;const q=$('search').value.toLowerCase().trim(),sf=$('statusFilter').value;let pp=list(e.id);if(sf!=='all')pp=pp.filter(p=>p.status===sf);if(q)pp=pp.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>(v||'').toLowerCase().includes(q)));pp.sort((a,b)=>a.name.localeCompare(b.name,'it'));$('people').innerHTML=pp.length?pp.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.phone||'')}${p.phone&&p.email?'<br>':''}${esc(p.email||'')}</td><td>${badge(p.status)}</td><td>${p.member==='yes'?'<span class="badge ok">Socio</span>':'<span class="badge off">No</span>'}</td><td>${p.paid==='yes'?'<span class="badge ok">Pagato</span>':'<span class="badge warn">Da pagare</span>'}</td><td>${p.diet?`🍽 ${esc(p.diet)}<br>`:''}<span class="muted">${esc(p.notes||'')}</span></td><td><div class="row"><button class="icon-btn" onclick="openPerson('${p.id}')">✎</button><button class="icon-btn" onclick="deletePerson('${p.id}')">×</button></div></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Nessun iscritto trovato.</td></tr>'}
+
+window.selectEvent=id=>{state.selected=id;localStorage.setItem(KEY,JSON.stringify(state));render()};
+function openEvent(id=null){editEventId=id;const e=id?state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eTime').value=e?.time||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eNotes').value=e?.notes||'';$('eventDlg').showModal()}
+window.openEvent=openEvent;
+window.deleteEvent=id=>{const e=state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni?`))return;state.events=state.events.filter(x=>x.id!==id);state.people=state.people.filter(p=>p.eventId!==id);if(state.selected===id)state.selected=state.events[0]?.id||null;save();toast('Evento eliminato')};
+$('eventForm').addEventListener('submit',ev=>{ev.preventDefault();const obj={id:editEventId||uid('evt'),name:$('eName').value.trim(),date:$('eDate').value,time:$('eTime').value,place:$('ePlace').value.trim(),capacity:Number($('eCapacity').value)||0,price:$('ePrice').value,notes:$('eNotes').value.trim()};if(editEventId)state.events=state.events.map(x=>x.id===editEventId?obj:x);else{state.events.push(obj);state.selected=obj.id}save();$('eventDlg').close();toast(editEventId?'Evento aggiornato':'Evento creato')});
+function openPerson(id=null){const e=selected();if(!e){openEvent();return}editPersonId=id;const p=id?state.people.find(x=>x.id===id):null;$('personDlgTitle').textContent=p?'Modifica iscritto':'Aggiungi iscritto';$('pName').value=p?.name||'';$('pPhone').value=p?.phone||'';$('pEmail').value=p?.email||'';$('pStatus').value=p?.status||'confirmed';$('pPaid').value=p?.paid||'no';$('pMember').value=p?.member||'no';$('pDiet').value=p?.diet||'';$('pNotes').value=p?.notes||'';$('personDlg').showModal()}
+window.openPerson=openPerson;
+window.deletePerson=id=>{const p=state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;state.people=state.people.filter(x=>x.id!==id);save();toast('Iscritto eliminato')};
+$('personForm').addEventListener('submit',ev=>{ev.preventDefault();const e=selected();const old=state.people.find(x=>x.id===editPersonId);const obj={id:editPersonId||uid('p'),eventId:e.id,name:$('pName').value.trim(),phone:$('pPhone').value.trim(),email:$('pEmail').value.trim(),status:$('pStatus').value,paid:$('pPaid').value,member:$('pMember').value,diet:$('pDiet').value.trim(),notes:$('pNotes').value.trim(),createdAt:old?.createdAt||new Date().toISOString()};if(editPersonId)state.people=state.people.map(x=>x.id===editPersonId?obj:x);else state.people.push(obj);save();$('personDlg').close();toast(editPersonId?'Iscritto aggiornato':'Iscritto aggiunto')});
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),700)}
+$('backupBtn').onclick=()=>download(`club42-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(state,null,2),'application/json');
+$('exportCsv').onclick=()=>{const e=selected();if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
+$('importFile').onchange=async ev=>{const f=ev.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.events)||!Array.isArray(d.people))throw 0;if(confirm('Sostituire i dati attuali con questo backup?')){state=d;save();toast('Backup importato')}}catch{alert('File non valido')}ev.target.value=''};
+['globalNewEvent','heroNewEvent','quickEvent','sideNewEvent'].forEach(id=>$(id).onclick=()=>openEvent());
+['addPerson','quickPerson'].forEach(id=>$(id).onclick=()=>openPerson());
+$('search').oninput=renderPeople;$('statusFilter').onchange=renderPeople;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
+render();
+</script>
+</body>
+</html>
