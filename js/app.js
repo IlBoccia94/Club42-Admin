@@ -7,6 +7,8 @@ import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
 import {initSocialFormats} from './social-formats.js';
+import {buildMembersUi} from './members-ui.js';
+import {initMembers,loadMembers} from './members.js';
 import {initDashboardNav} from './dashboard-nav.js';
 
 async function onAuthorized(){
@@ -25,14 +27,16 @@ function initShell(){
 }
 
 buildSocialUi();
+buildMembersUi();
 initSocialExtras();
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial});
+configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembers});
 initRouter();
 initShell();
 initEvents();
 initUsers();
 initSocial();
 initSocialFormats();
+initMembers();
 initDashboardNav();
 initAuth(onAuthorized);
 render();
