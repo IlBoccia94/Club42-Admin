@@ -8,16 +8,18 @@ export const viewMeta={
   cash:['Cassa','Entrate, uscite e rendiconto'],
   projects:['Progetti','Dalle idee alla realizzazione'],
   tasks:['Task','Attività e responsabilità del direttivo'],
-  social:['Social','Pianificazione dei contenuti'],
+  social:['Social','Calendario editoriale, produzione e risultati'],
   contacts:['Contatti','Collaboratori, partner e fornitori']
 };
 
 let usersHandler=null;
 let eventHandler=null;
+let socialHandler=null;
 
-export function configureRouter({onUsers,onEvent}={}){
+export function configureRouter({onUsers,onEvent,onSocial}={}){
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
+  socialHandler=onSocial||null;
 }
 
 function isSupabaseCallbackHash(hash=location.hash){
@@ -43,6 +45,7 @@ async function applyRoute(){
   document.body.classList.remove('sidebar-open');
   if(route.view==='users'&&usersHandler)await usersHandler();
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
+  if(route.view==='social'&&socialHandler)await socialHandler();
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
