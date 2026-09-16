@@ -42,6 +42,7 @@ function renderFormats(){
 }
 
 export async function refreshSocialFormats(){
+  if(!app.currentUser)return;
   const {data,error}=await db.from('social_formats').select('*').eq('active',true).order('name');
   if(error){console.error(error);toast('Errore nel caricamento dei format');return}
   managedFormats=data||[];
@@ -49,6 +50,7 @@ export async function refreshSocialFormats(){
 }
 
 function scheduleRefresh(){
+  if(!app.currentUser)return;
   clearTimeout(refreshTimer);
   refreshTimer=setTimeout(()=>refreshSocialFormats(),30);
 }
@@ -159,7 +161,7 @@ async function saveFormat(ev){
   await refreshSocialFormats();
 }
 
-export async function initSocialFormats(){
+export function initSocialFormats(){
   ensureUi();
   $('newSocialFormatBtn').onclick=openNewFormat;
   $('socialFormatClose').onclick=()=>$('socialFormatDlg').close();
@@ -169,5 +171,4 @@ export async function initSocialFormats(){
 
   observer=new MutationObserver(()=>scheduleRefresh());
   observeHost();
-  await refreshSocialFormats();
 }
