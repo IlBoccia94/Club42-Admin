@@ -1,27 +1,51 @@
 import {$,app,db,esc,fmtDate,toast,download} from './core.js';
 
-const YEAR=new Date().getFullYear();
+let referenceDate=new Date().toISOString().slice(0,10),ACTIVE_YEAR=new Date().getFullYear();
 let members=[],fees=[],editMemberId=null;
 
-const statusLabels={active:'Attivo',suspended:'Sospeso',resigned:'Dimesso'};
-const feeLabels={unknown:'Da verificare',due:'Da pagare',paid:'Pagata',waived:'Esente'};
+const statusLabels={active:'Attivo',suspended:'Sospeso',resigned:'Dimesso',expired:'Scaduto'};
+const feeLabels={unknown:'Da verificare',due:'Da rinnovare',paid:'Pagata',waived:'Esente'};
 
-function feeFor(memberId){return fees.find(f=>f.member_id===memberId&&f.year===YEAR)||null}
+function feeFor(memberId){return fees.find(f=>f.member_id===memberId&&f.year===ACTIVE_YEAR)||null}
 function fullName(m){return `${m.first_name} ${m.last_name}`.trim()}
 function missingCount(m){let n=0;if(!m.tax_code)n++;if(!m.email)n++;return n}
-function normalizedRows(){return members.slice().sort((a,b)=>a.member_number-b.member_number).map(m=>{const f=feeFor(m.id);return{Numero:m.member_number,Nome:m.first_name,Cognome:m.last_name,'Codice fiscale':m.tax_code||'',Email:m.email||'',Telefono:m.phone||'','Data iscrizione':m.join_date||'',Stato:statusLabels[m.status]||m.status,'Firma ricevuta':m.signature_received?'Sì':'No',Anno: YEAR,'Quota':f?.amount??15,'Stato quota':feeLabels[f?.payment_status||'unknown'],'Data pagamento':f?.paid_at||'','Metodo pagamento':f?.payment_method||'','Numero ricevuta':f?.receipt_number||'',Note:m.notes||'','Note quota':f?.notes||''}})}
+function anniversaryReached(m){if(!m.join_date||!referenceDate)return false;const join=new Date(m.join_date+'T12:00:00'),ref=new Date(referenceDate+'T12:00:00');if(ref<join)return false;const ann=new Date(ref.getFullYear(),join.getMonth(),join.getDate(),12);return ref>=ann&&ref.getFullYear()>join.getFullYear()}
+function normalizedRows(){return members.slice().sort((a,b)=>a.member_number-b.member_number).map(m=>{const f=feeFor(m.id);return{Numero:m.member_number,Nome:m.first_name,Cognome:m.last_name,'Codice fiscale':m.tax_code||'',Email:m.email||'',Telefono:m.phone||'','Data iscrizione':m.join_date||'',Stato:statusLabels[m.status]||m.status,'Firma ricevuta':m.signature_received?'Sì':'No',Anno:ACTIVE_YEAR,'Quota':f?.amount??15,'Stato quota':feeLabels[f?.payment_status||'unknown'],'Data pagamento':f?.paid_at||'','Metodo pagamento':f?.payment_method||'','Numero ricevuta':f?.receipt_number||'',Note:m.notes||'','Note quota':f?.notes||''}})}
+
+async function syncRenewals(){
+ const updates=[],inserts=[];
+ for(const m of members){
+  if(['resigned','expired'].includes(m.status))continue;
+  const due=anniversaryReached(m),f=feeFor(m.id);
+  if(f){
+   if(['paid','waived'].includes(f.payment_status))continue;
+   if(due&&f.payment_status!=='due')updates.push(db.from('membership_years').update({payment_status:'due'}).eq('id',f.id));
+   if(!due&&f.payment_status==='due')updates.push(db.from('membership_years').update({payment_status:'unknown'}).eq('id',f.id));
+  }else if(due){
+   inserts.push({member_id:m.id,year:ACTIVE_YEAR,amount:15,payment_status:'due',created_by:app.currentUser?.id||null});
+  }
+ }
+ if(inserts.length){const {error}=await db.from('membership_years').insert(inserts);if(error)console.error(error)}
+ if(updates.length)await Promise.all(updates);
+ if(inserts.length||updates.length){const {data}=await db.from('membership_years').select('*').eq('year',ACTIVE_YEAR);fees=data||fees}
+}
 
 export async function loadMembers(){
- const [mr,fr]=await Promise.all([db.from('members').select('*').order('member_number'),db.from('membership_years').select('*').eq('year',YEAR)]);
- if(mr.error||fr.error){console.error(mr.error||fr.error);toast('Errore nel caricamento soci');return}
- members=mr.data||[];fees=fr.data||[];renderMembers();
+ const [mr,sr,fr]=await Promise.all([
+  db.from('members').select('*').order('member_number'),
+  db.from('member_settings').select('*').eq('id','main').maybeSingle(),
+  db.from('membership_years').select('*')
+ ]);
+ if(mr.error||sr.error||fr.error){console.error(mr.error||sr.error||fr.error);toast('Errore nel caricamento soci');return}
+ members=mr.data||[];referenceDate=sr.data?.renewal_reference_date||new Date().toISOString().slice(0,10);ACTIVE_YEAR=new Date(referenceDate+'T12:00:00').getFullYear();fees=(fr.data||[]).filter(f=>f.year===ACTIVE_YEAR);
+ await syncRenewals();renderMembers();
 }
 
 function renderMembers(){
- $('memYearLabel').textContent=YEAR;$('feeYearTitle').textContent=YEAR;
- $('memTotal').textContent=members.length;$('memActive').textContent=members.filter(m=>m.status==='active').length;$('memMissing').textContent=members.filter(m=>missingCount(m)>0).length;$('memPaid').textContent=fees.filter(f=>f.payment_status==='paid').length;
- const q=$('memberSearch').value.toLowerCase().trim(),sf=$('memberStatusFilter').value,ff=$('memberFeeFilter').value;
- let rows=members.filter(m=>sf==='all'||m.status===sf).filter(m=>{const st=feeFor(m.id)?.payment_status||'unknown';return ff==='all'||st===ff});
+ $('memYearLabel').textContent=ACTIVE_YEAR;$('feeYearTitle').textContent=ACTIVE_YEAR;$('renewalReferenceDate').value=referenceDate;
+ $('memTotal').textContent=members.length;$('memActive').textContent=members.filter(m=>m.status==='active').length;$('memMissing').textContent=members.filter(m=>missingCount(m)>0).length;$('memRenew').textContent=members.filter(m=>(feeFor(m.id)?.payment_status||'unknown')==='due').length;
+ const q=$('memberSearch').value.toLowerCase().trim(),sf=$('memberStatusFilter').value,ff=$('memberFeeFilter').value,df=$('memberDataFilter').value;
+ let rows=members.filter(m=>sf==='all'||m.status===sf).filter(m=>{const st=feeFor(m.id)?.payment_status||'unknown';return ff==='all'||st===ff}).filter(m=>df==='all'||(df==='incomplete'?missingCount(m)>0:missingCount(m)===0));
  if(q)rows=rows.filter(m=>[m.first_name,m.last_name,m.tax_code,m.email,m.phone,String(m.member_number)].some(v=>(v||'').toLowerCase().includes(q)));
  rows.sort((a,b)=>a.member_number-b.member_number);
  $('membersRows').innerHTML=rows.length?rows.map(memberRow).join(''):'<tr><td colspan="9" class="empty">Nessun socio trovato.</td></tr>';
@@ -34,15 +58,19 @@ function clearForm(){editMemberId=null;$('memberForm').reset();$('memberDlgTitle
 window.openMember=id=>{const m=members.find(x=>x.id===id);if(!m)return;editMemberId=id;const f=feeFor(id);$('memberDlgTitle').textContent=`Socio #${m.member_number}`;$('mFirst').value=m.first_name;$('mLast').value=m.last_name;$('mNumber').value=m.member_number;$('mJoin').value=m.join_date;$('mTax').value=m.tax_code||'';$('mEmail').value=m.email||'';$('mPhone').value=m.phone||'';$('mStatus').value=m.status;$('mSignature').value=String(m.signature_received);$('mNotes').value=m.notes||'';$('mfAmount').value=f?.amount??15;$('mfStatus').value=f?.payment_status||'unknown';$('mfPaidAt').value=f?.paid_at||'';$('mfMethod').value=f?.payment_method||'';$('mfReceipt').value=f?.receipt_number||'';$('mfNotes').value=f?.notes||'';$('memberDeleteBtn').style.display='inline-flex';$('memberDlg').showModal()};
 
 async function saveMember(ev){ev.preventDefault();const row={first_name:$('mFirst').value.trim(),last_name:$('mLast').value.trim(),join_date:$('mJoin').value,tax_code:$('mTax').value.trim().toUpperCase()||null,email:$('mEmail').value.trim()||null,phone:$('mPhone').value.trim()||null,status:$('mStatus').value,signature_received:$('mSignature').value==='true',notes:$('mNotes').value.trim()||null};if($('mNumber').value)row.member_number=Number($('mNumber').value);let memberId=editMemberId;if(editMemberId){const {error}=await db.from('members').update(row).eq('id',editMemberId);if(error)return toast(error.code==='23505'?'Numero socio o codice fiscale già presente.':error.message)}else{const {data,error}=await db.from('members').insert({...row,created_by:app.currentUser.id}).select('id').single();if(error)return toast(error.code==='23505'?'Numero socio o codice fiscale già presente.':error.message);memberId=data.id}
- const feeRow={member_id:memberId,year:YEAR,amount:Number($('mfAmount').value)||0,payment_status:$('mfStatus').value,paid_at:$('mfPaidAt').value||null,payment_method:$('mfMethod').value.trim()||null,receipt_number:$('mfReceipt').value.trim()||null,notes:$('mfNotes').value.trim()||null,created_by:app.currentUser.id};const {error:fe}=await db.from('membership_years').upsert(feeRow,{onConflict:'member_id,year'});if(fe)return toast(fe.message);$('memberDlg').close();toast(editMemberId?'Socio aggiornato':'Socio aggiunto');await loadMembers()}
+ const feeRow={member_id:memberId,year:ACTIVE_YEAR,amount:Number($('mfAmount').value)||0,payment_status:$('mfStatus').value,paid_at:$('mfPaidAt').value||null,payment_method:$('mfMethod').value.trim()||null,receipt_number:$('mfReceipt').value.trim()||null,notes:$('mfNotes').value.trim()||null,created_by:app.currentUser.id};const {error:fe}=await db.from('membership_years').upsert(feeRow,{onConflict:'member_id,year'});if(fe)return toast(fe.message);$('memberDlg').close();toast(editMemberId?'Socio aggiornato':'Socio aggiunto');await loadMembers()}
 async function deleteMember(){if(!editMemberId)return;const m=members.find(x=>x.id===editMemberId);if(!confirm(`Eliminare definitivamente il socio #${m.member_number} ${fullName(m)} e il suo storico quote?`))return;const {error}=await db.from('members').delete().eq('id',editMemberId);if(error)return toast(error.message);$('memberDlg').close();toast('Socio eliminato');await loadMembers()}
 
+async function saveReferenceDate(){const value=$('renewalReferenceDate').value;if(!value)return toast('Inserisci una data di riferimento.');const {error}=await db.from('member_settings').update({renewal_reference_date:value,updated_by:app.currentUser.id}).eq('id','main');if(error)return toast(error.message);referenceDate=value;ACTIVE_YEAR=new Date(value+'T12:00:00').getFullYear();toast('Data rinnovi aggiornata');await loadMembers()}
+
+async function deleteExpiredMembers(){const expired=members.filter(m=>m.status==='expired');if(!expired.length)return toast('Non ci sono soci scaduti da eliminare.');if(!confirm(`Stai per eliminare definitivamente ${expired.length} soci in stato Scaduto e tutto il loro storico quote. Continuare?`))return;const typed=prompt('Conferma definitiva: scrivi ELIMINA per procedere.');if(typed!=='ELIMINA')return toast('Eliminazione annullata');const {error}=await db.from('members').delete().eq('status','expired');if(error)return toast(error.message);toast(`${expired.length} soci scaduti eliminati`);await loadMembers()}
+
 function csvEscape(v){return `"${String(v??'').replaceAll('"','""')}"`}
-function exportCsv(){const rows=normalizedRows(),headers=Object.keys(rows[0]||{});const csv='\uFEFF'+[headers.map(csvEscape).join(';'),...rows.map(r=>headers.map(h=>csvEscape(r[h])).join(';'))].join('\n');download(`club42-registro-soci-${YEAR}.csv`,csv,'text/csv;charset=utf-8')}
+function exportCsv(){const rows=normalizedRows(),headers=Object.keys(rows[0]||{});const csv='\uFEFF'+[headers.map(csvEscape).join(';'),...rows.map(r=>headers.map(h=>csvEscape(r[h])).join(';'))].join('\n');download(`club42-registro-soci-${ACTIVE_YEAR}.csv`,csv,'text/csv;charset=utf-8')}
 function loadScript(src,test){return new Promise((resolve,reject)=>{if(test())return resolve();const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
-async function exportExcel(){try{await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);const rows=normalizedRows();const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:8},{wch:18},{wch:22},{wch:20},{wch:30},{wch:16},{wch:16},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:16},{wch:20},{wch:18},{wch:30},{wch:24}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,`Soci ${YEAR}`);XLSX.writeFile(wb,`club42-registro-soci-${YEAR}.xlsx`)}catch(e){console.error(e);toast('Errore esportazione Excel')}}
-async function exportPdf(){try{await loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf);await loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable);const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});doc.setFontSize(16);doc.text(`Club42 - Registro soci ${YEAR}`,14,14);doc.setFontSize(8);doc.text(`Esportato il ${new Intl.DateTimeFormat('it-IT').format(new Date())} · ${members.length} soci`,14,20);doc.autoTable({startY:25,head:[['#','Nome','Cognome','Codice fiscale','Data iscrizione','Email','Firma']],body:members.slice().sort((a,b)=>a.member_number-b.member_number).map(m=>[m.member_number,m.first_name,m.last_name,m.tax_code||'',fmtDate(m.join_date),m.email||'',m.signature_received?'Sì':'']),styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[33,98,119]},columnStyles:{0:{cellWidth:10},1:{cellWidth:28},2:{cellWidth:38},3:{cellWidth:38},4:{cellWidth:25},5:{cellWidth:70},6:{cellWidth:18}}});doc.save(`club42-registro-soci-${YEAR}.pdf`)}catch(e){console.error(e);toast('Errore esportazione PDF')}}
+async function exportExcel(){try{await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX);const rows=normalizedRows();const ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[{wch:8},{wch:18},{wch:22},{wch:20},{wch:30},{wch:16},{wch:16},{wch:14},{wch:16},{wch:12},{wch:12},{wch:16},{wch:16},{wch:20},{wch:18},{wch:30},{wch:24}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,`Soci ${ACTIVE_YEAR}`);XLSX.writeFile(wb,`club42-registro-soci-${ACTIVE_YEAR}.xlsx`)}catch(e){console.error(e);toast('Errore esportazione Excel')}}
+async function exportPdf(){try{await loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>!!window.jspdf);await loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>!!window.jspdf?.jsPDF?.API?.autoTable);const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});doc.setFontSize(16);doc.text(`Club42 - Registro soci ${ACTIVE_YEAR}`,14,14);doc.setFontSize(8);doc.text(`Data riferimento rinnovi: ${fmtDate(referenceDate)} · Esportato il ${new Intl.DateTimeFormat('it-IT').format(new Date())} · ${members.length} soci`,14,20);doc.autoTable({startY:25,head:[['#','Nome','Cognome','Codice fiscale','Data iscrizione','Email','Stato','Rinnovo']],body:members.slice().sort((a,b)=>a.member_number-b.member_number).map(m=>{const f=feeFor(m.id);return[m.member_number,m.first_name,m.last_name,m.tax_code||'',fmtDate(m.join_date),m.email||'',statusLabels[m.status],feeLabels[f?.payment_status||'unknown']]}),styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[33,98,119]},columnStyles:{0:{cellWidth:9},1:{cellWidth:25},2:{cellWidth:34},3:{cellWidth:34},4:{cellWidth:24},5:{cellWidth:61},6:{cellWidth:24},7:{cellWidth:26}}});doc.save(`club42-registro-soci-${ACTIVE_YEAR}.pdf`)}catch(e){console.error(e);toast('Errore esportazione PDF')}}
 
 export function initMembers(){
- $('newMemberBtn').onclick=()=>{clearForm();$('memberDlg').showModal()};$('memberClose').onclick=()=>$('memberDlg').close();$('memberCancel').onclick=()=>$('memberDlg').close();$('memberForm').addEventListener('submit',saveMember);$('memberDeleteBtn').onclick=deleteMember;$('memberSearch').oninput=renderMembers;$('memberStatusFilter').onchange=renderMembers;$('memberFeeFilter').onchange=renderMembers;$('exportMembersCsv').onclick=exportCsv;$('exportMembersXlsx').onclick=exportExcel;$('exportMembersPdf').onclick=exportPdf;
+ $('newMemberBtn').onclick=()=>{clearForm();$('memberDlg').showModal()};$('memberClose').onclick=()=>$('memberDlg').close();$('memberCancel').onclick=()=>$('memberDlg').close();$('memberForm').addEventListener('submit',saveMember);$('memberDeleteBtn').onclick=deleteMember;$('memberSearch').oninput=renderMembers;$('memberStatusFilter').onchange=renderMembers;$('memberFeeFilter').onchange=renderMembers;$('memberDataFilter').onchange=renderMembers;$('saveRenewalReference').onclick=saveReferenceDate;$('deleteExpiredMembers').onclick=deleteExpiredMembers;$('exportMembersCsv').onclick=exportCsv;$('exportMembersXlsx').onclick=exportExcel;$('exportMembersPdf').onclick=exportPdf;
 }
