@@ -9,7 +9,7 @@ export const viewMeta={
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
-  contacts:['Contatti','Collaboratori, partner e fornitori']
+  contacts:['Contatti','Rubrica collaboratori e storico relazioni']
 };
 
 let usersHandler=null;
@@ -18,14 +18,16 @@ let socialHandler=null;
 let membersHandler=null;
 let projectsHandler=null;
 let tasksHandler=null;
+let contactsHandler=null;
 
-export function configureRouter({onUsers,onEvent,onSocial,onMembers,onProjects,onTasks}={}){
+export function configureRouter({onUsers,onEvent,onSocial,onMembers,onProjects,onTasks,onContacts}={}){
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
   membersHandler=onMembers||null;
   projectsHandler=onProjects||null;
   tasksHandler=onTasks||null;
+  contactsHandler=onContacts||null;
 }
 
 function isSupabaseCallbackHash(hash=location.hash){
@@ -55,6 +57,7 @@ async function applyRoute(){
   if(route.view==='members'&&membersHandler)await membersHandler();
   if(route.view==='projects'&&projectsHandler)await projectsHandler();
   if(route.view==='tasks'&&tasksHandler)await tasksHandler();
+  if(route.view==='contacts'&&contactsHandler)await contactsHandler();
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
