@@ -10,9 +10,9 @@ export const canManageEvents=()=>isAdmin()||isStaff();
 export const canUseOperations=()=>['admin','treasurer','staff'].includes(app.currentProfile?.role);
 
 const access={
-  admin:new Set(['dashboard','events','members','cash','users','projects','tasks','social','contacts']),
-  treasurer:new Set(['dashboard','events','members','cash','projects','tasks','social']),
-  staff:new Set(['dashboard','events','members','cash','projects','tasks','social']),
+  admin:new Set(['dashboard','events','members','cash','notifications','users','projects','tasks','social','contacts']),
+  treasurer:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social']),
+  staff:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social']),
   guest:new Set()
 };
 export function canAccessView(view){return access[app.currentProfile?.role]?.has(view)===true}
@@ -29,6 +29,7 @@ export function applyRoleUi(){
   document.body.dataset.club42Role=role;
   setHidden('.nav-item[data-view="users"]',role!=='admin');
   setHidden('.nav-item[data-view="contacts"]',role!=='admin');
+  setHidden('.nav-item[data-view="notifications"]',role==='guest');
   setHidden('button[onclick="showView(\'users\')"]',role!=='admin');
 
   setHidden('#globalNewEvent',true);
