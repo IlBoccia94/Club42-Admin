@@ -7,6 +7,7 @@ export const viewMeta={
   users:['Utenti','Accessi, ruoli e richieste di autorizzazione'],
   members:['Soci','Anagrafica, tessere e quote associative'],
   cash:['Cassa','Entrate, uscite e rendiconto'],
+  notifications:['Notifiche','Preferenze push, dispositivi e installazione PWA'],
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
@@ -19,17 +20,19 @@ let eventHandler=null;
 let socialHandler=null;
 let membersHandler=null;
 let cashHandler=null;
+let notificationsHandler=null;
 let projectsHandler=null;
 let tasksHandler=null;
 let contactsHandler=null;
 
-export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onProjects,onTasks,onContacts}={}){
+export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts}={}){
   dashboardHandler=onDashboard||null;
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
   membersHandler=onMembers||null;
   cashHandler=onCash||null;
+  notificationsHandler=onNotifications||null;
   projectsHandler=onProjects||null;
   tasksHandler=onTasks||null;
   contactsHandler=onContacts||null;
@@ -66,6 +69,7 @@ async function applyRoute(){
   if(route.view==='social'&&socialHandler)await socialHandler();
   if(route.view==='members'&&membersHandler)await membersHandler();
   if(route.view==='cash'&&cashHandler)await cashHandler();
+  if(route.view==='notifications'&&notificationsHandler)await notificationsHandler();
   if(route.view==='projects'&&projectsHandler)await projectsHandler();
   if(route.view==='tasks'&&tasksHandler)await tasksHandler();
   if(route.view==='contacts'&&contactsHandler)await contactsHandler();
