@@ -17,9 +17,14 @@ const access={
 };
 export function canAccessView(view){return access[app.currentProfile?.role]?.has(view)===true}
 
+function ensureStyles(){
+  if(document.querySelector('link[href="permissions.css"]'))return;
+  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css';document.head.appendChild(l);
+}
 function setHidden(selector,hidden){document.querySelectorAll(selector).forEach(el=>{el.hidden=hidden})}
 
 export function applyRoleUi(){
+  ensureStyles();
   const role=app.currentProfile?.role||'guest';
   document.body.dataset.club42Role=role;
   setHidden('.nav-item[data-view="users"]',role!=='admin');
@@ -32,8 +37,6 @@ export function applyRoleUi(){
   const cashReadonly=role==='staff';
   setHidden('#newCashBtn',cashReadonly);
 
-  if(roleLabel(role)){
-    const badge=document.getElementById('sidebarUserRole');
-    if(badge)badge.textContent=roleLabel(role);
-  }
+  const badge=document.getElementById('sidebarUserRole');
+  if(badge)badge.textContent=roleLabel(role);
 }
