@@ -29,7 +29,7 @@ function updateButton(target=activeTarget){
 
   const page=pageScroller();
   let chosen=target;
-  if(!chosen||scrollTopOf(chosen)<=THRESHOLD){
+  if(!chosen||!document.contains(chosen)||scrollTopOf(chosen)<=THRESHOLD){
     chosen=scrollTopOf(page)>THRESHOLD?page:null;
   }
 
@@ -55,14 +55,16 @@ function onElementScroll(event){
 }
 
 function onPageScroll(){
-  activeTarget=pageScroller();
+  const page=pageScroller();
+  if(scrollTopOf(page)>THRESHOLD||!activeTarget||scrollTopOf(activeTarget)<=THRESHOLD)activeTarget=page;
   updateButton(activeTarget);
 }
 
 function goTop(){
   const target=activeTarget||pageScroller();
-  if(target===pageScroller())window.scrollTo({top:0,behavior:'smooth'});
-  else target.scrollTo({top:0,behavior:'smooth'});
+  const behavior=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  if(target===pageScroller())window.scrollTo({top:0,behavior});
+  else target.scrollTo({top:0,behavior});
 }
 
 function ensureStyles(){
@@ -87,7 +89,7 @@ export function initScrollTop(){
 
   window.addEventListener('scroll',onPageScroll,{passive:true});
   document.addEventListener('scroll',onElementScroll,{passive:true,capture:true});
-  window.addEventListener('hashchange',()=>requestAnimationFrame(()=>updateButton(pageScroller())));
+  window.addEventListener('hashchange',()=>requestAnimationFrame(()=>{activeTarget=pageScroller();updateButton(activeTarget)}));
   document.addEventListener('club42:scrolltop-refresh',()=>requestAnimationFrame(()=>updateButton(activeTarget)));
   window.addEventListener('resize',()=>requestAnimationFrame(()=>updateButton(activeTarget)),{passive:true});
 
