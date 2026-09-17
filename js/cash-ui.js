@@ -12,7 +12,7 @@ export function buildCashUi(){
     </div>
 
     <div class="cash-insights">
-      <section class="card cash-panel"><div class="section-head"><div><h3>Spese anticipate per consigliere</h3><p>Quanto ciascun consigliere ha anticipato personalmente</p></div></div><div id="cashCouncilors" class="cash-councilors"></div></section>
+      <section class="card cash-panel"><div class="section-head"><div><h3>Spese anticipate per utente</h3><p>Calcolate dall'utente Club42 associato alle uscite</p></div></div><div id="cashCouncilors" class="cash-councilors"></div></section>
       <section class="card cash-panel"><div class="section-head"><div><h3>Flusso mensile</h3><p>Entrate e uscite dell'anno selezionato</p></div></div><div id="cashMonthlyChart" class="cash-monthly"></div></section>
     </div>
 
@@ -24,7 +24,7 @@ export function buildCashUi(){
         <select id="cashTypeFilter"><option value="all">Entrate + uscite</option><option value="income">Solo entrate</option><option value="expense">Solo uscite</option></select>
         <select id="cashCategoryFilter"><option value="all">Tutte le categorie</option><option value="unclassified">Da classificare</option><option value="membership">Quote associative</option><option value="donation">Donazioni</option><option value="materials">Materiali</option><option value="services">Servizi</option><option value="event">Eventi</option><option value="reimbursement">Rimborsi</option><option value="other">Altro</option></select>
       </div>
-      <div class="table-wrap cash-table-wrap"><table class="cash-table"><thead><tr><th>#</th><th>Data</th><th>Tipo</th><th>Descrizione</th><th>Da</th><th>A</th><th>Categoria</th><th class="num">Importo</th><th></th></tr></thead><tbody id="cashTableBody"></tbody></table></div>
+      <div class="table-wrap cash-table-wrap"><table class="cash-table"><thead><tr><th>#</th><th>Data</th><th>Tipo</th><th>Descrizione</th><th>Da</th><th>A</th><th>Utente</th><th>Categoria</th><th class="num">Importo</th><th></th></tr></thead><tbody id="cashTableBody"></tbody></table></div>
       <div class="cash-mobile-list" id="cashMobileList"></div>
       <div class="foot">☁️ Libro cassa sincronizzato nel database Club42.</div>
     </section>
@@ -39,6 +39,7 @@ export function buildCashUi(){
       <div class="field full"><label>Descrizione *</label><textarea id="cashDescription" rows="2" required></textarea></div>
       <div class="field"><label>Da</label><input id="cashFrom" placeholder="Chi paga / da chi arriva"></div>
       <div class="field"><label>A</label><input id="cashTo" placeholder="Chi riceve / destinatario"></div>
+      <div class="field full"><label>Utente Club42 associato</label><select id="cashAssociatedUser"><option value="">Nessuno</option></select><div class="cash-user-hint">Solo Admin/Staff attivi. I Guest non compaiono qui. Per le uscite questo campo alimenta il riepilogo delle spese anticipate.</div></div>
       <div class="field"><label>Metodo di pagamento</label><input id="cashMethod" placeholder="Contanti, bonifico, carta…"></div>
       <div class="field"><label>Riferimento documento</label><input id="cashDocument" placeholder="Ricevuta, fattura, scontrino…"></div>
       <div class="field"><label>Evento collegato</label><select id="cashEvent"><option value="">Nessuno</option></select></div>
