@@ -4,7 +4,7 @@ import {initAuth,bootstrapAuth} from './auth.js?v=20260917-access3';
 import {applyRoleUi} from './permissions.js?v=20260917-access3';
 import {initPwa} from './pwa.js?v=20260917-2';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-access3';
-import {initUsers,loadUsers} from './users.js?v=20260917-access3';
+import {initUsers,loadUsers} from './users.js?v=20260917-access4';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
 import {buildNotificationsUi} from './notifications-ui.js?v=20260917-1';
@@ -23,8 +23,7 @@ import {initProjects,loadProjects} from './projects.js';
 import {buildTasksUi} from './tasks-ui.js';
 import {initTasks,loadTasks} from './tasks.js';
 import {buildContactsUi} from './contacts-ui.js';
-import {initContacts} from './contacts.js';
-import {loadContactsForRole} from './contact-access.js?v=20260917-access3';
+import {initContacts,loadContacts} from './contacts.js?v=20260917-contactsfull1';
 
 function ensureSidebarLayout(){
   if(document.querySelector('link[href^="sidebar-layout.css"]'))return;
@@ -61,7 +60,7 @@ buildProjectsUi();
 buildTasksUi();
 buildContactsUi();
 initSocialExtras();
-configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContactsForRole});
+configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
 initRouter();
 initShell();
 initEvents();
