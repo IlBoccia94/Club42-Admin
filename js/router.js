@@ -1,5 +1,5 @@
 import {$,app} from './core.js';
-import {canAccessView} from './permissions.js?v=20260918-feedback2';
+import {canAccessView} from './permissions.js?v=20260918-newsletter-recipients1';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
@@ -11,7 +11,7 @@ export const viewMeta={
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
-  newsletter:['Newsletter','Comunicazioni email ai Guest che hanno espresso il consenso'],
+  newsletter:['Newsletter','Comunicazioni email agli utenti che hanno espresso il consenso'],
   contacts:['Contatti','Rubrica collaboratori e relazioni'],
   feedback:['Feedback','Bug, fix e richieste per il gestionale'],
   guest:['Pagina guest','Anteprima dell’Area soci Club42']
