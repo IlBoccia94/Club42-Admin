@@ -1,5 +1,5 @@
 export function buildCashUi(){
-  if(!document.querySelector('link[href="cash.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='cash.css';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="cash.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='cash.css?v=20260918-reimburse1';document.head.appendChild(l)}
   const nav=document.querySelector('.nav-item[data-view="cash"]');if(nav){const b=nav.querySelector('.nav-badge');if(b)b.remove()}
   const view=document.getElementById('view-cash');if(view)view.innerHTML=`<div class="cash-shell">
     <section class="card cash-hero"><div class="cash-hero-inner"><div><div class="hero-eyebrow">Club42 · Tesoreria</div><h2>Cassa</h2><p>Entrate, uscite e rendiconto sempre aggiornati, con storico completo e backup esportabili.</p></div><div class="cash-hero-actions"><button class="btn" id="cashPdfBtn">PDF</button><button class="btn" id="cashCsvBtn">CSV</button><button class="btn" id="cashExcelBtn">Excel</button><button class="btn primary" id="newCashBtn">＋ Movimento</button></div></div></section>
@@ -12,7 +12,7 @@ export function buildCashUi(){
     </div>
 
     <div class="cash-insights">
-      <section class="card cash-panel"><div class="section-head"><div><h3>Spese anticipate per utente</h3><p>Calcolate dall'utente Club42 associato alle uscite</p></div></div><div id="cashCouncilors" class="cash-councilors"></div></section>
+      <section class="card cash-panel"><div class="section-head"><div><h3>Rimborsi da effettuare</h3><p>Uscite anticipate dagli utenti Club42 e non ancora rimborsate</p></div></div><div id="cashCouncilors" class="cash-councilors"></div></section>
       <section class="card cash-panel cash-flow-panel">
         <div class="section-head cash-chart-head"><div><h3>Flusso mensile</h3><p id="cashChartSubtitle">Entrate e uscite dell'anno selezionato</p></div><div class="cash-chart-size"><button class="icon-btn" id="cashChartSmaller" type="button" aria-label="Riduci altezza grafico">−</button><button class="icon-btn" id="cashChartLarger" type="button" aria-label="Aumenta altezza grafico">＋</button></div></div>
         <div class="cash-chart-legend"><span><i class="income"></i>Entrate</span><span><i class="expense"></i>Uscite</span><small>Tocca una barra per vedere il valore</small></div>
@@ -46,7 +46,8 @@ export function buildCashUi(){
       <div class="field full"><label>Descrizione *</label><textarea id="cashDescription" rows="2" required></textarea></div>
       <div class="field"><label>Da</label><input id="cashFrom" placeholder="Chi paga / da chi arriva"></div>
       <div class="field"><label>A</label><input id="cashTo" placeholder="Chi riceve / destinatario"></div>
-      <div class="field full"><label>Utente Club42 associato</label><select id="cashAssociatedUser"><option value="">Nessuno</option></select><div class="cash-user-hint">Solo Admin/Staff attivi. I Guest non compaiono qui. Per le uscite questo campo alimenta il riepilogo delle spese anticipate.</div></div>
+      <div class="field full"><label>Utente Club42 associato</label><select id="cashAssociatedUser"><option value="">Nessuno</option></select><div class="cash-user-hint">Solo Admin/Staff attivi. I Guest non compaiono qui. Per le uscite questo campo alimenta il riepilogo dei rimborsi da effettuare.</div></div>
+      <div class="field full cash-reimbursed-field" id="cashReimbursedWrap" hidden><label class="cash-reimbursed-check"><input id="cashUserReimbursed" type="checkbox"> Rimborsato all'utente</label><div class="cash-user-hint">Attiva quando Club42 ha già restituito questa somma all'utente associato. Il movimento resta nelle uscite, ma non viene più conteggiato tra i rimborsi da effettuare.</div></div>
       <div class="field"><label>Metodo di pagamento</label><input id="cashMethod" placeholder="Contanti, bonifico, carta…"></div>
       <div class="field"><label>Riferimento documento</label><input id="cashDocument" placeholder="Ricevuta, fattura, scontrino…"></div>
       <div class="field"><label>Evento collegato</label><select id="cashEvent"><option value="">Nessuno</option></select></div>
