@@ -1,4 +1,5 @@
 import {$,app,db,APP_URL} from './core.js';
+import {applyRoleUi,roleLabel} from './permissions.js';
 
 export async function getProfile(user){
   const {data,error}=await db.from('admin_users').select('user_id,email,display_name,role,active,status').eq('user_id',user.id).maybeSingle();
@@ -26,12 +27,22 @@ export async function handleSession(user,onAuthorized){
     $('authScreen').classList.remove('hidden');
     return false;
   }
+  if(app.currentProfile.role==='guest'){
+    $('authFormWrap').style.display='none';
+    $('authPending').classList.add('show');
+    $('pendingEmail').textContent=user.email||user.id;
+    $('pendingTitle').textContent='Profilo Guest';
+    $('pendingText').textContent='Questo profilo non ha accesso ai moduli gestionali Club42. Un Admin può assegnarti un ruolo operativo quando necessario.';
+    $('authScreen').classList.remove('hidden');
+    return false;
+  }
   $('authScreen').classList.add('hidden');
   $('authPending').classList.remove('show');
   $('authFormWrap').style.display='block';
   $('sidebarUserName').textContent=app.currentProfile.display_name||user.email||'Utente';
   $('sidebarUserEmail').textContent=app.currentProfile.email||user.email||'';
-  $('sidebarUserRole').textContent=app.currentProfile.role||'—';
+  $('sidebarUserRole').textContent=roleLabel(app.currentProfile.role);
+  applyRoleUi();
   if(onAuthorized)await onAuthorized();
   return true;
 }
@@ -66,6 +77,7 @@ export function initAuth(onAuthorized){
     await db.auth.signOut();
     app.currentUser=null;app.currentProfile=null;
     app.state={events:[],people:[],selected:null};
+    delete document.body.dataset.club42Role;
     showAuth();
   };
   $('logoutBtn').onclick=logout;$('pendingLogout').onclick=logout;
