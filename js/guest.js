@@ -81,7 +81,7 @@ function featuredCard(e){
   const p=compactDateBadge(e);
   const cls=p.crossMonth?'guest-date-cross':p.range?'guest-date-range':'';
   return `<article class="guest-featured-card">
-    <div class="guest-featured-date"><span>${esc(p.month)}</span><strong class="${cls}">${esc(p.day)}</strong><small>${esc(whenLabel(e))}</small></div>
+    <div class="guest-featured-date ${p.crossMonth?'cross-month':''}"><span>${esc(p.month)}</span><strong class="${cls}">${esc(p.day)}</strong><small>${esc(whenLabel(e))}</small></div>
     <div class="guest-featured-body"><div class="guest-next-pill">PROSSIMO EVENTO</div><h2>${esc(e.name)}</h2>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e,true)}</div>${eventActions(e)}</div>
   </article>`;
 }
