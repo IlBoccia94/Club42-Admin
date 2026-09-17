@@ -6,7 +6,7 @@ export const isTreasurer=()=>app.currentProfile?.role==='treasurer';
 export const isStaff=()=>app.currentProfile?.role==='staff';
 export const isGuest=()=>app.currentProfile?.role==='guest';
 export const canManageCash=()=>isAdmin()||isTreasurer();
-export const canManageEvents=()=>isAdmin()||isStaff();
+export const canManageEvents=()=>isAdmin()||isStaff()||isTreasurer();
 export const canUseOperations=()=>['admin','treasurer','staff'].includes(app.currentProfile?.role);
 
 const access={
@@ -19,7 +19,7 @@ export function canAccessView(view){return access[app.currentProfile?.role]?.has
 
 function ensureStyles(){
   if(document.querySelector('link[href^="permissions.css"]'))return;
-  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-access3';document.head.appendChild(l);
+  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-access5';document.head.appendChild(l);
 }
 function setHidden(selector,hidden){document.querySelectorAll(selector).forEach(el=>{el.hidden=hidden})}
 
@@ -34,10 +34,10 @@ export function applyRoleUi(){
   setHidden('button[onclick="showView(\'users\')"]',role!=='admin');
 
   setHidden('#globalNewEvent',true);
-  const eventReadonly=role==='treasurer';
+  const eventReadonly=!canManageEvents();
   ['#heroNewEvent','#quickEvent','#quickPerson','#sideNewEvent','#addPerson'].forEach(s=>setHidden(s,eventReadonly));
 
-  const cashReadonly=role==='staff';
+  const cashReadonly=!canManageCash();
   setHidden('#newCashBtn',cashReadonly);
 
   const badge=document.getElementById('sidebarUserRole');
