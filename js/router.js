@@ -1,5 +1,5 @@
 import {$,app} from './core.js';
-import {canAccessView} from './permissions.js?v=20260917-access3';
+import {canAccessView} from './permissions.js?v=20260917-access6';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
@@ -11,7 +11,8 @@ export const viewMeta={
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
-  contacts:['Contatti','Rubrica collaboratori e relazioni']
+  contacts:['Contatti','Rubrica collaboratori e relazioni'],
+  guest:['Pagina guest','Anteprima dell’Area soci Club42']
 };
 
 let dashboardHandler=null;
@@ -24,8 +25,9 @@ let notificationsHandler=null;
 let projectsHandler=null;
 let tasksHandler=null;
 let contactsHandler=null;
+let guestHandler=null;
 
-export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts}={}){
+export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts,onGuest}={}){
   dashboardHandler=onDashboard||null;
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
@@ -36,8 +38,10 @@ export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,
   projectsHandler=onProjects||null;
   tasksHandler=onTasks||null;
   contactsHandler=onContacts||null;
+  guestHandler=onGuest||null;
 }
 
+function defaultView(){return app.currentProfile?.role==='guest'?'guest':'dashboard'}
 function isSupabaseCallbackHash(hash=location.hash){
   const h=hash.toLowerCase();
   return h.includes('access_token=')||h.includes('refresh_token=')||h.includes('error_code=')||h.includes('type=invite')||h.includes('type=recovery')||h.includes('type=signup');
@@ -45,9 +49,9 @@ function isSupabaseCallbackHash(hash=location.hash){
 
 export function parseRoute(){
   const raw=location.hash.replace(/^#/,'').trim();
-  if(!raw||isSupabaseCallbackHash('#'+raw))return {view:'dashboard',eventId:null,authCallback:isSupabaseCallbackHash('#'+raw)};
+  if(!raw||isSupabaseCallbackHash('#'+raw))return {view:defaultView(),eventId:null,authCallback:isSupabaseCallbackHash('#'+raw)};
   const parts=raw.split('/');
-  const view=viewMeta[parts[0]]?parts[0]:'dashboard';
+  const view=viewMeta[parts[0]]?parts[0]:defaultView();
   return {view,eventId:parts[1]||null,authCallback:false};
 }
 
@@ -55,8 +59,8 @@ async function applyRoute(){
   if(!app.currentProfile?.active)return;
   let route=parseRoute();
   if(!canAccessView(route.view)){
-    route={view:'dashboard',eventId:null,authCallback:false};
-    history.replaceState(null,'','#dashboard');
+    route={view:defaultView(),eventId:null,authCallback:false};
+    history.replaceState(null,'',`#${route.view}`);
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+route.view));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===route.view));
@@ -73,11 +77,12 @@ async function applyRoute(){
   if(route.view==='projects'&&projectsHandler)await projectsHandler();
   if(route.view==='tasks'&&tasksHandler)await tasksHandler();
   if(route.view==='contacts'&&contactsHandler)await contactsHandler();
+  if(route.view==='guest'&&guestHandler)await guestHandler();
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
-  const requested=viewMeta[name]?name:'dashboard';
-  const view=canAccessView(requested)?requested:'dashboard';
+  const requested=viewMeta[name]?name:defaultView();
+  const view=canAccessView(requested)?requested:defaultView();
   const hash=view==='events'&&eventId?`#events/${eventId}`:`#${view}`;
   if(location.hash===hash)return applyRoute();
   if(replace){history.replaceState(null,'',hash);await applyRoute();}
@@ -85,7 +90,7 @@ export async function showView(name,{replace=false,eventId=null}={}){
 }
 
 export async function restoreRoute(){
-  if(!location.hash)history.replaceState(null,'','#dashboard');
+  if(!location.hash)history.replaceState(null,'',`#${defaultView()}`);
   await applyRoute();
 }
 
