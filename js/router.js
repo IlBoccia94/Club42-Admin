@@ -13,6 +13,7 @@ export const viewMeta={
   social:['Social','Calendario editoriale, produzione e risultati'],
   newsletter:['Newsletter','Comunicazioni email ai Guest che hanno espresso il consenso'],
   contacts:['Contatti','Rubrica collaboratori e relazioni'],
+  feedback:['Feedback','Bug, fix e richieste per il gestionale'],
   guest:['Pagina guest','Anteprima dell’Area soci Club42']
 };
 
@@ -27,9 +28,10 @@ let notificationsHandler=null;
 let projectsHandler=null;
 let tasksHandler=null;
 let contactsHandler=null;
+let feedbackHandler=null;
 let guestHandler=null;
 
-export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onNewsletter,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts,onGuest}={}){
+export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onNewsletter,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts,onFeedback,onGuest}={}){
   dashboardHandler=onDashboard||null;
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
@@ -41,6 +43,7 @@ export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onNewslett
   projectsHandler=onProjects||null;
   tasksHandler=onTasks||null;
   contactsHandler=onContacts||null;
+  feedbackHandler=onFeedback||null;
   guestHandler=onGuest||null;
 }
 
@@ -81,6 +84,7 @@ async function applyRoute(){
   if(route.view==='projects'&&projectsHandler)await projectsHandler();
   if(route.view==='tasks'&&tasksHandler)await tasksHandler();
   if(route.view==='contacts'&&contactsHandler)await contactsHandler();
+  if(route.view==='feedback'&&feedbackHandler)await feedbackHandler();
   if(route.view==='guest'&&guestHandler)await guestHandler();
 }
 
