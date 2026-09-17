@@ -14,21 +14,17 @@ function ensureEventContactsField(){
 }
 function fillEventContacts(){const el=$('eContacts');if(!el)return;el.innerHTML=eventContacts.map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}${c.active?'':' · archiviato'}</option>`).join('')}
 function setEventContactSelection(eventId){const el=$('eContacts');if(!el)return;const ids=new Set(eventId?eventContactLinks.filter(x=>x.event_id===eventId).map(x=>x.contact_id):[]);[...el.options].forEach(o=>o.selected=ids.has(o.value))}
-async function refreshEventContactData(){const [cr,hr]=await Promise.all([db.from('contacts').select('id,name,organization,active').order('name'),db.from('contact_collaborations').select('id,event_id,contact_id,title,collaboration_date,role,notes')]);if(cr.error||hr.error){console.error(cr.error||hr.error);return}eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();if($('eventDlg')?.open)setEventContactSelection(app.editEventId);render()}
+async function refreshEventContactData(){const [cr,hr]=await Promise.all([db.rpc('club42_event_contact_directory'),db.rpc('club42_event_contact_links')]);if(cr.error||hr.error){console.error(cr.error||hr.error);return}eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();if($('eventDlg')?.open)setEventContactSelection(app.editEventId);render()}
 async function syncEventContacts(eventId,base){
  const el=$('eContacts');if(!el)return;
- const selectedIds=[...el.selectedOptions].map(o=>o.value),selectedSet=new Set(selectedIds),existing=eventContactLinks.filter(x=>x.event_id===eventId),existingSet=new Set(existing.map(x=>x.contact_id));
- const removeIds=existing.filter(x=>!selectedSet.has(x.contact_id)).map(x=>x.id);
- if(removeIds.length){const {error}=await db.from('contact_collaborations').delete().in('id',removeIds);if(error)throw error}
- const keepIds=existing.filter(x=>selectedSet.has(x.contact_id)).map(x=>x.id);
- if(keepIds.length){const {error}=await db.from('contact_collaborations').update({title:base.name,collaboration_date:base.event_date}).in('id',keepIds);if(error)throw error}
- const addIds=selectedIds.filter(id=>!existingSet.has(id));
- if(addIds.length){const {error}=await db.from('contact_collaborations').insert(addIds.map(contact_id=>({contact_id,event_id:eventId,title:base.name,collaboration_date:base.event_date,created_by:app.currentUser.id})));if(error)throw error}
+ const selectedIds=[...el.selectedOptions].map(o=>o.value);
+ const {error}=await db.rpc('club42_sync_event_contacts',{p_event_id:eventId,p_contact_ids:selectedIds,p_title:base.name,p_collaboration_date:base.event_date});
+ if(error)throw error;
 }
 
 export async function loadRemote(){
   syncStatus('loading','Sincronizzazione…');
-  const [er,pr,cr,hr]=await Promise.all([db.from('events').select('*').order('event_date'),db.from('event_registrations').select('*'),db.from('contacts').select('id,name,organization,active').order('name'),db.from('contact_collaborations').select('id,event_id,contact_id,title,collaboration_date,role,notes')]);
+  const [er,pr,cr,hr]=await Promise.all([db.from('events').select('*').order('event_date'),db.from('event_registrations').select('*'),db.rpc('club42_event_contact_directory'),db.rpc('club42_event_contact_links')]);
   if(er.error||pr.error||cr.error||hr.error){console.error(er.error||pr.error||cr.error||hr.error);syncStatus('error','Errore DB');toast('Errore nel caricamento dati');return}
   app.state.events=(er.data||[]).map(mapEvent);app.state.people=(pr.data||[]).map(mapPerson);eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();
   if(!app.state.events.some(e=>e.id===app.state.selected))app.state.selected=app.state.events[0]?.id||null;
