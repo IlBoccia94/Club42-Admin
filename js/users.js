@@ -1,7 +1,7 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,esc,fmtDate,toast} from './core.js';
 import {getProfile} from './auth.js';
 import {roleLabel} from './permissions.js?v=20260917-newsletter2';
-import {syncUserNewsletterControls,setUserNewsletterForm,resetInviteNewsletterForm,getUserNewsletterValue} from './newsletter.js?v=20260918-consentfix1';
+import {syncUserNewsletterControls,setUserNewsletterForm,resetInviteNewsletterForm,getUserNewsletterValue} from './newsletter.js?v=20260918-recipients1';
 
 async function adminApi(action,payload={}){
   const {data:{session}}=await db.auth.getSession();
