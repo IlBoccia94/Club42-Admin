@@ -31,7 +31,7 @@ function syncRoleGuide(){
     if(title==='Staff')p.innerHTML='Può creare e gestire Eventi e partecipanti, consultare i <strong>dati essenziali dei Soci</strong>, vedere la <strong>Cassa in sola lettura</strong>, lavorare su Progetti, Task e Social, <strong>gestire completamente Contatti e collaborazioni</strong> e utilizzare <strong>Feedback</strong> e aprire la Pagina guest in anteprima. Non vede Utenti né Newsletter.';
     if(title==='Guest')p.innerHTML='<strong>Accesso esclusivo all’Area soci.</strong> Vede soltanto la Pagina guest con gli eventi che il direttivo ha scelto di rendere visibili. Non vede menu né moduli gestionali.';
   });
-  const note=dlg.querySelector('.role-info-note');if(note)note.innerHTML='<strong>Tesoriere = Staff + Cassa.</strong> La sezione <strong>Newsletter</strong>, insieme alla gestione del consenso dei Guest, è esclusivamente Admin. La <strong>Pagina guest</strong> resta l’unica area accessibile ai Guest.';
+  const note=dlg.querySelector('.role-info-note');if(note)note.innerHTML='<strong>Tesoriere = Staff + Cassa.</strong> La sezione <strong>Newsletter</strong>, insieme alla gestione dei consensi newsletter, è esclusivamente Admin. La <strong>Pagina guest</strong> resta l’unica area accessibile ai Guest.';
 }
 
 export function applyRoleUi(){
