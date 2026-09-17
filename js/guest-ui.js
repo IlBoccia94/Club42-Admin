@@ -2,6 +2,9 @@ export function buildGuestUi(){
   if(!document.querySelector('link[href^="guest.css"]')){
     const l=document.createElement('link');l.rel='stylesheet';l.href='guest.css?v=20260917-1';document.head.appendChild(l);
   }
+  if(!document.querySelector('link[href^="guest-actions.css"]')){
+    const l=document.createElement('link');l.rel='stylesheet';l.href='guest-actions.css?v=20260917-1';document.head.appendChild(l);
+  }
 
   if(!document.querySelector('.nav-item[data-view="guest"]')){
     const contacts=document.querySelector('.nav-item[data-view="contacts"]');
