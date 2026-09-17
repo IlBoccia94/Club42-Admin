@@ -1,5 +1,5 @@
 import {$,app,db,APP_URL} from './core.js';
-import {applyRoleUi,roleLabel} from './permissions.js';
+import {applyRoleUi,roleLabel} from './permissions.js?v=20260917-access6';
 
 export async function getProfile(user){
   const {data,error}=await db.from('admin_users').select('user_id,email,display_name,role,active,status').eq('user_id',user.id).maybeSingle();
@@ -32,15 +32,6 @@ export async function handleSession(user,onAuthorized){
     $('pendingEmail').textContent=user.email||user.id;
     $('pendingTitle').textContent=app.currentProfile?.status==='disabled'?'Account disabilitato':'Account in attesa';
     $('pendingText').textContent=app.currentProfile?.status==='disabled'?'Questo account è stato disabilitato da un amministratore.':'La richiesta esiste ma deve essere approvata da un utente autorizzato.';
-    $('authScreen').classList.remove('hidden');
-    return false;
-  }
-  if(app.currentProfile.role==='guest'){
-    $('authFormWrap').style.display='none';
-    $('authPending').classList.add('show');
-    $('pendingEmail').textContent=user.email||user.id;
-    $('pendingTitle').textContent='Profilo Guest';
-    $('pendingText').textContent='Questo profilo non ha accesso ai moduli gestionali Club42. Un Admin può assegnarti un ruolo operativo quando necessario.';
     $('authScreen').classList.remove('hidden');
     return false;
   }
@@ -86,9 +77,11 @@ export function initAuth(onAuthorized){
     app.currentUser=null;app.currentProfile=null;
     app.state={events:[],people:[],selected:null};
     delete document.body.dataset.club42Role;
+    history.replaceState(null,'',location.pathname+'#dashboard');
     showAuth();
   };
   $('logoutBtn').onclick=logout;$('pendingLogout').onclick=logout;
+  if($('guestLogoutBtn'))$('guestLogoutBtn').onclick=logout;
   db.auth.onAuthStateChange((_event,session)=>{
     if(session?.user&&session.user.id!==app.currentUser?.id)setTimeout(()=>handleSession(session.user,onAuthorized),0);
   });
