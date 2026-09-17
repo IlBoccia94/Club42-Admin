@@ -22,9 +22,18 @@ function ensureStyles(){
   const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-access5';document.head.appendChild(l);
 }
 function setHidden(selector,hidden){document.querySelectorAll(selector).forEach(el=>{el.hidden=hidden})}
+function syncRoleGuide(){
+  const dlg=document.getElementById('roleInfoDlg');if(!dlg)return;
+  dlg.querySelectorAll('.role-info-card').forEach(card=>{
+    const title=card.querySelector('h4')?.textContent?.trim();const p=card.querySelector('p');if(!p)return;
+    if(title==='Tesoriere')p.innerHTML='<strong>Ha tutti i permessi operativi dello Staff, più la gestione completa della Cassa.</strong> Può creare e gestire Eventi e partecipanti, consultare i dati essenziali dei Soci, lavorare su Progetti, Task e Social e gestire completamente Contatti e collaborazioni. Non vede Utenti.';
+    if(title==='Staff')p.innerHTML='Può creare e gestire Eventi e partecipanti, consultare i <strong>dati essenziali dei Soci</strong>, vedere la <strong>Cassa in sola lettura</strong>, lavorare su Progetti, Task e Social e <strong>gestire completamente Contatti e collaborazioni</strong>. Non vede Utenti.';
+  });
+  const note=dlg.querySelector('.role-info-note');if(note)note.innerHTML='<strong>Tesoriere = Staff + Cassa.</strong> Staff e Tesoriere hanno gli stessi permessi operativi su Eventi, Progetti, Task, Social e Contatti; il Tesoriere può inoltre inserire, modificare ed eliminare movimenti di Cassa. La sezione <strong>Utenti</strong> resta esclusivamente Admin.';
+}
 
 export function applyRoleUi(){
-  ensureStyles();
+  ensureStyles();syncRoleGuide();
   const role=app.currentProfile?.role||'guest';
   document.body.dataset.club42Role=role;
   setHidden('.nav-item[data-view="users"]',role!=='admin');
