@@ -23,6 +23,17 @@ function dateRangeLabel(e){
   }
   return `${start.long} – ${end.long}`;
 }
+
+function compactDateBadge(e){
+  const start=dateParts(e.event_date);
+  if(!e.event_end_date||e.event_end_date===e.event_date)return{day:start.day,month:start.month,range:false,crossMonth:false};
+  const end=dateParts(e.event_end_date);
+  const sd=new Date(`${e.event_date}T12:00:00`),ed=new Date(`${e.event_end_date}T12:00:00`);
+  if(sd.getFullYear()===ed.getFullYear()&&sd.getMonth()===ed.getMonth()){
+    return{day:`${start.day}–${end.day}`,month:start.month,range:true,crossMonth:false};
+  }
+  return{day:`${start.day} ${start.month}`,month:`– ${end.day} ${end.month}`,range:true,crossMonth:true};
+}
 function whenLabel(e){
   const today=new Date();today.setHours(0,0,0,0);
   const start=new Date(`${e.event_date}T00:00:00`);start.setHours(0,0,0,0);
@@ -67,16 +78,18 @@ function registrationButton(e){
 function eventActions(e){return `<div class="guest-event-actions">${registrationButton(e)}${calendarButton(e)}</div>`}
 
 function featuredCard(e){
-  const p=dateParts(e.event_date);
+  const p=compactDateBadge(e);
+  const cls=p.crossMonth?'guest-date-cross':p.range?'guest-date-range':'';
   return `<article class="guest-featured-card">
-    <div class="guest-featured-date"><span>${p.month}</span><strong>${p.day}</strong><small>${esc(whenLabel(e))}</small></div>
+    <div class="guest-featured-date"><span>${esc(p.month)}</span><strong class="${cls}">${esc(p.day)}</strong><small>${esc(whenLabel(e))}</small></div>
     <div class="guest-featured-body"><div class="guest-next-pill">PROSSIMO EVENTO</div><h2>${esc(e.name)}</h2>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e,true)}</div>${eventActions(e)}</div>
   </article>`;
 }
 function regularCard(e){
-  const p=dateParts(e.event_date);
+  const p=compactDateBadge(e);
+  const cls=p.crossMonth?'guest-date-cross':p.range?'guest-date-range':'';
   return `<article class="guest-event-card">
-    <div class="guest-event-date"><strong>${p.day}</strong><span>${p.month}</span></div>
+    <div class="guest-event-date"><strong class="${cls}">${esc(p.day)}</strong><span>${esc(p.month)}</span></div>
     <div class="guest-event-copy"><div class="guest-event-when">${esc(whenLabel(e))} · ${esc(dateRangeLabel(e))}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
   </article>`;
 }
