@@ -1,5 +1,5 @@
 import {$,app} from './core.js';
-import {canAccessView} from './permissions.js';
+import {canAccessView} from './permissions.js?v=20260917-access3';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
@@ -11,7 +11,7 @@ export const viewMeta={
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
-  contacts:['Contatti','Rubrica collaboratori e storico relazioni']
+  contacts:['Contatti','Rubrica collaboratori e relazioni']
 };
 
 let dashboardHandler=null;
