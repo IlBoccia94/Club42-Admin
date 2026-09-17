@@ -19,7 +19,7 @@ export function canAccessView(view){return access[app.currentProfile?.role]?.has
 
 function ensureStyles(){
   if(document.querySelector('link[href^="permissions.css"]'))return;
-  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-access6';document.head.appendChild(l);
+  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-newsletter1';document.head.appendChild(l);
 }
 function setHidden(selector,hidden){document.querySelectorAll(selector).forEach(el=>{el.hidden=hidden})}
 function syncRoleGuide(){
