@@ -40,6 +40,14 @@ function ensureSidebarLayout(){
   document.head.appendChild(link);
 }
 
+function ensureReadabilityStyles(){
+  if(document.querySelector('link[href^="readability.css"]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='readability.css?v=20260918-1';
+  document.head.appendChild(link);
+}
+
 async function onAuthorized(){
   applyRoleUi();
   if(app.currentProfile?.role==='guest'){
@@ -75,6 +83,7 @@ buildContactsUi();
 buildFeedbackUi();
 buildGuestUi();
 buildNewsletterUi();
+ensureReadabilityStyles();
 initSocialExtras();
 configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onNewsletter:loadNewsletter,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts,onFeedback:loadFeedback,onGuest:loadGuestPage});
 initRouter();
