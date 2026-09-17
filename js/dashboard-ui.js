@@ -1,5 +1,5 @@
 export function buildDashboardUi(){
-  if(!document.querySelector('link[href^="dashboard.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='dashboard.css?v=20260917-1';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="dashboard.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='dashboard.css?v=20260917-2';document.head.appendChild(l)}
   const view=document.getElementById('view-dashboard');
   if(!view)return;
   view.innerHTML=`<div class="dashboard-v2">
