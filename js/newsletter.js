@@ -13,6 +13,7 @@ let initialized=false;
 let sending=false;
 let pendingRequestId=null;
 let pendingFingerprint='';
+let pendingDeleteId=null;
 
 function emailOk(v=''){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())}
 function ext(name=''){const p=String(name).toLowerCase().split('.');return p.length>1?p.pop()||'':''}
@@ -69,7 +70,38 @@ function historyStatusLabel(s){return s==='completed'?'Completata':s==='partial'
 function renderHistory(){
   const root=$('newsletterHistory');if(!root)return;
   if(!historyRows.length){root.innerHTML='<div class="newsletter-empty">Nessuna newsletter inviata.</div>';return}
-  root.innerHTML=historyRows.map(r=>`<article class="newsletter-history-item"><div class="newsletter-history-main"><b>${esc(r.subject)}</b><span>${dateTime(r.created_at)} · ${esc(r.sent_by_name||'Admin')}</span><span>${esc(stripHtml(r.body_html).slice(0,130))}${stripHtml(r.body_html).length>130?'…':''}</span></div><div class="newsletter-history-result"><strong>${r.success_count}/${r.recipient_count} inviate</strong><span>${r.failure_count?`${r.failure_count} fallite`:r.attachment_count?`${r.attachment_count} allegati`:'Nessun errore'}</span></div><span class="newsletter-history-status ${esc(r.status)}">${historyStatusLabel(r.status)}</span></article>`).join('');
+  root.innerHTML=historyRows.map(r=>`<article class="newsletter-history-item"><div class="newsletter-history-main"><b>${esc(r.subject)}</b><span>${dateTime(r.created_at)} · ${esc(r.sent_by_name||'Admin')}</span><span>${esc(stripHtml(r.body_html).slice(0,130))}${stripHtml(r.body_html).length>130?'…':''}</span></div><div class="newsletter-history-result"><strong>${r.success_count}/${r.recipient_count} inviate</strong><span>${r.failure_count?`${r.failure_count} fallite`:r.attachment_count?`${r.attachment_count} allegati`:'Nessun errore'}</span></div><div class="newsletter-history-controls"><span class="newsletter-history-status ${esc(r.status)}">${historyStatusLabel(r.status)}</span>${r.status==='sending'?'':`<button type="button" class="newsletter-history-delete" data-newsletter-delete="${r.id}" title="Elimina dallo storico" aria-label="Elimina ${esc(r.subject)} dallo storico">⌫</button>`}</div></article>`).join('');
+  root.querySelectorAll('[data-newsletter-delete]').forEach(btn=>btn.addEventListener('click',()=>openDeleteConfirm(btn.dataset.newsletterDelete)));
+}
+function openDeleteConfirm(id){
+  if(!isAdmin())return;
+  const row=historyRows.find(r=>r.id===id);
+  if(!row)return toast('Newsletter non trovata nello storico');
+  if(row.status==='sending')return toast('Non puoi eliminare una newsletter mentre è in corso l’invio');
+  pendingDeleteId=id;
+  const ok=Number(row.success_count||0),fail=Number(row.failure_count||0),total=Number(row.recipient_count||0);
+  $('newsletterDeleteSummary').innerHTML=`<div><strong>Oggetto:</strong> ${esc(row.subject)}</div><div><strong>Data:</strong> ${esc(dateTime(row.created_at))}</div><div><strong>Destinatari:</strong> ${total}</div><div><strong>Esito:</strong> ${ok} inviate correttamente${fail?`, ${fail} fallite`:''}</div>`;
+  $('newsletterDeleteDlg').showModal();
+}
+function closeDeleteConfirm(){pendingDeleteId=null;$('newsletterDeleteDlg')?.close()}
+async function deleteHistoryEntry(){
+  if(!isAdmin()||!pendingDeleteId)return;
+  const row=historyRows.find(r=>r.id===pendingDeleteId);
+  if(!row||row.status==='sending')return closeDeleteConfirm();
+  const id=pendingDeleteId;
+  const button=$('newsletterDeleteConfirm');
+  const oldText=button.textContent;
+  button.disabled=true;button.textContent='Eliminazione…';
+  try{
+    const {data,error}=await db.from('newsletter_sends').delete().eq('id',id).neq('status','sending').select('id');
+    if(error)throw error;
+    if(!data?.length)throw new Error('La newsletter non è stata eliminata. Potrebbe essere ancora in invio o non essere più disponibile.');
+    historyRows=historyRows.filter(r=>r.id!==id);
+    closeDeleteConfirm();
+    renderHistory();
+    toast('Newsletter eliminata dallo storico');
+  }catch(e){console.error(e);toast(e.message||'Errore durante la cancellazione della newsletter')}
+  finally{button.disabled=false;button.textContent=oldText}
 }
 function setSendStatus(kind,title,text){
   const box=$('newsletterSendStatus');if(!box)return;
@@ -204,5 +236,8 @@ export function initNewsletter(){
   $('newsletterConfirmSend').addEventListener('click',sendFinal);
   $('newsletterConfirmClose').addEventListener('click',()=>$('newsletterConfirmDlg').close());
   $('newsletterConfirmCancel').addEventListener('click',()=>$('newsletterConfirmDlg').close());
+  $('newsletterDeleteClose').addEventListener('click',closeDeleteConfirm);
+  $('newsletterDeleteCancel').addEventListener('click',closeDeleteConfirm);
+  $('newsletterDeleteConfirm').addEventListener('click',deleteHistoryEntry);
   $('newsletterRefreshHistory').addEventListener('click',loadHistory);
 }
