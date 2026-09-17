@@ -1,5 +1,5 @@
 import {$,app} from './core.js';
-import {canAccessView} from './permissions.js?v=20260917-newsletter1';
+import {canAccessView} from './permissions.js?v=20260918-feedback2';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
