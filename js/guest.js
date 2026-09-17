@@ -11,26 +11,49 @@ function dateParts(value){
     long:d.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'})
   };
 }
-function whenLabel(value){
+function dateRangeLabel(e){
+  if(!e?.event_date)return '';
+  const start=dateParts(e.event_date);
+  const end=e.event_end_date&&e.event_end_date!==e.event_date?dateParts(e.event_end_date):null;
+  if(!end)return start.long;
+  const sd=new Date(`${e.event_date}T12:00:00`),ed=new Date(`${e.event_end_date}T12:00:00`);
+  if(sd.getFullYear()===ed.getFullYear()&&sd.getMonth()===ed.getMonth()){
+    const month=sd.toLocaleDateString('it-IT',{month:'long'});
+    return `${sd.getDate()}–${ed.getDate()} ${month} ${sd.getFullYear()}`;
+  }
+  return `${start.long} – ${end.long}`;
+}
+function whenLabel(e){
   const today=new Date();today.setHours(0,0,0,0);
-  const d=new Date(`${value}T00:00:00`);d.setHours(0,0,0,0);
-  const days=Math.round((d-today)/86400000);
+  const start=new Date(`${e.event_date}T00:00:00`);start.setHours(0,0,0,0);
+  const end=new Date(`${e.event_end_date||e.event_date}T00:00:00`);end.setHours(0,0,0,0);
+  if(start<today&&end>=today)return 'In corso';
+  const days=Math.round((start-today)/86400000);
   if(days===0)return 'Oggi';
   if(days===1)return 'Domani';
   if(days>1&&days<=7)return `Tra ${days} giorni`;
-  return dateParts(value).weekday;
+  return dateParts(e.event_date).weekday;
 }
-function priceLabel(price){
-  if(price===null||price===undefined||price==='')return '';
-  const n=Number(price);
-  if(n===0)return 'Ingresso libero';
+function priceLabel(e){
+  if(e?.is_free)return 'Gratuito';
+  if(e?.price===null||e?.price===undefined||e?.price==='')return '';
+  const n=Number(e.price);
   return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:n%1?2:0}).format(n);
 }
-function eventMeta(e){
+function timeLabel(e){
+  const start=e?.event_time?String(e.event_time).slice(0,5):'';
+  const end=e?.event_end_time?String(e.event_end_time).slice(0,5):'';
+  if(start&&end)return `${start} – ${end}`;
+  if(start)return start;
+  if(end)return `Fine ${end}`;
+  return '';
+}
+function eventMeta(e,includeDateRange=false){
   const bits=[];
-  if(e.event_time)bits.push(`<span><b>◷</b>${esc(String(e.event_time).slice(0,5))}</span>`);
+  if(includeDateRange&&e.event_end_date&&e.event_end_date!==e.event_date)bits.push(`<span><b>◫</b>${esc(dateRangeLabel(e))}</span>`);
+  const time=timeLabel(e);if(time)bits.push(`<span><b>◷</b>${esc(time)}</span>`);
   if(e.place)bits.push(`<span><b>⌖</b>${esc(e.place)}</span>`);
-  const price=priceLabel(e.price);if(price)bits.push(`<span><b>€</b>${esc(price)}</span>`);
+  const price=priceLabel(e);if(price)bits.push(`<span><b>€</b>${esc(price)}</span>`);
   return bits.join('');
 }
 function calendarButton(e){return `<button type="button" class="guest-calendar-btn" onclick="addGuestEventToCalendar('${e.id}')"><span>＋</span> Aggiungi al calendario</button>`}
@@ -46,15 +69,15 @@ function eventActions(e){return `<div class="guest-event-actions">${registration
 function featuredCard(e){
   const p=dateParts(e.event_date);
   return `<article class="guest-featured-card">
-    <div class="guest-featured-date"><span>${p.month}</span><strong>${p.day}</strong><small>${esc(whenLabel(e.event_date))}</small></div>
-    <div class="guest-featured-body"><div class="guest-next-pill">PROSSIMO EVENTO</div><h2>${esc(e.name)}</h2>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
+    <div class="guest-featured-date"><span>${p.month}</span><strong>${p.day}</strong><small>${esc(whenLabel(e))}</small></div>
+    <div class="guest-featured-body"><div class="guest-next-pill">PROSSIMO EVENTO</div><h2>${esc(e.name)}</h2>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e,true)}</div>${eventActions(e)}</div>
   </article>`;
 }
 function regularCard(e){
   const p=dateParts(e.event_date);
   return `<article class="guest-event-card">
     <div class="guest-event-date"><strong>${p.day}</strong><span>${p.month}</span></div>
-    <div class="guest-event-copy"><div class="guest-event-when">${esc(whenLabel(e.event_date))} · ${esc(p.long)}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
+    <div class="guest-event-copy"><div class="guest-event-when">${esc(whenLabel(e))} · ${esc(dateRangeLabel(e))}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
   </article>`;
 }
 function teaserCard(e){
@@ -81,10 +104,20 @@ function renderGuestEvents(){
 function icsEscape(v=''){return String(v).replaceAll('\\','\\\\').replaceAll('\n','\\n').replaceAll(',','\\,').replaceAll(';','\\;')}
 function icsDate(value){return String(value).replaceAll('-','')}
 function icsTime(value){return String(value||'').slice(0,5).replace(':','')+'00'}
+function addDaysIso(value,days){
+  const d=new Date(`${value}T12:00:00`);d.setDate(d.getDate()+days);
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 window.addGuestEventToCalendar=id=>{
   const e=guestEvents.find(x=>x.id===id);if(!e||e.is_teaser||!e.event_date)return;
   const start=e.event_time?`DTSTART;TZID=Europe/Rome:${icsDate(e.event_date)}T${icsTime(e.event_time)}`:`DTSTART;VALUE=DATE:${icsDate(e.event_date)}`;
   const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Club42//Area Soci//IT','CALSCALE:GREGORIAN','BEGIN:VEVENT',`UID:${e.id}@club42`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,start,`SUMMARY:${icsEscape(e.name)}`];
+  if(e.event_time&&e.event_end_time){
+    lines.push(`DTEND;TZID=Europe/Rome:${icsDate(e.event_end_date||e.event_date)}T${icsTime(e.event_end_time)}`);
+  }else if(!e.event_time){
+    lines.push(`DTEND;VALUE=DATE:${icsDate(addDaysIso(e.event_end_date||e.event_date,1))}`);
+  }
   if(e.place)lines.push(`LOCATION:${icsEscape(e.place)}`);
   if(e.guest_description)lines.push(`DESCRIPTION:${icsEscape(e.guest_description)}`);
   lines.push('END:VEVENT','END:VCALENDAR');
