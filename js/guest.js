@@ -38,7 +38,7 @@ function registrationButton(e){
   const isGuest=app.currentProfile?.role==='guest';
   if(e.registration_status==='confirmed')return '<button type="button" class="guest-register-btn registered" disabled><span>✓</span> Sei iscritto</button>';
   if(e.registration_status==='waitlist')return '<button type="button" class="guest-register-btn waitlisted" disabled><span>⏳</span> In lista d’attesa</button>';
-  if(!isGuest)return '<button type="button" class="guest-register-btn preview" disabled><span>＋</span> Iscriviti <small>anteprima</small></button>';
+  if(!isGuest)return '<button type="button" class="guest-register-btn" onclick="previewGuestRegistration()"><span>＋</span> Iscriviti</button>';
   return `<button type="button" class="guest-register-btn" data-register-event="${e.id}" onclick="registerGuestEvent('${e.id}',this)"><span>＋</span> Iscriviti</button>`;
 }
 function eventActions(e){return `<div class="guest-event-actions">${registrationButton(e)}${calendarButton(e)}</div>`}
@@ -58,7 +58,7 @@ function regularCard(e){
   </article>`;
 }
 function teaserCard(e){
-  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:'<p>Presto condivideremo tutti i dettagli.</p>'}</article>`;
+  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}</article>`;
 }
 function renderGuestEvents(){
   const root=$('guestEventsRoot');if(!root)return;
@@ -90,6 +90,7 @@ window.addGuestEventToCalendar=id=>{
   lines.push('END:VEVENT','END:VCALENDAR');
   download(`club42-${e.event_date}-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.ics`,lines.join('\r\n'),'text/calendar;charset=utf-8');
 };
+window.previewGuestRegistration=()=>toast('Anteprima: l’iscrizione è disponibile agli utenti Guest.');
 window.registerGuestEvent=async(id,button)=>{
   if(app.currentProfile?.role!=='guest')return;
   if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Iscrizione in corso';}
