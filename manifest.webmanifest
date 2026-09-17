@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "Club42 Admin",
+  "short_name": "Club42",
+  "description": "Gestionale operativo del Club42",
+  "start_url": "./#dashboard",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f4eb",
+  "theme_color": "#216277",
+  "icons": [
+    {
+      "src": "assets/IMG-20260914-WA0013.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
