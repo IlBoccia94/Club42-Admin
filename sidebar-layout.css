@@ -1,0 +1,96 @@
+/* Club42 Admin — sidebar fixed e scroll indipendente */
+.app-shell{
+  display:block !important;
+  min-height:100vh;
+  min-height:100dvh;
+  max-width:100%;
+}
+
+.sidebar{
+  position:fixed !important;
+  top:0;
+  bottom:0;
+  left:0;
+  right:auto;
+  width:264px;
+  height:100vh !important;
+  height:100dvh !important;
+  max-height:100dvh;
+  z-index:40;
+  overflow-y:auto !important;
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(247,244,235,.28) transparent;
+  scrollbar-gutter:stable;
+  padding-top:max(20px,env(safe-area-inset-top));
+  padding-right:16px;
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+  padding-left:max(16px,env(safe-area-inset-left));
+}
+
+.sidebar::-webkit-scrollbar{width:7px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(247,244,235,.24);border-radius:999px}
+.sidebar::-webkit-scrollbar-thumb:hover{background:rgba(247,244,235,.36)}
+
+.sidebar-spacer{
+  flex:1 0 14px;
+  min-height:14px;
+}
+
+.sidebar-foot{
+  flex:0 0 auto;
+  padding-bottom:max(4px,env(safe-area-inset-bottom));
+}
+
+.content{
+  margin-left:264px;
+  width:calc(100% - 264px);
+  min-height:100vh;
+  min-height:100dvh;
+}
+
+@media(max-width:900px){
+  .sidebar{
+    width:min(270px,calc(100vw - 42px));
+    max-width:calc(100vw - 42px);
+    height:100vh !important;
+    height:100dvh !important;
+    max-height:100dvh;
+    transform:translate3d(-105%,0,0);
+    transition:transform .22s ease;
+    will-change:transform;
+    box-shadow:20px 0 60px rgba(19,57,69,.28);
+    padding-top:max(18px,env(safe-area-inset-top));
+    padding-bottom:max(18px,env(safe-area-inset-bottom));
+  }
+
+  body.sidebar-open .sidebar{
+    transform:translate3d(0,0,0);
+  }
+
+  body.sidebar-open{
+    overflow:hidden;
+  }
+
+  .content{
+    margin-left:0;
+    width:100%;
+    min-width:0;
+  }
+
+  .overlay{
+    z-index:35;
+  }
+}
+
+@media(max-width:380px){
+  .sidebar{
+    width:min(258px,calc(100vw - 28px));
+    max-width:calc(100vw - 28px);
+    padding-right:13px;
+    padding-left:max(13px,env(safe-area-inset-left));
+  }
+}
