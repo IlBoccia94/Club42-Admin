@@ -3,7 +3,8 @@ import {applyRoleUi,roleLabel} from './permissions.js';
 
 export async function getProfile(user){
   const {data,error}=await db.from('admin_users').select('user_id,email,display_name,role,active,status').eq('user_id',user.id).maybeSingle();
-  return error?null:data;
+  if(error)throw error;
+  return data;
 }
 
 export function showAuth(msg=''){
@@ -16,7 +17,14 @@ export function showAuth(msg=''){
 
 export async function handleSession(user,onAuthorized){
   app.currentUser=user;
-  app.currentProfile=await getProfile(user);
+  try{
+    app.currentProfile=await getProfile(user);
+  }catch(error){
+    console.error('Errore caricamento profilo Club42',error);
+    app.currentProfile=null;
+    showAuth('Errore nel caricamento del profilo. Ricarica la pagina o riprova tra poco.');
+    return false;
+  }
   const ok=app.currentProfile?.active===true&&app.currentProfile?.status==='active';
   if(!ok){
     $('authFormWrap').style.display='none';
