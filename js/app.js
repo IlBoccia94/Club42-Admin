@@ -3,6 +3,7 @@ import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './rou
 import {initAuth,bootstrapAuth} from './auth.js?v=20260917-guest1';
 import {applyRoleUi} from './permissions.js?v=20260917-access6';
 import {initPwa} from './pwa.js?v=20260917-2';
+import {initScrollTop} from './scroll-top.js?v=20260917-1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-guest2';
 import {initUsers,loadUsers} from './users.js?v=20260917-access5';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
@@ -57,6 +58,7 @@ function initShell(){
 }
 
 ensureSidebarLayout();
+initScrollTop();
 initPwa();
 buildDashboardUi();
 buildNotificationsUi();
