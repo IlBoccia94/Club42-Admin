@@ -1,6 +1,6 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,esc,fmtDate,toast} from './core.js';
 import {getProfile} from './auth.js';
-import {roleLabel} from './permissions.js';
+import {roleLabel} from './permissions.js?v=20260917-access3';
 
 async function adminApi(action,payload={}){
   const {data:{session}}=await db.auth.getSession();
@@ -28,11 +28,11 @@ function ensurePermissionGuide(){
     const info=document.createElement('button');info.type='button';info.className='btn';info.id='roleInfoBtn';info.textContent='ⓘ Permessi ruoli';wrap.insertBefore(info,invite);
   }
   if(!$('roleInfoDlg'))document.body.insertAdjacentHTML('beforeend',`<dialog id="roleInfoDlg"><div class="modal"><div class="modal-head"><div><div class="panel-kicker">Accessi gestionale</div><h3>Visibilità dei ruoli</h3></div><button type="button" class="close" id="roleInfoClose">×</button></div><div class="role-info-grid">
-    <article class="role-info-card"><h4>Admin</h4><p><strong>Accesso completo.</strong> Gestisce Eventi, Soci, Cassa, Progetti, Task, Social, Contatti e Utenti. È l'unico ruolo che può amministrare account, ruoli, rubrica completa, registro soci completo, eliminazioni massive e impostazioni strutturali.</p></article>
-    <article class="role-info-card"><h4>Tesoriere</h4><p>Può vedere Dashboard ed Eventi in sola lettura, consultare i <strong>dati essenziali dei Soci</strong>, gestire completamente la <strong>Cassa</strong> e lavorare su Progetti, Task e Social. Non vede Utenti né Contatti.</p></article>
-    <article class="role-info-card"><h4>Staff</h4><p>Può gestire Eventi e partecipanti, consultare i <strong>dati essenziali dei Soci</strong>, vedere la <strong>Cassa in sola lettura</strong> e lavorare su Progetti, Task e Social. Non vede Utenti né Contatti.</p></article>
+    <article class="role-info-card"><h4>Admin</h4><p><strong>Accesso completo.</strong> Gestisce Eventi, Soci, Cassa, Progetti, Task, Social, Contatti e Utenti. È l'unico ruolo che può amministrare account e ruoli, rubrica Contatti completa con note e storico, registro Soci completo, eliminazioni massive e impostazioni strutturali.</p></article>
+    <article class="role-info-card"><h4>Tesoriere</h4><p>Può vedere Dashboard ed Eventi in sola lettura, consultare i <strong>dati essenziali dei Soci</strong>, gestire completamente la <strong>Cassa</strong>, lavorare su Progetti, Task e Social e consultare i <strong>Contatti in modalità base</strong>. Non vede Utenti.</p></article>
+    <article class="role-info-card"><h4>Staff</h4><p>Può gestire Eventi e partecipanti, consultare i <strong>dati essenziali dei Soci</strong>, vedere la <strong>Cassa in sola lettura</strong>, lavorare su Progetti, Task e Social e consultare i <strong>Contatti in modalità base</strong>. Non vede Utenti.</p></article>
     <article class="role-info-card"><h4>Guest</h4><p><strong>Nessun accesso ai moduli gestionali.</strong> L'account può esistere ed essere attivo, ma non carica dati del Club42 finché un Admin non gli assegna un ruolo operativo.</p></article>
-  </div><div class="role-info-note">Nei dropdown degli Eventi Staff/Admin possono vedere solo il riferimento minimo necessario dei collaboratori (nome e organizzazione), senza aprire la rubrica Contatti completa.</div><div class="modal-actions"><button type="button" class="btn primary" id="roleInfoOk">Ho capito</button></div></div></dialog>`);
+  </div><div class="role-info-note">Per Staff e Tesoriere la pagina Contatti mostra solo informazioni essenziali: nome, organizzazione, tipologia, email, telefono, Instagram e città. Note, tag, indirizzi, preferiti e storico collaborazioni restano riservati agli Admin.</div><div class="modal-actions"><button type="button" class="btn primary" id="roleInfoOk">Ho capito</button></div></div></dialog>`);
 }
 
 export async function loadUsers(){try{const data=await adminApi('list');app.adminUsers=data.users||[];renderUsers()}catch(e){toast(e.message)}}
