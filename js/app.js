@@ -1,10 +1,13 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js';
 import {initAuth,bootstrapAuth} from './auth.js';
+import {initPwa} from './pwa.js?v=20260917-1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
 import {initUsers,loadUsers} from './users.js?v=20260917-roles2';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
+import {buildNotificationsUi} from './notifications-ui.js?v=20260917-1';
+import {initNotifications,loadNotifications} from './notifications.js?v=20260917-1';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
@@ -36,7 +39,9 @@ function initShell(){
   $('exportCsv').onclick=()=>{const e=app.state.events.find(x=>x.id===app.state.selected);if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
 }
 
+initPwa();
 buildDashboardUi();
+buildNotificationsUi();
 buildSocialUi();
 buildMembersUi();
 buildCashUi();
@@ -44,12 +49,13 @@ buildProjectsUi();
 buildTasksUi();
 buildContactsUi();
 initSocialExtras();
-configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
+configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
 initRouter();
 initShell();
 initEvents();
 initUsers();
 initDashboard();
+initNotifications();
 initSocial();
 initSocialFormats();
 initMembers();
