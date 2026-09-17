@@ -1,5 +1,5 @@
 import {$,app,db,esc,toast} from './core.js';
-import {canUseOperations} from './permissions.js?v=20260918-feedback1';
+import {canUseOperations} from './permissions.js?v=20260918-feedback2';
 
 let feedbackRows=[];
 let initialized=false;
