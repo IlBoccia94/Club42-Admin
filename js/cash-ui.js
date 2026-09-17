@@ -8,19 +8,26 @@ export function buildCashUi(){
       <div class="card cash-kpi income"><span>Entrate</span><b id="cashIncome">€ 0,00</b><small id="cashIncomeCount">0 movimenti</small></div>
       <div class="card cash-kpi expense"><span>Uscite</span><b id="cashExpense">€ 0,00</b><small id="cashExpenseCount">0 movimenti</small></div>
       <div class="card cash-kpi balance"><span>Saldo</span><b id="cashBalance">€ 0,00</b><small>entrate - uscite</small></div>
-      <div class="card cash-kpi"><span>Movimenti</span><b id="cashMovements">0</b><small id="cashYearLabel">anno selezionato</small></div>
+      <div class="card cash-kpi"><span>Movimenti</span><b id="cashMovements">0</b><small id="cashYearLabel">periodo selezionato</small></div>
     </div>
 
     <div class="cash-insights">
       <section class="card cash-panel"><div class="section-head"><div><h3>Spese anticipate per utente</h3><p>Calcolate dall'utente Club42 associato alle uscite</p></div></div><div id="cashCouncilors" class="cash-councilors"></div></section>
-      <section class="card cash-panel"><div class="section-head"><div><h3>Flusso mensile</h3><p>Entrate e uscite dell'anno selezionato</p></div></div><div id="cashMonthlyChart" class="cash-monthly"></div></section>
+      <section class="card cash-panel cash-flow-panel">
+        <div class="section-head cash-chart-head"><div><h3>Flusso mensile</h3><p id="cashChartSubtitle">Entrate e uscite dell'anno selezionato</p></div><div class="cash-chart-size"><button class="icon-btn" id="cashChartSmaller" type="button" aria-label="Riduci altezza grafico">−</button><button class="icon-btn" id="cashChartLarger" type="button" aria-label="Aumenta altezza grafico">＋</button></div></div>
+        <div class="cash-chart-legend"><span><i class="income"></i>Entrate</span><span><i class="expense"></i>Uscite</span><small>Tocca una barra per vedere il valore</small></div>
+        <div id="cashMonthlyChart" class="cash-monthly"></div>
+        <div id="cashChartDetail" class="cash-chart-detail" aria-live="polite">Seleziona una barra del grafico.</div>
+      </section>
     </div>
 
     <section class="card cash-panel cash-ledger-panel">
       <div class="section-head cash-ledger-head"><div><h3>Libro cassa</h3><p>Ogni riga è modificabile: aprila per aggiornare o integrare i dati.</p></div><div class="cash-source-note">Import iniziale: Rendicontazione 2026</div></div>
       <div class="cash-toolbar">
         <input id="cashSearch" placeholder="🔎 Cerca descrizione, soggetto, riferimento…">
-        <select id="cashYearFilter"></select>
+        <select id="cashYearFilter" aria-label="Anno"></select>
+        <select id="cashMonthFrom" aria-label="Mese da"></select>
+        <select id="cashMonthTo" aria-label="Mese a"></select>
         <select id="cashTypeFilter"><option value="all">Entrate + uscite</option><option value="income">Solo entrate</option><option value="expense">Solo uscite</option></select>
         <select id="cashCategoryFilter"><option value="all">Tutte le categorie</option><option value="unclassified">Da classificare</option><option value="membership">Quote associative</option><option value="donation">Donazioni</option><option value="materials">Materiali</option><option value="services">Servizi</option><option value="event">Eventi</option><option value="reimbursement">Rimborsi</option><option value="other">Altro</option></select>
       </div>
