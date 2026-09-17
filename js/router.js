@@ -13,6 +13,7 @@ export const viewMeta={
   contacts:['Contatti','Rubrica collaboratori e storico relazioni']
 };
 
+let dashboardHandler=null;
 let usersHandler=null;
 let eventHandler=null;
 let socialHandler=null;
@@ -22,7 +23,8 @@ let projectsHandler=null;
 let tasksHandler=null;
 let contactsHandler=null;
 
-export function configureRouter({onUsers,onEvent,onSocial,onMembers,onCash,onProjects,onTasks,onContacts}={}){
+export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onProjects,onTasks,onContacts}={}){
+  dashboardHandler=onDashboard||null;
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
@@ -58,6 +60,7 @@ async function applyRoute(){
   $('pageTitle').textContent=viewMeta[route.view][0];
   $('pageSubtitle').textContent=viewMeta[route.view][1];
   document.body.classList.remove('sidebar-open');
+  if(route.view==='dashboard'&&dashboardHandler)await dashboardHandler();
   if(route.view==='users'&&usersHandler)await usersHandler();
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
   if(route.view==='social'&&socialHandler)await socialHandler();
