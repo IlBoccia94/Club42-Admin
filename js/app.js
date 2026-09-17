@@ -3,6 +3,8 @@ import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './rou
 import {initAuth,bootstrapAuth} from './auth.js';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
 import {initUsers,loadUsers} from './users.js?v=20260917-roles2';
+import {buildDashboardUi} from './dashboard-ui.js?v=20260917-1';
+import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-1';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
@@ -18,7 +20,6 @@ import {buildTasksUi} from './tasks-ui.js';
 import {initTasks,loadTasks} from './tasks.js';
 import {buildContactsUi} from './contacts-ui.js';
 import {initContacts,loadContacts} from './contacts.js';
-import {initDashboardNav} from './dashboard-nav.js';
 
 async function onAuthorized(){
   await loadRemote();
@@ -35,6 +36,7 @@ function initShell(){
   $('exportCsv').onclick=()=>{const e=app.state.events.find(x=>x.id===app.state.selected);if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
 }
 
+buildDashboardUi();
 buildSocialUi();
 buildMembersUi();
 buildCashUi();
@@ -42,11 +44,12 @@ buildProjectsUi();
 buildTasksUi();
 buildContactsUi();
 initSocialExtras();
-configureRouter({onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
+configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
 initRouter();
 initShell();
 initEvents();
 initUsers();
+initDashboard();
 initSocial();
 initSocialFormats();
 initMembers();
@@ -54,7 +57,6 @@ initCash();
 initProjects();
 initTasks();
 initContacts();
-initDashboardNav();
 initAuth(onAuthorized);
 render();
 bootstrapAuth(onAuthorized);
