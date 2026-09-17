@@ -1,9 +1,9 @@
 import {$,app,download,list} from './core.js';
-import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260917-access3';
-import {initAuth,bootstrapAuth} from './auth.js?v=20260917-access3';
-import {applyRoleUi} from './permissions.js?v=20260917-access5';
+import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260917-guest1';
+import {initAuth,bootstrapAuth} from './auth.js?v=20260917-guest1';
+import {applyRoleUi} from './permissions.js?v=20260917-access6';
 import {initPwa} from './pwa.js?v=20260917-2';
-import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-access3';
+import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-guest1';
 import {initUsers,loadUsers} from './users.js?v=20260917-access5';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
@@ -24,6 +24,8 @@ import {buildTasksUi} from './tasks-ui.js';
 import {initTasks,loadTasks} from './tasks.js';
 import {buildContactsUi} from './contacts-ui.js';
 import {initContacts,loadContacts} from './contacts.js?v=20260917-contactsfull1';
+import {buildGuestUi} from './guest-ui.js?v=20260917-1';
+import {loadGuestPage} from './guest.js?v=20260917-1';
 
 function ensureSidebarLayout(){
   if(document.querySelector('link[href^="sidebar-layout.css"]'))return;
@@ -35,6 +37,11 @@ function ensureSidebarLayout(){
 
 async function onAuthorized(){
   applyRoleUi();
+  if(app.currentProfile?.role==='guest'){
+    history.replaceState(null,'','#guest');
+    await restoreRoute();
+    return;
+  }
   await loadRemote();
   const route=parseRoute();
   await restoreRoute();
@@ -59,8 +66,9 @@ buildCashUi();
 buildProjectsUi();
 buildTasksUi();
 buildContactsUi();
+buildGuestUi();
 initSocialExtras();
-configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts});
+configureRouter({onDashboard:loadDashboard,onUsers:loadUsers,onEvent:applyEventRoute,onSocial:loadSocial,onMembers:loadMembersForRole,onCash:loadCash,onNotifications:loadNotifications,onProjects:loadProjects,onTasks:loadTasks,onContacts:loadContacts,onGuest:loadGuestPage});
 initRouter();
 initShell();
 initEvents();
