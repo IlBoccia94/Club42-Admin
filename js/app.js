@@ -1,6 +1,7 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260917-access3';
 import {initAuth,bootstrapAuth} from './auth.js?v=20260917-access3';
+import {applyRoleUi} from './permissions.js?v=20260917-access3';
 import {initPwa} from './pwa.js?v=20260917-2';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-access3';
 import {initUsers,loadUsers} from './users.js?v=20260917-access3';
@@ -34,6 +35,7 @@ function ensureSidebarLayout(){
 }
 
 async function onAuthorized(){
+  applyRoleUi();
   await loadRemote();
   const route=parseRoute();
   await restoreRoute();
