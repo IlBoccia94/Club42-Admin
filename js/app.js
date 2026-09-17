@@ -1,11 +1,11 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260917-newsletter1';
 import {initAuth,bootstrapAuth} from './auth.js?v=20260917-guest1';
-import {applyRoleUi} from './permissions.js?v=20260917-newsletter1';
+import {applyRoleUi} from './permissions.js?v=20260917-newsletter2';
 import {initPwa} from './pwa.js?v=20260917-2';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-guest2';
-import {initUsers,loadUsers} from './users.js?v=20260917-newsletter1';
+import {initUsers,loadUsers} from './users.js?v=20260917-newsletter2';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
 import {buildNotificationsUi} from './notifications-ui.js?v=20260917-1';
@@ -28,7 +28,7 @@ import {initContacts,loadContacts} from './contacts.js?v=20260917-contactsfull1'
 import {buildGuestUi} from './guest-ui.js?v=20260917-2';
 import {loadGuestPage} from './guest.js?v=20260917-3';
 import {buildNewsletterUi} from './newsletter-ui.js?v=20260917-1';
-import {initNewsletter,loadNewsletter} from './newsletter.js?v=20260917-1';
+import {initNewsletter,loadNewsletter} from './newsletter.js?v=20260917-2';
 
 function ensureSidebarLayout(){
   if(document.querySelector('link[href^="sidebar-layout.css"]'))return;
