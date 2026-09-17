@@ -2,7 +2,7 @@ import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js';
 import {initAuth,bootstrapAuth} from './auth.js';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
-import {initUsers,loadUsers} from './users.js';
+import {initUsers,loadUsers} from './users.js?v=20260917-roles2';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
