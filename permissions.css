@@ -6,4 +6,27 @@ body[data-club42-role="staff"] #view-cash .cash-table .icon-btn{display:none!imp
 body[data-club42-role="staff"] #view-cash .cash-table tbody tr,
 body[data-club42-role="staff"] #view-cash .cash-mobile-card{cursor:default!important;pointer-events:none}
 body[data-club42-role="staff"] #cashDlg{display:none!important}
+
+body[data-club42-role="staff"] .nav-item[data-view="users"],
+body[data-club42-role="treasurer"] .nav-item[data-view="users"],
+body[data-club42-role="guest"] .nav-item[data-view="users"]{display:none!important}
+body[data-club42-role="guest"] .nav-item[data-view="contacts"],
+body[data-club42-role="guest"] .nav-item[data-view="members"],
+body[data-club42-role="guest"] .nav-item[data-view="notifications"]{display:none!important}
+
+body[data-club42-role="staff"] #view-contacts #newContactBtn,
+body[data-club42-role="staff"] #view-contacts .contacts-summary,
+body[data-club42-role="staff"] #view-contacts .contacts-tabs,
+body[data-club42-role="staff"] #view-contacts #contact-panel-history,
+body[data-club42-role="staff"] #view-contacts #contactStatusFilter,
+body[data-club42-role="treasurer"] #view-contacts #newContactBtn,
+body[data-club42-role="treasurer"] #view-contacts .contacts-summary,
+body[data-club42-role="treasurer"] #view-contacts .contacts-tabs,
+body[data-club42-role="treasurer"] #view-contacts #contact-panel-history,
+body[data-club42-role="treasurer"] #view-contacts #contactStatusFilter{display:none!important}
+body[data-club42-role="staff"] #contactDlg,
+body[data-club42-role="staff"] #collaborationDlg,
+body[data-club42-role="treasurer"] #contactDlg,
+body[data-club42-role="treasurer"] #collaborationDlg{display:none!important}
+
 .role-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.role-info-card{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff}.role-info-card h4{margin:0 0 7px;color:var(--blue);font-family:var(--font-subtitle);font-size:13px}.role-info-card p{margin:0;color:var(--muted);font-size:9px;line-height:1.55}.role-info-card strong{color:var(--ink)}.role-info-note{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--blue-soft);color:var(--blue);font-size:9px;line-height:1.5}.users-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}@media(max-width:650px){.role-info-grid{grid-template-columns:1fr}.users-head-actions{width:100%}.users-head-actions .btn{flex:1}}
