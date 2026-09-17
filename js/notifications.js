@@ -1,5 +1,5 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,toast} from './core.js';
-import {isAdmin} from './permissions.js';
+import {isAdmin,isTreasurer} from './permissions.js';
 import {getServiceWorkerRegistration,isStandalone,isIos,canPromptInstall,promptInstallPwa} from './pwa.js';
 
 const VAPID_PUBLIC_KEY='BLVXtniv5aw-9oXQbV9b7pCjeKGzNYahsUNcFvBi_RuwbMLZdvcDEq3Zx9RBVT2wkCXQaZCfzb3uGegWGKwD_JA';
@@ -13,6 +13,12 @@ const info={
   projects:{title:'Progetti',body:'Alle 09:00 del giorno precedente alla prossima azione di un progetto viene inviato un promemoria al responsabile del progetto; se non c’è un responsabile, l’avviso viene inviato agli utenti operativi.'},
   users:{title:'Utenti',body:'Solo Admin. Ricevi una push quando compare un nuovo account in stato “In attesa” che richiede approvazione.'}
 };
+
+function availableCategory(category){
+  if(category==='users')return isAdmin();
+  if(category==='cash'||category==='members')return isAdmin()||isTreasurer();
+  return true;
+}
 
 function b64ToUint8(value){
   const padding='='.repeat((4-value.length%4)%4);
@@ -38,12 +44,13 @@ function renderPreferences(prefs){
   categories.forEach(cat=>{
     const el=$(`notifPref-${cat}`);
     if(el)el.checked=prefs?.[cat]!==false;
+    const row=document.querySelector(`[data-notif-category="${cat}"]`);
+    if(row)row.hidden=!availableCategory(cat);
   });
-  document.querySelectorAll('.notif-admin-only').forEach(el=>{el.hidden=!isAdmin()});
 }
 
 async function savePreference(category,value){
-  if(!app.currentUser||!categories.includes(category))return;
+  if(!app.currentUser||!categories.includes(category)||!availableCategory(category))return;
   const row={user_id:app.currentUser.id,[category]:value,timezone:timezone(),updated_at:new Date().toISOString()};
   const {error}=await db.from('notification_preferences').upsert(row,{onConflict:'user_id'});
   if(error){toast(error.message);const el=$(`notifPref-${category}`);if(el)el.checked=!value;return}
@@ -133,7 +140,7 @@ function showInfo(category=null){
     body.innerHTML=`<article class="notif-info-card"><h4>Quando viene inviata</h4><p>${info[category].body}</p></article>`;
   }else{
     title.textContent='Quando vengono inviate';
-    body.innerHTML=Object.values(info).filter((_,i)=>isAdmin()||Object.keys(info)[i]!=='users').map(x=>`<article class="notif-info-card"><h4>${x.title}</h4><p>${x.body}</p></article>`).join('');
+    body.innerHTML=Object.entries(info).filter(([key])=>availableCategory(key)).map(([,x])=>`<article class="notif-info-card"><h4>${x.title}</h4><p>${x.body}</p></article>`).join('');
   }
   dlg.showModal();
 }
