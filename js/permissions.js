@@ -31,8 +31,9 @@ export function applyRoleUi(){
   setHidden('.nav-item[data-view="contacts"]',role!=='admin');
   setHidden('button[onclick="showView(\'users\')"]',role!=='admin');
 
+  setHidden('#globalNewEvent',true);
   const eventReadonly=role==='treasurer';
-  ['#globalNewEvent','#heroNewEvent','#quickEvent','#quickPerson','#sideNewEvent','#addPerson'].forEach(s=>setHidden(s,eventReadonly));
+  ['#heroNewEvent','#quickEvent','#quickPerson','#sideNewEvent','#addPerson'].forEach(s=>setHidden(s,eventReadonly));
 
   const cashReadonly=role==='staff';
   setHidden('#newCashBtn',cashReadonly);
