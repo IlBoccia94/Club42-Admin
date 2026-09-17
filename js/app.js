@@ -3,8 +3,8 @@ import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './rou
 import {initAuth,bootstrapAuth} from './auth.js';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js';
 import {initUsers,loadUsers} from './users.js?v=20260917-roles2';
-import {buildDashboardUi} from './dashboard-ui.js?v=20260917-1';
-import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-1';
+import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
+import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
