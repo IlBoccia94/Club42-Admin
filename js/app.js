@@ -3,7 +3,7 @@ import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './rou
 import {initAuth,bootstrapAuth} from './auth.js?v=20260917-guest1';
 import {applyRoleUi} from './permissions.js?v=20260917-access6';
 import {initPwa} from './pwa.js?v=20260917-2';
-import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-guest1';
+import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260917-guest2';
 import {initUsers,loadUsers} from './users.js?v=20260917-access5';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
@@ -24,8 +24,8 @@ import {buildTasksUi} from './tasks-ui.js';
 import {initTasks,loadTasks} from './tasks.js';
 import {buildContactsUi} from './contacts-ui.js';
 import {initContacts,loadContacts} from './contacts.js?v=20260917-contactsfull1';
-import {buildGuestUi} from './guest-ui.js?v=20260917-1';
-import {loadGuestPage} from './guest.js?v=20260917-1';
+import {buildGuestUi} from './guest-ui.js?v=20260917-2';
+import {loadGuestPage} from './guest.js?v=20260917-2';
 
 function ensureSidebarLayout(){
   if(document.querySelector('link[href^="sidebar-layout.css"]'))return;
