@@ -198,23 +198,18 @@ async function sendFinal(){
 function ensureNewsletterConsentControls(){
   if(!$('uNewsletterActive')){
     const grid=document.querySelector('#userForm .form-grid');
-    if(grid)grid.insertAdjacentHTML('beforeend','<div class="field full newsletter-consent-field" id="uNewsletterWrap"><label class="newsletter-consent-check"><input id="uNewsletterActive" type="checkbox"> Newsletter attiva</label><div class="newsletter-consent-help">Disponibile solo per i Guest. Il consenso viene registrato con data e ora.</div></div>');
+    if(grid)grid.insertAdjacentHTML('beforeend','<div class="field full newsletter-consent-field" id="uNewsletterWrap"><label class="newsletter-consent-check"><input id="uNewsletterActive" type="checkbox"> Newsletter attiva</label><div class="newsletter-consent-help">Il consenso newsletter è indipendente dal ruolo e resta memorizzato anche se il ruolo dell’utente cambia.</div></div>');
   }
   if(!$('iNewsletterActive')){
     const grid=document.querySelector('#inviteForm .form-grid');
-    if(grid)grid.insertAdjacentHTML('beforeend','<div class="field full newsletter-consent-field" id="iNewsletterWrap"><label class="newsletter-consent-check"><input id="iNewsletterActive" type="checkbox"> Newsletter attiva</label><div class="newsletter-consent-help">Disponibile solo se il nuovo utente viene creato come Guest.</div></div>');
+    if(grid)grid.insertAdjacentHTML('beforeend','<div class="field full newsletter-consent-field" id="iNewsletterWrap"><label class="newsletter-consent-check"><input id="iNewsletterActive" type="checkbox"> Newsletter attiva</label><div class="newsletter-consent-help">Il consenso newsletter viene salvato indipendentemente dal ruolo assegnato.</div></div>');
   }
-  const sync=()=>{
-    if($('uNewsletterWrap'))$('uNewsletterWrap').hidden=$('uRole')?.value!=='guest';
-    if($('iNewsletterWrap'))$('iNewsletterWrap').hidden=$('iRole')?.value!=='guest';
-    if($('uRole')?.value!=='guest'&&$('uNewsletterActive'))$('uNewsletterActive').checked=false;
-    if($('iRole')?.value!=='guest'&&$('iNewsletterActive'))$('iNewsletterActive').checked=false;
-  };
-  $('uRole')?.addEventListener('change',sync);$('iRole')?.addEventListener('change',sync);sync();
+  if($('uNewsletterWrap'))$('uNewsletterWrap').hidden=false;
+  if($('iNewsletterWrap'))$('iNewsletterWrap').hidden=false;
 }
 export function syncUserNewsletterControls(){ensureNewsletterConsentControls()}
-export function setUserNewsletterForm(user){ensureNewsletterConsentControls();if($('uNewsletterActive'))$('uNewsletterActive').checked=!!user?.newsletter_active;if($('uNewsletterWrap'))$('uNewsletterWrap').hidden=user?.role!=='guest'}
-export function resetInviteNewsletterForm(role='staff'){ensureNewsletterConsentControls();if($('iNewsletterActive'))$('iNewsletterActive').checked=false;if($('iNewsletterWrap'))$('iNewsletterWrap').hidden=role!=='guest'}
+export function setUserNewsletterForm(user){ensureNewsletterConsentControls();if($('uNewsletterActive'))$('uNewsletterActive').checked=!!user?.newsletter_active}
+export function resetInviteNewsletterForm(){ensureNewsletterConsentControls();if($('iNewsletterActive'))$('iNewsletterActive').checked=false}
 export function getUserNewsletterValue(kind='edit'){return kind==='invite'?!!$('iNewsletterActive')?.checked:!!$('uNewsletterActive')?.checked}
 
 export async function loadNewsletter(){
