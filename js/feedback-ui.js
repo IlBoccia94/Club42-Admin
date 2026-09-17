@@ -1,6 +1,6 @@
 export function buildFeedbackUi(){
   if(!document.querySelector('link[href^="feedback.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='feedback.css?v=20260918-1';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='feedback.css?v=20260918-workflow1';document.head.appendChild(l);
   }
 
   if(!document.querySelector('.nav-item[data-view="feedback"]')){
@@ -52,11 +52,25 @@ export function buildFeedbackUi(){
       </section>
 
       <section class="card feedback-list-card">
-        <div class="feedback-section-head">
-          <div><div class="panel-kicker">Storico</div><h3>Richieste inviate</h3></div>
-          <button class="btn soft" id="feedbackRefreshBtn" type="button">↻ Aggiorna</button>
+        <div class="feedback-section-head feedback-open-head">
+          <div><div class="panel-kicker">In lavorazione</div><h3>Da risolvere <span id="feedbackOpenCount" class="feedback-count">0</span></h3></div>
+          <div class="feedback-list-tools">
+            <select id="feedbackSort" aria-label="Ordina feedback da risolvere">
+              <option value="date">Data · più recenti</option>
+              <option value="priority">Priorità · alta → bassa</option>
+            </select>
+            <button class="btn soft" id="feedbackRefreshBtn" type="button">↻ Aggiorna</button>
+          </div>
         </div>
-        <div id="feedbackList" class="feedback-list"><div class="feedback-empty">Caricamento richieste…</div></div>
+        <div class="feedback-sort-note" id="feedbackSortNote">Ordinati per data di inserimento, dal più recente.</div>
+        <div id="feedbackOpenList" class="feedback-list"><div class="feedback-empty">Caricamento richieste…</div></div>
+      </section>
+
+      <section class="card feedback-list-card feedback-resolved-card">
+        <div class="feedback-section-head">
+          <div><div class="panel-kicker">Archivio completati</div><h3>Feedback risolti <span id="feedbackResolvedCount" class="feedback-count">0</span></h3></div>
+        </div>
+        <div id="feedbackResolvedList" class="feedback-list"><div class="feedback-empty">Caricamento richieste…</div></div>
       </section>
     </div>`;
     main?.appendChild(section);
