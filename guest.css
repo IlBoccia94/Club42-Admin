@@ -14,3 +14,5 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
 /* Multi-day date badges */
 .guest-featured-date strong.guest-date-range{font-size:48px;letter-spacing:-.06em;white-space:nowrap}.guest-featured-date strong.guest-date-cross{font-size:28px;letter-spacing:-.035em;white-space:nowrap}.guest-event-date strong.guest-date-range{font-size:24px;letter-spacing:-.04em;white-space:nowrap}.guest-event-date strong.guest-date-cross{font-size:15px;letter-spacing:-.02em;white-space:nowrap}.guest-event-date strong.guest-date-cross+span{font-size:7.5px;letter-spacing:.08em;text-align:center}
 @media(max-width:760px){.guest-featured-date strong.guest-date-range{font-size:32px}.guest-featured-date strong.guest-date-cross{font-size:23px}.guest-event-date strong.guest-date-range{font-size:23px}.guest-event-date strong.guest-date-cross{font-size:14px}}
+
+.guest-featured-date.cross-month strong{order:-1}
