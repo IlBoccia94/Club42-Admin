@@ -1,5 +1,5 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,esc,toast} from './core.js';
-import {isAdmin} from './permissions.js?v=20260917-newsletter2';
+import {isAdmin,roleLabel} from './permissions.js?v=20260918-newsletter-recipients1';
 
 const MAX_ATTACHMENTS=10;
 const MAX_FILE_BYTES=6*1024*1024;
@@ -44,16 +44,13 @@ function selectedCount(){return [...selected].filter(id=>recipients.some(r=>r.us
 function updateSelectedCount(){
   const n=selectedCount();
   $('newsletterSelectedCount').textContent=`${n} ${n===1?'destinatario selezionato':'destinatari selezionati'}`;
-  const validIds=recipients.filter(r=>r.valid).map(r=>r.user_id);
-  $('newsletterSelectAll').checked=validIds.length>0&&validIds.every(id=>selected.has(id));
-  $('newsletterSelectAll').indeterminate=validIds.some(id=>selected.has(id))&&!$('newsletterSelectAll').checked;
 }
 function renderRecipients(){
   const root=$('newsletterRecipients');if(!root)return;
   const q=($('newsletterSearch')?.value||'').toLowerCase().trim();
-  const filtered=recipients.filter(r=>!q||[r.first_name,r.last_name,r.email,r.display_name].some(v=>String(v||'').toLowerCase().includes(q)));
-  if(!filtered.length){root.innerHTML='<div class="newsletter-empty">Nessun Guest con newsletter attiva.</div>';updateSelectedCount();return}
-  root.innerHTML=filtered.map(r=>`<label class="newsletter-recipient-row ${r.valid?'':'invalid'}"><input type="checkbox" data-newsletter-recipient="${r.user_id}" ${selected.has(r.user_id)?'checked':''} ${r.valid?'':'disabled'}><div class="newsletter-recipient-copy"><b>${esc(r.first_name)} ${esc(r.last_name)}</b><span>${esc(r.email||'Email mancante')}</span>${r.valid?'':'<span class="newsletter-invalid-pill">Email non valida</span>'}</div></label>`).join('');
+  const filtered=recipients.filter(r=>!q||[r.first_name,r.last_name,r.email,r.display_name,roleLabel(r.role)].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(!filtered.length){root.innerHTML='<div class="newsletter-empty">Nessun utente con newsletter attiva.</div>';updateSelectedCount();return}
+  root.innerHTML=filtered.map(r=>`<label class="newsletter-recipient-row ${r.valid?'':'invalid'}"><input type="checkbox" data-newsletter-recipient="${r.user_id}" ${selected.has(r.user_id)?'checked':''} ${r.valid?'':'disabled'}><div class="newsletter-recipient-copy"><div class="newsletter-recipient-name"><b>${esc(r.first_name)} ${esc(r.last_name)}</b><span class="newsletter-role-pill ${esc(r.role||'guest')}">${esc(roleLabel(r.role))}</span></div><span>${esc(r.email||'Email mancante')}</span>${r.valid?'':'<span class="newsletter-invalid-pill">Email non valida</span>'}</div></label>`).join('');
   root.querySelectorAll('[data-newsletter-recipient]').forEach(input=>input.addEventListener('change',()=>{
     const id=input.dataset.newsletterRecipient;if(!id)return;
     if(input.checked)selected.add(id);else selected.delete(id);updateSelectedCount();
@@ -152,7 +149,7 @@ async function loadHistory(){
 }
 async function loadRecipients(){
   const [{data:users,error:userError},{data:members,error:memberError}]=await Promise.all([
-    db.from('admin_users').select('user_id,email,display_name,newsletter_active').eq('role','guest').eq('active',true).eq('status','active').eq('newsletter_active',true).order('display_name'),
+    db.from('admin_users').select('user_id,email,display_name,role,newsletter_active').eq('active',true).eq('status','active').eq('newsletter_active',true).order('display_name'),
     db.from('members').select('first_name,last_name,email').not('email','is',null)
   ]);
   if(userError)throw userError;
@@ -221,7 +218,8 @@ export function initNewsletter(){
   if(initialized)return;initialized=true;
   ensureNewsletterConsentControls();
   $('newsletterSearch').addEventListener('input',renderRecipients);
-  $('newsletterSelectAll').addEventListener('change',e=>{const on=e.target.checked;recipients.filter(r=>r.valid).forEach(r=>on?selected.add(r.user_id):selected.delete(r.user_id));renderRecipients()});
+  $('newsletterSelectAll').addEventListener('click',()=>{selected=new Set(recipients.filter(r=>r.valid).map(r=>r.user_id));renderRecipients()});
+  $('newsletterSelectGuests').addEventListener('click',()=>{selected=new Set(recipients.filter(r=>r.valid&&r.role==='guest').map(r=>r.user_id));renderRecipients();toast('Selezionati solo i Guest iscritti alla newsletter')});
   $('newsletterAttachmentInput').addEventListener('change',e=>handleFiles(e.target.files||[]));
   $('newsletterToolbar').querySelectorAll('[data-command]').forEach(btn=>btn.addEventListener('click',()=>execEditor(btn.dataset.command)));
   $('newsletterToolbar').querySelectorAll('[data-heading]').forEach(btn=>btn.addEventListener('click',()=>execEditor('formatBlock',btn.dataset.heading)));
