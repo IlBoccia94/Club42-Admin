@@ -1,5 +1,5 @@
 import {$,app} from './core.js';
-import {canAccessView} from './permissions.js?v=20260917-access6';
+import {canAccessView} from './permissions.js?v=20260917-newsletter1';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
@@ -11,6 +11,7 @@ export const viewMeta={
   projects:['Progetti','Portfolio, priorità e avanzamento'],
   tasks:['Task','Control room operativa, priorità e responsabilità'],
   social:['Social','Calendario editoriale, produzione e risultati'],
+  newsletter:['Newsletter','Comunicazioni email ai Guest che hanno espresso il consenso'],
   contacts:['Contatti','Rubrica collaboratori e relazioni'],
   guest:['Pagina guest','Anteprima dell’Area soci Club42']
 };
@@ -19,6 +20,7 @@ let dashboardHandler=null;
 let usersHandler=null;
 let eventHandler=null;
 let socialHandler=null;
+let newsletterHandler=null;
 let membersHandler=null;
 let cashHandler=null;
 let notificationsHandler=null;
@@ -27,11 +29,12 @@ let tasksHandler=null;
 let contactsHandler=null;
 let guestHandler=null;
 
-export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts,onGuest}={}){
+export function configureRouter({onDashboard,onUsers,onEvent,onSocial,onNewsletter,onMembers,onCash,onNotifications,onProjects,onTasks,onContacts,onGuest}={}){
   dashboardHandler=onDashboard||null;
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
+  newsletterHandler=onNewsletter||null;
   membersHandler=onMembers||null;
   cashHandler=onCash||null;
   notificationsHandler=onNotifications||null;
@@ -71,6 +74,7 @@ async function applyRoute(){
   if(route.view==='users'&&usersHandler)await usersHandler();
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
   if(route.view==='social'&&socialHandler)await socialHandler();
+  if(route.view==='newsletter'&&newsletterHandler)await newsletterHandler();
   if(route.view==='members'&&membersHandler)await membersHandler();
   if(route.view==='cash'&&cashHandler)await cashHandler();
   if(route.view==='notifications'&&notificationsHandler)await notificationsHandler();
