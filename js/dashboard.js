@@ -23,7 +23,7 @@ function renderAttention(tasks,fees,social,pending,today){
   if(overdue)items.push(attentionRow({icon:'!',title:'Task scaduti',text:'Attività oltre la data prevista',value:overdue,view:'tasks',warn:true}));
   if(blocked)items.push(attentionRow({icon:'×',title:'Task bloccati',text:'Richiedono uno sblocco o una decisione',value:blocked,view:'tasks',warn:true}));
   if(renewals)items.push(attentionRow({icon:'♙',title:'Rinnovi da gestire',text:'Quote associative segnate da rinnovare',value:renewals,view:'members',warn:true}));
-  if(socialLate)items.push(attentionRow({icon:'◎',title:'Contenuti social in ritardo',text:'Programmatione superata e contenuto non pubblicato',value:socialLate,view:'social',warn:true}));
+  if(socialLate)items.push(attentionRow({icon:'◎',title:'Contenuti social in ritardo',text:'Programmazione superata e contenuto non pubblicato',value:socialLate,view:'social',warn:true}));
   if(isAdmin()&&pending)items.push(attentionRow({icon:'⚙',title:'Utenti in attesa',text:'Account che richiedono una decisione Admin',value:pending,view:'users',warn:true}));
   $('dashAttentionList').innerHTML=items.length?items.join(''):attentionRow({icon:'✓',title:'Nessuna criticità',text:'Non risultano scadenze o blocchi urgenti',value:'OK',ok:true});
 }
@@ -34,19 +34,19 @@ function renderMyTasks(tasks,today){
   $('dashMyTasks').innerHTML=mine.map(t=>{let due='Senza scadenza',dueClass='';if(t.due_date){if(t.due_date<today){due='Scaduto';dueClass=' · '+fmtDate(t.due_date)}else if(t.due_date===today)due='Oggi';else due=fmtDate(t.due_date)}return `<button class="dash-task-item" type="button" data-dashboard-view="tasks"><span class="dash-task-main"><span class="dash-task-title"><i class="dash-priority-dot ${esc(t.priority||'')}"></i><b>${esc(t.title)}</b></span><p>${esc(t.description||t.notes||'Nessuna descrizione')}</p></span><span class="dash-task-meta"><b>${esc(due)}</b><span>${esc((t.priority||'').toUpperCase())}${esc(dueClass)}</span></span></button>`}).join('');
 }
 
-function renderPulse(cash,projects,social,fees,today,year){
+function renderPulse(cash,projects,social,tasks,today,year){
   const income=cash.filter(x=>x.movement_type==='income').reduce((s,x)=>s+Number(x.amount||0),0);
   const expense=cash.filter(x=>x.movement_type==='expense').reduce((s,x)=>s+Number(x.amount||0),0);
   const balance=income-expense;
   const activeProjects=projects.filter(activeProject);
   const nextProject=activeProjects.filter(p=>p.next_action_due&&p.next_action_due>=today).sort((a,b)=>a.next_action_due.localeCompare(b.next_action_due))[0];
   const nextSocial=social.filter(s=>activeSocial(s)&&s.scheduled_date&&s.scheduled_date>=today).sort((a,b)=>a.scheduled_date.localeCompare(b.scheduled_date)||(a.scheduled_time||'').localeCompare(b.scheduled_time||''))[0];
-  const renewals=fees.filter(f=>f.payment_status==='due').length;
+  const openTasks=tasks.filter(openTask),mine=openTasks.filter(t=>t.assigned_to===app.currentUser?.id).length,blocked=openTasks.filter(t=>t.status==='blocked').length;
   const rows=[
     pulseRow({icon:'€',title:`Cassa ${year}`,text:`Entrate ${money(income)} · Uscite ${money(expense)}`,value:money(balance),view:'cash',small:true}),
     pulseRow({icon:'◇',title:'Progetti attivi',text:nextProject?`Prossima azione: ${nextProject.next_action||nextProject.title} · ${fmtDate(nextProject.next_action_due)}`:'Portfolio senza prossime scadenze registrate',value:activeProjects.length,view:'projects'}),
     pulseRow({icon:'◎',title:'Prossimo contenuto social',text:nextSocial?`${nextSocial.title} · ${fmtDate(nextSocial.scheduled_date)}`:'Nessun contenuto futuro programmato',value:nextSocial?'→':'—',view:'social'}),
-    pulseRow({icon:'♙',title:'Rinnovi soci',text:renewals?'Quote che richiedono gestione':'Nessun rinnovo attualmente dovuto',value:renewals,view:'members'})
+    pulseRow({icon:'✓',title:'Task aperti',text:`${mine} assegnati a te${blocked?` · ${blocked} bloccati`:''}`,value:openTasks.length,view:'tasks'})
   ];
   $('dashPulse').innerHTML=rows.join('');
 }
@@ -69,7 +69,7 @@ export async function loadDashboard(){
     const tasks=tr.data||[],projects=pr.data||[],social=sr.data||[],cash=cr.data||[],fees=fr.data||[],pending=ur?.data?.length||0;
     renderAttention(tasks,fees,social,pending,today);
     renderMyTasks(tasks,today);
-    renderPulse(cash,projects,social,fees,today,year);
+    renderPulse(cash,projects,social,tasks,today,year);
     bindLinks();
   }catch(error){
     console.error(error);
