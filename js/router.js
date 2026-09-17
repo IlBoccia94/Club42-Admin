@@ -1,4 +1,5 @@
 import {$,app} from './core.js';
+import {canAccessView} from './permissions.js';
 
 export const viewMeta={
   dashboard:['Dashboard','Panoramica operativa del Club42'],
@@ -47,7 +48,11 @@ export function parseRoute(){
 
 async function applyRoute(){
   if(!app.currentProfile?.active)return;
-  const route=parseRoute();
+  let route=parseRoute();
+  if(!canAccessView(route.view)){
+    route={view:'dashboard',eventId:null,authCallback:false};
+    history.replaceState(null,'','#dashboard');
+  }
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+route.view));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===route.view));
   $('pageTitle').textContent=viewMeta[route.view][0];
@@ -64,7 +69,8 @@ async function applyRoute(){
 }
 
 export async function showView(name,{replace=false,eventId=null}={}){
-  const view=viewMeta[name]?name:'dashboard';
+  const requested=viewMeta[name]?name:'dashboard';
+  const view=canAccessView(requested)?requested:'dashboard';
   const hash=view==='events'&&eventId?`#events/${eventId}`:`#${view}`;
   if(location.hash===hash)return applyRoute();
   if(replace){history.replaceState(null,'',hash);await applyRoute();}
