@@ -24,6 +24,14 @@ import {initTasks,loadTasks} from './tasks.js';
 import {buildContactsUi} from './contacts-ui.js';
 import {initContacts,loadContacts} from './contacts.js';
 
+function ensureSidebarLayout(){
+  if(document.querySelector('link[href^="sidebar-layout.css"]'))return;
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='sidebar-layout.css?v=20260917-1';
+  document.head.appendChild(link);
+}
+
 async function onAuthorized(){
   await loadRemote();
   const route=parseRoute();
@@ -39,6 +47,7 @@ function initShell(){
   $('exportCsv').onclick=()=>{const e=app.state.events.find(x=>x.id===app.state.selected);if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
 }
 
+ensureSidebarLayout();
 initPwa();
 buildDashboardUi();
 buildNotificationsUi();
