@@ -3,8 +3,32 @@ import {showView} from './router.js';
 
 let eventContacts=[],eventContactLinks=[];
 
-function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,time:r.event_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||''}}
+function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||''}}
 function mapPerson(r){return{id:r.id,eventId:r.event_id,name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
+
+function eventDateLabel(e){return e?.endDate&&e.endDate!==e.date?`${fmtDate(e.date)} → ${fmtDate(e.endDate)}`:fmtDate(e?.date||'')}
+function eventTimeLabel(e){
+  if(e?.time&&e?.endTime)return `${e.time}–${e.endTime}`;
+  if(e?.time)return e.time;
+  if(e?.endTime)return `fine ${e.endTime}`;
+  return '';
+}
+function eventPriceLabel(e){
+  if(e?.isFree)return 'Gratuito';
+  if(e?.price===null||e?.price===undefined||e?.price==='')return '';
+  const n=Number(e.price);
+  return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:n%1?2:0}).format(n);
+}
+function syncEventPriceControl(){
+  const free=$('eFree')?.checked===true;
+  if($('ePrice'))$('ePrice').disabled=free;
+}
+function syncEndDateMin(){
+  const start=$('eDate')?.value||'';
+  if(!$('eEndDate'))return;
+  $('eEndDate').min=start;
+  if(start&&$('eEndDate').value&&$('eEndDate').value<start)$('eEndDate').value='';
+}
 
 function ensureEventContactsField(){
  if($('eContacts'))return;
@@ -44,7 +68,7 @@ async function offerLegacyImport(){
   if(!confirm(`Ho trovato ${old.events.length} eventi salvati in questo browser. Vuoi importarli nel database condiviso?`)){localStorage.setItem(LEGACY_KEY+'_migrated','declined');return}
   const idMap={};
   for(const e of old.events){
-    const {data,error}=await db.from('events').insert({name:e.name,event_date:e.date,event_time:e.time||null,place:e.place||null,capacity:Number(e.capacity)||0,price:e.price===''?null:Number(e.price),notes:e.notes||null,created_by:app.currentUser.id}).select('id').single();
+    const legacyFree=e.price!==''&&Number(e.price)===0;const {data,error}=await db.from('events').insert({name:e.name,event_date:e.date,event_end_date:null,event_time:e.time||null,event_end_time:null,place:e.place||null,capacity:Number(e.capacity)||0,price:legacyFree?null:(e.price===''?null:Number(e.price)),is_free:legacyFree,notes:e.notes||null,created_by:app.currentUser.id}).select('id').single();
     if(error)return toast('Importazione interrotta');idMap[e.id]=data.id;
   }
   for(const p of old.people||[]){if(!idMap[p.eventId])continue;await db.from('event_registrations').insert({event_id:idMap[p.eventId],name:p.name,phone:p.phone||null,email:p.email||null,status:p.status||'confirmed',paid:p.paid==='yes',member:p.member==='yes',dietary_requirements:p.diet||null,notes:p.notes||null,created_by:app.currentUser.id})}
@@ -54,20 +78,20 @@ async function offerLegacyImport(){
 function renderDashboard(){
   const confirmed=app.state.people.filter(p=>p.status==='confirmed');
   $('dashEvents').textContent=app.state.events.length;$('dashPeople').textContent=confirmed.length;$('dashPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('dashMembers').textContent=confirmed.filter(p=>p.member==='yes').length;
-  const today=new Date().toISOString().slice(0,10);const next=app.state.events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date))[0]||app.state.events.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];const box=$('nextEventBox');
+  const today=new Date().toISOString().slice(0,10);const next=app.state.events.filter(e=>(e.endDate||e.date)>=today).sort((a,b)=>a.date.localeCompare(b.date))[0]||app.state.events.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];const box=$('nextEventBox');
   if(!next){box.innerHTML='<div class="empty">Nessun evento presente. Creane uno per iniziare.</div>';return}
   const dt=new Date(next.date+'T12:00:00'),day=String(dt.getDate()).padStart(2,'0'),month=dt.toLocaleDateString('it-IT',{month:'short'}).replace('.','').toUpperCase(),n=list(next.id).filter(p=>p.status==='confirmed').length;
-  box.innerHTML=`<div class="upcoming-event"><div class="date-tile"><div><b>${day}</b><span>${month}</span></div></div><div><h4>${esc(next.name)}</h4><p>${next.time?next.time+' · ':''}${esc(next.place||'Luogo da definire')}<br>${next.capacity?`${n}/${next.capacity} posti occupati`:`${n} confermati`}</p></div><button class="btn" onclick="selectEvent('${next.id}',true)">Gestisci</button></div>`;
+  const when=[eventDateLabel(next),eventTimeLabel(next)].filter(Boolean).join(' · ');box.innerHTML=`<div class="upcoming-event"><div class="date-tile"><div><b>${day}</b><span>${month}</span></div></div><div><h4>${esc(next.name)}</h4><p>${esc(when)}${when?' · ':''}${esc(next.place||'Luogo da definire')}<br>${next.capacity?`${n}/${next.capacity} posti occupati`:`${n} confermati`}</p></div><button class="btn" onclick="selectEvent('${next.id}',true)">Gestisci</button></div>`;
 }
 
 export function render(){
   const e=selected();if(e&&!app.state.selected)app.state.selected=e.id;
-  $('events').innerHTML=app.state.events.length?app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;const guestBadge=x.guestTeaser?'<span class="event-guest-badge teaser">◌ Prossimamente</span>':x.guestVisible?'<span class="event-guest-badge">● Pagina soci</span>':'';return `<div class="event-card ${x.id===app.state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}${guestBadge}</div><div class="event-card-meta">${fmtDate(x.date)}${x.time?' · '+x.time:''}<br>${esc(x.place||'Luogo da definire')}<br>${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
+  $('events').innerHTML=app.state.events.length?app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;const guestBadge=x.guestTeaser?'<span class="event-guest-badge teaser">◌ Prossimamente</span>':x.guestVisible?'<span class="event-guest-badge">● Pagina soci</span>':'';const time=eventTimeLabel(x),price=eventPriceLabel(x);return `<div class="event-card ${x.id===app.state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}${guestBadge}</div><div class="event-card-meta">${esc(eventDateLabel(x))}${time?' · '+esc(time):''}<br>${esc(x.place||'Luogo da definire')}<br>${price?esc(price)+' · ':''}${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
   renderDashboard();
   if(!e){$('eventName').textContent='Nessun evento';$('eventMeta').textContent='Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
   const collaborators=eventContactLinks.filter(x=>x.event_id===e.id).length;
   const guestState=e.guestTeaser?' · prossimamente ai soci':e.guestVisible?' · visibile ai soci':'';
-  $('eventName').textContent=e.name;$('eventMeta').textContent=`${fmtDate(e.date)}${e.time?' · '+e.time:''}${e.place?' · '+e.place:''}${e.capacity?' · capienza '+e.capacity:''}${collaborators?' · '+collaborators+' collaboratori':''}${guestState}`;
+  const timeLabel=eventTimeLabel(e),priceLabel=eventPriceLabel(e);$('eventName').textContent=e.name;$('eventMeta').textContent=`${eventDateLabel(e)}${timeLabel?' · '+timeLabel:''}${e.place?' · '+e.place:''}${priceLabel?' · '+priceLabel:''}${e.capacity?' · capienza '+e.capacity:''}${collaborators?' · '+collaborators+' collaboratori':''}${guestState}`;
   const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');$('sConfirmed').textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');$('sWait').textContent=pp.filter(p=>p.status==='waitlist').length;$('sPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('sMembers').textContent=confirmed.filter(p=>p.member==='yes').length;renderPeople();
 }
 
@@ -79,7 +103,7 @@ export function renderPeople(){
 export async function selectEvent(id,openView=false){app.state.selected=id;render();await showView('events',{eventId:id});if(openView)document.body.classList.remove('sidebar-open')}
 export async function applyEventRoute(eventId){if(eventId&&app.state.events.some(e=>e.id===eventId)){app.state.selected=eventId;render()}else if(app.state.selected){const wanted=`#events/${app.state.selected}`;if(location.hash==='#events')history.replaceState(null,'',wanted)}}
 
-function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eTime').value=e?.time||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
+function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
 async function deleteEvent(id){const e=app.state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni? Lo storico delle collaborazioni resterà conservato.`))return;const {error}=await db.from('events').delete().eq('id',id);if(error)return toast(error.message);toast('Evento eliminato');await loadRemote()}
 function openPerson(id=null){const e=selected();if(!e){openEvent();return}app.editPersonId=id;const p=id?app.state.people.find(x=>x.id===id):null;$('personDlgTitle').textContent=p?'Modifica iscritto':'Aggiungi iscritto';$('pName').value=p?.name||'';$('pPhone').value=p?.phone||'';$('pEmail').value=p?.email||'';$('pStatus').value=p?.status||'confirmed';$('pPaid').value=p?.paid||'no';$('pMember').value=p?.member||'no';$('pDiet').value=p?.diet||'';$('pNotes').value=p?.notes||'';$('personDlg').showModal()}
 async function deletePerson(id){const p=app.state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;const {error}=await db.from('event_registrations').delete().eq('id',id);if(error)return toast(error.message);toast('Iscritto eliminato');await loadRemote()}
@@ -88,8 +112,10 @@ export function initEvents(){
   ensureEventContactsField();ensureGuestFields();document.addEventListener('club42:contacts-changed',refreshEventContactData);
   $('eGuestVisible').onchange=()=>{if($('eGuestVisible').checked)$('eGuestTeaser').checked=false};
   $('eGuestTeaser').onchange=()=>{if($('eGuestTeaser').checked)$('eGuestVisible').checked=false};
+  $('eFree').onchange=syncEventPriceControl;
+  $('eDate').onchange=syncEndDateMin;
   window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;
-  $('eventForm').addEventListener('submit',async ev=>{ev.preventDefault();const base={name:$('eName').value.trim(),event_date:$('eDate').value,event_time:$('eTime').value||null,place:$('ePlace').value.trim()||null,capacity:Number($('eCapacity').value)||0,price:$('ePrice').value===''?null:Number($('ePrice').value),notes:$('eNotes').value.trim()||null,guest_visible:$('eGuestVisible').checked,guest_teaser:$('eGuestTeaser').checked,guest_description:$('eGuestDescription').value.trim()||null};let result;if(app.editEventId)result=await db.from('events').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editEventId).select('id').single();else result=await db.from('events').insert({...base,created_by:app.currentUser.id}).select('id').single();if(result.error)return toast(result.error.message);try{await syncEventContacts(result.data.id,base)}catch(error){console.error(error);return toast('Evento salvato, ma errore nel collegamento collaboratori')}$('eventDlg').close();toast(app.editEventId?'Evento aggiornato':'Evento creato');await loadRemote()});
+  $('eventForm').addEventListener('submit',async ev=>{ev.preventDefault();const startDate=$('eDate').value,endDate=$('eEndDate').value||null;if(endDate&&endDate<startDate)return toast('La data fine non può essere precedente alla data inizio');const isFree=$('eFree').checked;const base={name:$('eName').value.trim(),event_date:startDate,event_end_date:endDate,event_time:$('eTime').value||null,event_end_time:$('eEndTime').value||null,place:$('ePlace').value.trim()||null,capacity:Number($('eCapacity').value)||0,price:isFree?null:($('ePrice').value===''?null:Number($('ePrice').value)),is_free:isFree,notes:$('eNotes').value.trim()||null,guest_visible:$('eGuestVisible').checked,guest_teaser:$('eGuestTeaser').checked,guest_description:$('eGuestDescription').value.trim()||null};let result;if(app.editEventId)result=await db.from('events').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editEventId).select('id').single();else result=await db.from('events').insert({...base,created_by:app.currentUser.id}).select('id').single();if(result.error)return toast(result.error.message);try{await syncEventContacts(result.data.id,base)}catch(error){console.error(error);return toast('Evento salvato, ma errore nel collegamento collaboratori')}$('eventDlg').close();toast(app.editEventId?'Evento aggiornato':'Evento creato');await loadRemote()});
   $('personForm').addEventListener('submit',async ev=>{ev.preventDefault();const e=selected();const base={event_id:e.id,name:$('pName').value.trim(),phone:$('pPhone').value.trim()||null,email:$('pEmail').value.trim()||null,status:$('pStatus').value,paid:$('pPaid').value==='yes',member:$('pMember').value==='yes',dietary_requirements:$('pDiet').value.trim()||null,notes:$('pNotes').value.trim()||null};let result;if(app.editPersonId)result=await db.from('event_registrations').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editPersonId);else result=await db.from('event_registrations').insert({...base,created_by:app.currentUser.id});if(result.error)return toast(result.error.message);$('personDlg').close();toast(app.editPersonId?'Iscritto aggiornato':'Iscritto aggiunto');await loadRemote()});
   ['globalNewEvent','heroNewEvent','quickEvent','sideNewEvent'].forEach(id=>$(id).onclick=()=>openEvent());['addPerson','quickPerson'].forEach(id=>$(id).onclick=()=>openPerson());$('search').oninput=renderPeople;$('statusFilter').onchange=renderPeople;
 }
