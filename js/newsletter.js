@@ -1,5 +1,5 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,esc,toast} from './core.js';
-import {isAdmin} from './permissions.js';
+import {isAdmin} from './permissions.js?v=20260917-newsletter2';
 
 const MAX_ATTACHMENTS=10;
 const MAX_FILE_BYTES=6*1024*1024;
@@ -11,6 +11,8 @@ let attachments=[];
 let historyRows=[];
 let initialized=false;
 let sending=false;
+let pendingRequestId=null;
+let pendingFingerprint='';
 
 function emailOk(v=''){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim())}
 function ext(name=''){const p=String(name).toLowerCase().split('.');return p.length>1?p.pop()||'':''}
@@ -88,6 +90,15 @@ function validateCompose(requireRecipients=true){
   if(requireRecipients&&!ids.length){toast('Seleziona almeno un destinatario');return null}
   return{subject,bodyHtml:editorHtml(),recipientUserIds:ids};
 }
+function composeFingerprint(data){
+  const fileMeta=attachments.map(a=>`${a.file.name}:${a.file.size}:${a.file.lastModified||0}`).sort().join('|');
+  return JSON.stringify([data.subject,data.bodyHtml,[...data.recipientUserIds].sort(),fileMeta]);
+}
+function requestIdFor(data){
+  const fingerprint=composeFingerprint(data);
+  if(!pendingRequestId||pendingFingerprint!==fingerprint){pendingRequestId=crypto.randomUUID();pendingFingerprint=fingerprint}
+  return pendingRequestId;
+}
 function readFileBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||'').split(',')[1]||'');r.onerror=()=>reject(r.error||new Error('Errore lettura file'));r.readAsDataURL(file)})}
 async function serializeAttachments(){
   const out=[];
@@ -149,8 +160,8 @@ async function sendTest(){
 }
 async function sendFinal(){
   if(sending)return;const data=validateCompose(true);if(!data)return;$('newsletterConfirmDlg').close();
-  const requestId=crypto.randomUUID();
-  try{setSending(true);setSendStatus('','Invio newsletter…',`Invio individuale a ${data.recipientUserIds.length} destinatari. Non chiudere questa pagina fino al riepilogo finale.`);const files=await serializeAttachments();const result=await newsletterApi({action:'send',requestId,subject:data.subject,bodyHtml:data.bodyHtml,attachments:files,recipientUserIds:data.recipientUserIds});const send=result.send||{};const ok=Number(send.success_count||0),fail=Number(send.failure_count||0),total=Number(send.recipient_count||data.recipientUserIds.length);setSendStatus(fail?'error':'success',fail?'Newsletter inviata con alcuni errori':'Newsletter inviata',`${ok} email inviate correttamente su ${total}.${fail?` ${fail} email non inviate.`:''}`);toast(fail?`${ok} inviate, ${fail} fallite`:'Newsletter inviata');await loadHistory()}catch(e){setSendStatus('error','Invio newsletter non riuscito',e.message);toast(e.message);await loadHistory()}finally{setSending(false)}
+  const requestId=requestIdFor(data);
+  try{setSending(true);setSendStatus('','Invio newsletter…',`Invio individuale a ${data.recipientUserIds.length} destinatari. Non chiudere questa pagina fino al riepilogo finale.`);const files=await serializeAttachments();const result=await newsletterApi({action:'send',requestId,subject:data.subject,bodyHtml:data.bodyHtml,attachments:files,recipientUserIds:data.recipientUserIds});const send=result.send||{};const ok=Number(send.success_count||0),fail=Number(send.failure_count||0),total=Number(send.recipient_count||data.recipientUserIds.length);setSendStatus(fail?'error':'success',result.duplicateRequest?'Invio già registrato':fail?'Newsletter inviata con alcuni errori':'Newsletter inviata',`${ok} email inviate correttamente su ${total}.${fail?` ${fail} email non inviate.`:''}${result.duplicateRequest?' Nessun secondo invio è stato effettuato.':''}`);toast(result.duplicateRequest?'Invio già registrato: nessun duplicato':fail?`${ok} inviate, ${fail} fallite`:'Newsletter inviata');await loadHistory()}catch(e){setSendStatus('error','Invio newsletter non riuscito',`${e.message} Puoi riprovare: se il server aveva già ricevuto la richiesta, verrà riutilizzato lo stesso identificativo e non verrà duplicato l’invio.`);toast(e.message);await loadHistory()}finally{setSending(false)}
 }
 function ensureNewsletterConsentControls(){
   if(!$('uNewsletterActive')){
