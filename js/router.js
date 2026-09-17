@@ -16,15 +16,17 @@ let usersHandler=null;
 let eventHandler=null;
 let socialHandler=null;
 let membersHandler=null;
+let cashHandler=null;
 let projectsHandler=null;
 let tasksHandler=null;
 let contactsHandler=null;
 
-export function configureRouter({onUsers,onEvent,onSocial,onMembers,onProjects,onTasks,onContacts}={}){
+export function configureRouter({onUsers,onEvent,onSocial,onMembers,onCash,onProjects,onTasks,onContacts}={}){
   usersHandler=onUsers||null;
   eventHandler=onEvent||null;
   socialHandler=onSocial||null;
   membersHandler=onMembers||null;
+  cashHandler=onCash||null;
   projectsHandler=onProjects||null;
   tasksHandler=onTasks||null;
   contactsHandler=onContacts||null;
@@ -55,6 +57,7 @@ async function applyRoute(){
   if(route.view==='events'&&eventHandler)await eventHandler(route.eventId);
   if(route.view==='social'&&socialHandler)await socialHandler();
   if(route.view==='members'&&membersHandler)await membersHandler();
+  if(route.view==='cash'&&cashHandler)await cashHandler();
   if(route.view==='projects'&&projectsHandler)await projectsHandler();
   if(route.view==='tasks'&&tasksHandler)await tasksHandler();
   if(route.view==='contacts'&&contactsHandler)await contactsHandler();
