@@ -11,15 +11,15 @@ export const canUseOperations=()=>['admin','treasurer','staff'].includes(app.cur
 
 const access={
   admin:new Set(['dashboard','events','members','cash','notifications','users','projects','tasks','social','contacts']),
-  treasurer:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social']),
-  staff:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social']),
+  treasurer:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social','contacts']),
+  staff:new Set(['dashboard','events','members','cash','notifications','projects','tasks','social','contacts']),
   guest:new Set()
 };
 export function canAccessView(view){return access[app.currentProfile?.role]?.has(view)===true}
 
 function ensureStyles(){
-  if(document.querySelector('link[href="permissions.css"]'))return;
-  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css';document.head.appendChild(l);
+  if(document.querySelector('link[href^="permissions.css"]'))return;
+  const l=document.createElement('link');l.rel='stylesheet';l.href='permissions.css?v=20260917-access3';document.head.appendChild(l);
 }
 function setHidden(selector,hidden){document.querySelectorAll(selector).forEach(el=>{el.hidden=hidden})}
 
@@ -28,7 +28,8 @@ export function applyRoleUi(){
   const role=app.currentProfile?.role||'guest';
   document.body.dataset.club42Role=role;
   setHidden('.nav-item[data-view="users"]',role!=='admin');
-  setHidden('.nav-item[data-view="contacts"]',role!=='admin');
+  setHidden('.nav-item[data-view="contacts"]',role==='guest');
+  setHidden('.nav-item[data-view="members"]',role==='guest');
   setHidden('.nav-item[data-view="notifications"]',role==='guest');
   setHidden('button[onclick="showView(\'users\')"]',role!=='admin');
 
