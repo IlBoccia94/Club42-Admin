@@ -1,6 +1,6 @@
 export function buildNewsletterUi(){
   if(!document.querySelector('link[href^="newsletter.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='newsletter.css?v=20260917-2';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='newsletter.css?v=20260918-recipients1';document.head.appendChild(l);
   }
 
   if(!document.querySelector('.nav-item[data-view="newsletter"]')){
@@ -18,16 +18,16 @@ export function buildNewsletterUi(){
     section.className='view';section.id='view-newsletter';
     section.innerHTML=`<div class="newsletter-page">
       <section class="card newsletter-hero">
-        <div><div class="panel-kicker">Comunicazioni Club42</div><h2>Newsletter</h2><p>Invia comunicazioni individuali ai Guest che hanno espresso il consenso alla newsletter.</p></div>
+        <div><div class="panel-kicker">Comunicazioni Club42</div><h2>Newsletter</h2><p>Invia comunicazioni individuali a tutti gli utenti attivi che hanno espresso il consenso alla newsletter.</p></div>
         <div class="newsletter-sender"><span>Mittente</span><strong>Club42 &lt;club42.laspezia@gmail.com&gt;</strong></div>
       </section>
 
       <div class="newsletter-grid">
         <section class="card newsletter-panel recipients-panel">
-          <div class="newsletter-panel-head"><div><div class="panel-kicker">Destinatari</div><h3>Guest iscritti</h3></div><span class="newsletter-count" id="newsletterSelectedCount">0 selezionati</span></div>
-          <div class="newsletter-recipient-tools"><input id="newsletterSearch" type="search" placeholder="🔎 Cerca nome o email…"><label class="newsletter-select-all"><input type="checkbox" id="newsletterSelectAll"> Seleziona tutti</label></div>
+          <div class="newsletter-panel-head"><div><div class="panel-kicker">Destinatari</div><h3>Utenti iscritti alla newsletter</h3></div><span class="newsletter-count" id="newsletterSelectedCount">0 selezionati</span></div>
+          <div class="newsletter-recipient-tools"><input id="newsletterSearch" type="search" placeholder="🔎 Cerca nome, email o ruolo…"><div class="newsletter-selection-presets"><button class="btn soft" id="newsletterSelectAll" type="button">Seleziona tutti</button><button class="btn soft" id="newsletterSelectGuests" type="button">Solo Guest</button></div></div>
           <div class="newsletter-recipient-list" id="newsletterRecipients"><div class="newsletter-loading">Caricamento destinatari…</div></div>
-          <div class="newsletter-recipient-note">Sono selezionabili esclusivamente Guest attivi con <strong>Newsletter attiva</strong>.</div>
+          <div class="newsletter-recipient-note">Sono selezionabili tutti gli utenti attivi con <strong>Newsletter attiva</strong>. Usa <strong>Solo Guest</strong> per escludere rapidamente Staff, Tesoriere e Admin.</div>
         </section>
 
         <section class="card newsletter-panel composer-panel">
