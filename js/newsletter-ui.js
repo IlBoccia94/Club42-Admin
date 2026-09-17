@@ -1,6 +1,6 @@
 export function buildNewsletterUi(){
   if(!document.querySelector('link[href^="newsletter.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='newsletter.css?v=20260917-1';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='newsletter.css?v=20260917-2';document.head.appendChild(l);
   }
 
   if(!document.querySelector('.nav-item[data-view="newsletter"]')){
@@ -67,5 +67,9 @@ export function buildNewsletterUi(){
 
   if(!document.getElementById('newsletterConfirmDlg')){
     document.body.insertAdjacentHTML('beforeend',`<dialog id="newsletterConfirmDlg"><div class="modal newsletter-confirm-modal"><div class="modal-head"><div><div class="panel-kicker">Conferma invio</div><h3>Inviare la newsletter?</h3></div><button type="button" class="close" id="newsletterConfirmClose">×</button></div><div id="newsletterConfirmSummary" class="newsletter-confirm-summary"></div><div class="modal-actions"><button type="button" class="btn" id="newsletterConfirmCancel">Annulla</button><button type="button" class="btn primary" id="newsletterConfirmSend">Invia newsletter</button></div></div></dialog>`);
+  }
+
+  if(!document.getElementById('newsletterDeleteDlg')){
+    document.body.insertAdjacentHTML('beforeend',`<dialog id="newsletterDeleteDlg"><div class="modal newsletter-delete-modal"><div class="modal-head"><div><div class="panel-kicker">Storico newsletter</div><h3>Eliminare questa newsletter?</h3></div><button type="button" class="close" id="newsletterDeleteClose">×</button></div><div class="newsletter-delete-warning"><div class="newsletter-delete-warning-icon">!</div><div><strong>Questa operazione è definitiva.</strong><p>La voce verrà rimossa dallo storico insieme ai dettagli tecnici delle consegne. Le email già inviate ai destinatari non possono essere richiamate o cancellate.</p></div></div><div id="newsletterDeleteSummary" class="newsletter-confirm-summary"></div><div class="modal-actions"><button type="button" class="btn" id="newsletterDeleteCancel">Mantieni nello storico</button><button type="button" class="btn danger" id="newsletterDeleteConfirm">Elimina dallo storico</button></div></div></dialog>`);
   }
 }
