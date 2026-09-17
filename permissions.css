@@ -5,7 +5,10 @@ body[data-club42-role="staff"] #cashDlg{display:none!important}
 
 body[data-club42-role="staff"] .nav-item[data-view="users"],
 body[data-club42-role="treasurer"] .nav-item[data-view="users"],
-body[data-club42-role="guest"] .nav-item[data-view="users"]{display:none!important}
+body[data-club42-role="guest"] .nav-item[data-view="users"],
+body[data-club42-role="staff"] .nav-item[data-view="newsletter"],
+body[data-club42-role="treasurer"] .nav-item[data-view="newsletter"],
+body[data-club42-role="guest"] .nav-item[data-view="newsletter"]{display:none!important}
 body[data-club42-role="guest"] .nav-item[data-view="contacts"],
 body[data-club42-role="guest"] .nav-item[data-view="members"],
 body[data-club42-role="guest"] .nav-item[data-view="notifications"]{display:none!important}
