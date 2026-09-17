@@ -1,5 +1,6 @@
 import {$,app,db,SUPABASE_URL,SUPABASE_KEY,esc,fmtDate,toast} from './core.js';
 import {getProfile} from './auth.js';
+import {roleLabel} from './permissions.js';
 
 async function adminApi(action,payload={}){
   const {data:{session}}=await db.auth.getSession();
@@ -8,8 +9,32 @@ async function adminApi(action,payload={}){
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'Errore gestione utenti');return data;
 }
 
-function ensureGuestRoleOptions(){['uRole','iRole'].forEach(id=>{const s=$(id);if(s&&![...s.options].some(o=>o.value==='guest'))s.insertAdjacentHTML('beforeend','<option value="guest">Guest</option>')})}
-function roleLabel(role){return role==='admin'?'Admin':role==='staff'?'Staff':role==='guest'?'Guest':role}
+function ensureRoleOptions(){
+  ['uRole','iRole'].forEach(id=>{
+    const s=$(id);if(!s)return;
+    const wanted=[['admin','Admin'],['treasurer','Tesoriere'],['staff','Staff'],['guest','Guest']];
+    const current=s.value;
+    s.innerHTML=wanted.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    if(wanted.some(([v])=>v===current))s.value=current;
+  });
+}
+
+function ensurePermissionGuide(){
+  const head=document.querySelector('#view-users .users-head');
+  const invite=$('inviteUserBtn');
+  if(head&&invite&&!$('roleInfoBtn')){
+    const wrap=document.createElement('div');wrap.className='users-head-actions';
+    invite.parentNode.insertBefore(wrap,invite);wrap.appendChild(invite);
+    const info=document.createElement('button');info.type='button';info.className='btn';info.id='roleInfoBtn';info.textContent='ⓘ Permessi ruoli';wrap.insertBefore(info,invite);
+  }
+  if(!$('roleInfoDlg'))document.body.insertAdjacentHTML('beforeend',`<dialog id="roleInfoDlg"><div class="modal"><div class="modal-head"><div><div class="panel-kicker">Accessi gestionale</div><h3>Visibilità dei ruoli</h3></div><button type="button" class="close" id="roleInfoClose">×</button></div><div class="role-info-grid">
+    <article class="role-info-card"><h4>Admin</h4><p><strong>Accesso completo.</strong> Gestisce Eventi, Soci, Cassa, Progetti, Task, Social, Contatti e Utenti. È l'unico ruolo che può amministrare account, ruoli, rubrica completa, registro soci completo, eliminazioni massive e impostazioni strutturali.</p></article>
+    <article class="role-info-card"><h4>Tesoriere</h4><p>Può vedere Dashboard ed Eventi in sola lettura, consultare i <strong>dati essenziali dei Soci</strong>, gestire completamente la <strong>Cassa</strong> e lavorare su Progetti, Task e Social. Non vede Utenti né Contatti.</p></article>
+    <article class="role-info-card"><h4>Staff</h4><p>Può gestire Eventi e partecipanti, consultare i <strong>dati essenziali dei Soci</strong>, vedere la <strong>Cassa in sola lettura</strong> e lavorare su Progetti, Task e Social. Non vede Utenti né Contatti.</p></article>
+    <article class="role-info-card"><h4>Guest</h4><p><strong>Nessun accesso ai moduli gestionali.</strong> L'account può esistere ed essere attivo, ma non carica dati del Club42 finché un Admin non gli assegna un ruolo operativo.</p></article>
+  </div><div class="role-info-note">Nei dropdown degli Eventi Staff/Admin possono vedere solo il riferimento minimo necessario dei collaboratori (nome e organizzazione), senza aprire la rubrica Contatti completa.</div><div class="modal-actions"><button type="button" class="btn primary" id="roleInfoOk">Ho capito</button></div></div></dialog>`);
+}
+
 export async function loadUsers(){try{const data=await adminApi('list');app.adminUsers=data.users||[];renderUsers()}catch(e){toast(e.message)}}
 function statusLabel(s){return s==='active'?'Attivo':s==='disabled'?'Disabilitato':'In attesa'}
 function userActions(u){const self=u.user_id===app.currentUser?.id;const approve=u.status==='pending'?`<button class="btn success" onclick="quickUserStatus('${u.user_id}','active')">Approva</button>`:'';const toggle=u.status==='active'&&!self?`<button class="btn" onclick="quickUserStatus('${u.user_id}','disabled')">Disabilita</button>`:u.status==='disabled'?`<button class="btn success" onclick="quickUserStatus('${u.user_id}','active')">Riattiva</button>`:'';const del=!self?`<button class="btn danger" onclick="deleteAdminUser('${u.user_id}')">Elimina</button>`:'';return `<div class="user-actions">${approve}<button class="btn" onclick="openUser('${u.user_id}')">Modifica</button>${toggle}${del}</div>`}
@@ -19,9 +44,10 @@ async function quickUserStatus(id,status){const u=app.adminUsers.find(x=>x.user_
 async function deleteAdminUser(id){const u=app.adminUsers.find(x=>x.user_id===id);if(!u||!confirm(`Eliminare definitivamente l'account di ${u.display_name||u.email}?`))return;try{await adminApi('delete',{userId:id});toast('Utente eliminato');await loadUsers()}catch(e){toast(e.message)}}
 
 export function initUsers(){
-  ensureGuestRoleOptions();
+  ensureRoleOptions();ensurePermissionGuide();
   window.openUser=openUser;window.quickUserStatus=quickUserStatus;window.deleteAdminUser=deleteAdminUser;
-  $('userForm').addEventListener('submit',async e=>{e.preventDefault();try{await adminApi('update',{userId:app.editUserId,displayName:$('uName').value.trim(),role:$('uRole').value,status:$('uStatus').value});$('userDlg').close();toast('Utente aggiornato');await loadUsers();if(app.editUserId===app.currentUser.id){app.currentProfile=await getProfile(app.currentUser);$('sidebarUserName').textContent=app.currentProfile.display_name;$('sidebarUserRole').textContent=app.currentProfile.role}}catch(err){toast(err.message)}});
+  $('roleInfoBtn').onclick=()=>$('roleInfoDlg').showModal();$('roleInfoClose').onclick=()=>$('roleInfoDlg').close();$('roleInfoOk').onclick=()=>$('roleInfoDlg').close();
+  $('userForm').addEventListener('submit',async e=>{e.preventDefault();try{await adminApi('update',{userId:app.editUserId,displayName:$('uName').value.trim(),role:$('uRole').value,status:$('uStatus').value});$('userDlg').close();toast('Utente aggiornato');await loadUsers();if(app.editUserId===app.currentUser.id){app.currentProfile=await getProfile(app.currentUser);$('sidebarUserName').textContent=app.currentProfile.display_name;$('sidebarUserRole').textContent=roleLabel(app.currentProfile.role)}}catch(err){toast(err.message)}});
   $('inviteUserBtn').onclick=()=>{$('iName').value='';$('iEmail').value='';$('iRole').value='staff';$('inviteDlg').showModal()};
   $('inviteForm').addEventListener('submit',async e=>{e.preventDefault();try{await adminApi('invite',{displayName:$('iName').value.trim(),email:$('iEmail').value.trim(),role:$('iRole').value});$('inviteDlg').close();toast('Invito inviato');await loadUsers()}catch(err){toast(err.message)}});
   $('passwordForm').addEventListener('submit',async e=>{e.preventDefault();const a=$('newPassword').value,b=$('newPassword2').value;if(a!==b)return toast('Le password non coincidono');const {error}=await db.auth.updateUser({password:a});if(error)return toast(error.message);history.replaceState(null,'',location.pathname+'#dashboard');$('passwordDlg').close();toast('Password impostata')});
