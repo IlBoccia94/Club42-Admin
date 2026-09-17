@@ -1,0 +1,51 @@
+/* Micro-regolazione di leggibilità: solo testi secondari molto piccoli.
+   Caricato per ultimo per non alterare gerarchia, titoli o layout. */
+
+/* Eventi */
+.event-card-meta{font-size:10.7px}
+@media(max-width:650px){.event-hero p{font-size:11px}.event-stat span{font-size:9px}}
+
+/* Dashboard */
+.dash-attention-copy span,.dash-pulse-copy span{font-size:9px}
+.dash-task-main p{font-size:9.25px}
+.dash-task-meta b{font-size:9px}
+.dash-task-meta span{font-size:8.25px}
+
+/* Task */
+.task-focus-copy p{font-size:9.25px}
+.task-focus-meta,.task-pill,.task-kanban-toolbar span,.task-column-head span{font-size:8.75px}
+.task-card p{font-size:9px}
+.task-card-meta span{font-size:8.25px}
+.task-owner-row label{font-size:8.75px}
+.task-deadline-day span{font-size:8px}
+.task-archive-row p{font-size:8.75px}
+
+/* Progetti */
+.project-card p,.project-radar-item p,.project-archive-row p,.project-update-item p{font-size:9.5px}
+.project-board-card p,.project-task-item p{font-size:9px}
+.project-card-meta span,.project-badge,.project-column-head span,.project-update-item b{font-size:8.75px}
+.project-update-item small{font-size:8px}
+
+/* Contatti e collaborazioni */
+.contact-org,.contact-meta,.collaboration-body p,.contact-history-item b{font-size:9.5px}
+.contact-card-foot span,.contact-history-item span{font-size:8.25px}
+.collaboration-title span,.collaboration-body small,.contact-history-head span,.event-contact-hint{font-size:8.5px}
+
+/* Social: solo descrizioni e metadati, non il calendario compatto */
+.social-card p,.social-format small,.social-check{font-size:9.5px}
+.social-card-meta span,.social-type,.social-analytics-summary span,.social-status{font-size:8.5px}
+
+/* Cassa */
+.cash-user-hint{font-size:9.5px}
+.cash-mobile-meta span,.cash-chart-legend small{font-size:8.5px}
+.cash-reimbursement-badge{font-size:7.5px}
+
+/* Feedback */
+.feedback-help,.feedback-sort-note,.feedback-item-top time,.feedback-author,.feedback-resolved-meta{font-size:8.5px}
+.feedback-update p{font-size:9.5px}
+.feedback-update span,.feedback-no-updates{font-size:8px}
+
+/* Newsletter */
+.newsletter-recipient-copy span,.newsletter-recipient-note,.newsletter-toolbar button,.newsletter-attachment-info b{font-size:9.5px}
+.newsletter-attachments-head span,.newsletter-attachment-info span,.newsletter-history-main span,.newsletter-history-result span,.newsletter-history-status,.newsletter-consent-help{font-size:8.5px}
+.newsletter-user-badge,.newsletter-role-pill{font-size:7.5px}
