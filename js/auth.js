@@ -1,5 +1,41 @@
 import {$,app,db,APP_URL} from './core.js';
-import {applyRoleUi,roleLabel} from './permissions.js?v=20260917-access6';
+import {applyRoleUi,roleLabel} from './permissions.js?v=20260917-newsletter2';
+
+let authMode='login';
+
+function ensureSignupControls(){
+  if($('authSignupConsent'))return;
+  const actions=document.querySelector('#authForm .auth-actions');
+  if(!actions)return;
+  actions.insertAdjacentHTML('beforebegin',`<div class="auth-signup-consent" id="authSignupConsent" hidden>
+    <label class="auth-newsletter-check"><input id="authNewsletterActive" type="checkbox" checked><span>Newsletter attiva</span></label>
+    <p>Accetto di ricevere comunicazioni e newsletter di Club42. Puoi togliere la spunta se non vuoi riceverle.</p>
+  </div>`);
+}
+
+function setAuthMode(mode='login',resetConsent=false){
+  ensureSignupControls();
+  authMode=mode==='signup'?'signup':'login';
+  const signup=authMode==='signup';
+  const consent=$('authSignupConsent');
+  const checkbox=$('authNewsletterActive');
+  const submit=document.querySelector('#authForm button[type="submit"]');
+  const toggle=$('signupBtn');
+  const note=document.querySelector('#authFormWrap .auth-note');
+  if(consent)consent.hidden=!signup;
+  if(signup&&resetConsent&&checkbox)checkbox.checked=true;
+  if(submit)submit.textContent=signup?'Crea account':'Accedi';
+  if(toggle)toggle.textContent=signup?'← Ho già un account':'Crea account';
+  if($('authPassword'))$('authPassword').autocomplete=signup?'new-password':'current-password';
+  if(note)note.textContent=signup
+    ?'Il nuovo account verrà creato come Guest. Dopo la conferma email resterà in attesa di approvazione.'
+    :'Puoi creare un account liberamente, ma l’accesso ai dati richiede l’approvazione del direttivo.';
+}
+
+function showAuthError(msg=''){
+  $('authError').textContent=msg;
+  $('authError').classList.toggle('show',!!msg);
+}
 
 export async function getProfile(user){
   const {data,error}=await db.from('admin_users').select('user_id,email,display_name,role,active,status').eq('user_id',user.id).maybeSingle();
@@ -7,12 +43,13 @@ export async function getProfile(user){
   return data;
 }
 
-export function showAuth(msg=''){
+export function showAuth(msg='',mode='login'){
+  ensureSignupControls();
+  setAuthMode(mode,false);
   $('authScreen').classList.remove('hidden');
   $('authFormWrap').style.display='block';
   $('authPending').classList.remove('show');
-  $('authError').textContent=msg;
-  $('authError').classList.toggle('show',!!msg);
+  showAuthError(msg);
 }
 
 export async function handleSession(user,onAuthorized){
@@ -38,6 +75,7 @@ export async function handleSession(user,onAuthorized){
   $('authScreen').classList.add('hidden');
   $('authPending').classList.remove('show');
   $('authFormWrap').style.display='block';
+  setAuthMode('login',false);
   $('sidebarUserName').textContent=app.currentProfile.display_name||user.email||'Utente';
   $('sidebarUserEmail').textContent=app.currentProfile.email||user.email||'';
   $('sidebarUserRole').textContent=roleLabel(app.currentProfile.role);
@@ -52,24 +90,47 @@ export async function bootstrapAuth(onAuthorized){
 }
 
 export function initAuth(onAuthorized){
+  ensureSignupControls();
+  setAuthMode('login',false);
+
   $('authForm').addEventListener('submit',async ev=>{
     ev.preventDefault();
-    $('authError').classList.remove('show');
-    const {data,error}=await db.auth.signInWithPassword({email:$('authEmail').value.trim(),password:$('authPassword').value});
-    if(error)return showAuth(error.message);
+    showAuthError('');
+    const email=$('authEmail').value.trim();
+    const password=$('authPassword').value;
+
+    if(authMode==='signup'){
+      if(!email||password.length<6)return showAuth('Inserisci email e una password di almeno 6 caratteri.','signup');
+      const newsletterActive=$('authNewsletterActive')?.checked===true;
+      const {error}=await db.auth.signUp({
+        email,
+        password,
+        options:{
+          emailRedirectTo:APP_URL,
+          data:{
+            display_name:email.split('@')[0],
+            newsletter_active:newsletterActive
+          }
+        }
+      });
+      if(error)return showAuth(error.message,'signup');
+      $('authFormWrap').style.display='none';
+      $('authPending').classList.add('show');
+      $('pendingTitle').textContent='Conferma l’email';
+      $('pendingText').textContent='Apri la mail ricevuta. Dopo la conferma la tua richiesta resterà in attesa di approvazione.';
+      $('pendingEmail').textContent=email;
+      return;
+    }
+
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error)return showAuth(error.message,'login');
     await handleSession(data.user,onAuthorized);
   });
 
-  $('signupBtn').onclick=async()=>{
-    const email=$('authEmail').value.trim(),password=$('authPassword').value;
-    if(!email||password.length<6)return showAuth('Inserisci email e una password di almeno 6 caratteri.');
-    const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:APP_URL,data:{display_name:email.split('@')[0]}}});
-    if(error)return showAuth(error.message);
-    $('authFormWrap').style.display='none';
-    $('authPending').classList.add('show');
-    $('pendingTitle').textContent='Conferma l’email';
-    $('pendingText').textContent='Apri la mail ricevuta. Dopo la conferma la tua richiesta resterà in attesa di approvazione.';
-    $('pendingEmail').textContent=email;
+  $('signupBtn').onclick=()=>{
+    showAuthError('');
+    if(authMode==='login')setAuthMode('signup',true);
+    else setAuthMode('login',false);
   };
 
   const logout=async()=>{
