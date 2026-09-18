@@ -1,14 +1,13 @@
 import {$,app,db,esc,fmtDate,toast} from './core.js';
-import {loadMembers} from './members.js';
+import {loadMembers} from './members.js?v=20260918-cycle1';
 import {isAdmin} from './permissions.js';
 
 const statusLabels={active:'Attivo',suspended:'Sospeso',resigned:'Dimesso',expired:'Scaduto'};
 const feeLabels={unknown:'Da verificare',due:'Da rinnovare',paid:'Pagata',waived:'Esente'};
-let limitedMembers=[];
+let limitedMembers=[],limitedCycle=null;
 
 function hideAdminControls(){
-  ['newMemberBtn','saveRenewalReference','deleteExpiredMembers','exportMembersPdf','exportMembersCsv','exportMembersXlsx','memberDataFilter'].forEach(id=>{const el=$(id);if(el)el.hidden=true});
-  const renewal=document.querySelector('.renewal-panel');if(renewal)renewal.hidden=true;
+  ['newMemberBtn','deleteExpiredMembers','exportMembersPdf','exportMembersCsv','exportMembersXlsx','memberDataFilter'].forEach(id=>{const el=$(id);if(el)el.hidden=true});
   const missing=$('memMissing')?.closest('.card');if(missing)missing.hidden=true;
   const head=document.querySelector('.members-table thead tr');if(head)head.innerHTML='<th>#</th><th>Socio</th><th>Iscrizione</th><th>Stato</th><th>Rinnovo</th>';
   const search=$('memberSearch');if(search)search.placeholder='🔎 Cerca nome o numero socio…';
@@ -16,9 +15,12 @@ function hideAdminControls(){
 
 function renderLimited(){
   hideAdminControls();
-  const year=limitedMembers[0]?.active_year||new Date().getFullYear();
-  if($('memYearLabel'))$('memYearLabel').textContent=year;
-  if($('feeYearTitle'))$('feeYearTitle').textContent=year;
+  const year=Number(limitedCycle?.active_year||limitedMembers[0]?.active_year||new Date().getFullYear());
+  const label=`${year}/${year+1}`;
+  if($('memYearLabel'))$('memYearLabel').textContent=label;
+  if($('feeYearTitle'))$('feeYearTitle').textContent=label;
+  if($('renewalCycleLabel'))$('renewalCycleLabel').textContent=label;
+  if($('renewalExpiryDate'))$('renewalExpiryDate').textContent=fmtDate(limitedCycle?.expiry_date||limitedMembers[0]?.reference_date||'');
   $('memTotal').textContent=limitedMembers.length;
   $('memActive').textContent=limitedMembers.filter(m=>m.status==='active').length;
   $('memRenew').textContent=limitedMembers.filter(m=>m.payment_status==='due').length;
@@ -32,9 +34,14 @@ function renderLimited(){
 
 export async function loadMembersForRole(){
   if(isAdmin())return loadMembers();
-  const {data,error}=await db.rpc('club42_member_directory');
-  if(error){console.error(error);toast('Errore nel caricamento soci');return}
-  limitedMembers=data||[];renderLimited();
+  const [directoryResult,cycleResult]=await Promise.all([
+    db.rpc('club42_member_directory'),
+    db.rpc('club42_membership_cycle')
+  ]);
+  if(directoryResult.error||cycleResult.error){console.error(directoryResult.error||cycleResult.error);toast('Errore nel caricamento soci');return}
+  limitedMembers=directoryResult.data||[];
+  limitedCycle=Array.isArray(cycleResult.data)?cycleResult.data[0]:cycleResult.data;
+  renderLimited();
   $('memberSearch').oninput=renderLimited;
   $('memberStatusFilter').onchange=renderLimited;
   $('memberFeeFilter').onchange=renderLimited;
