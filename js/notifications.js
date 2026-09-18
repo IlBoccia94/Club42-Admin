@@ -5,12 +5,12 @@ import {getServiceWorkerRegistration,isStandalone,isIos,canPromptInstall,promptI
 const VAPID_PUBLIC_KEY='BLVXtniv5aw-9oXQbV9b7pCjeKGzNYahsUNcFvBi_RuwbMLZdvcDEq3Zx9RBVT2wkCXQaZCfzb3uGegWGKwD_JA';
 const categories=['tasks','events','social','cash','members','projects','users'];
 const info={
-  tasks:{title:'Task',body:'Ricevi una push quando ti viene assegnato un task, quando un tuo task viene impostato come bloccato, alle 09:00 del giorno prima della scadenza e una volta quando risulta scaduto.'},
-  events:{title:'Eventi',body:'Ricevi una push quando un evento raggiunge la capienza prevista e alle 09:00 del giorno precedente a un evento in calendario.'},
+  tasks:{title:'Task',body:'Ricevi una push quando ti viene assegnato un task, quando un tuo task viene impostato come bloccato, alle 09:00 (ora italiana) del giorno prima della scadenza e una volta quando risulta scaduto.'},
+  events:{title:'Eventi',body:'Ricevi una push quando un evento raggiunge la capienza prevista e alle 09:00 (ora italiana) del giorno precedente a un evento in calendario.'},
   social:{title:'Social',body:'Ricevi una push circa 2 ore prima dell’orario programmato di un contenuto Social e una volta quando un contenuto programmato risulta in ritardo ma non pubblicato. Se il contenuto ha un assegnatario, l’avviso va a lui; altrimenti agli utenti operativi.'},
   cash:{title:'Cassa',body:'Disponibile per Admin e Tesoriere. Ricevi una push quando un altro utente registra un nuovo movimento di Cassa. Non viene notificata la modifica di un movimento già esistente.'},
-  members:{title:'Soci',body:'Disponibile per Admin e Tesoriere. Il lunedì alle 09:00 viene inviato un riepilogo se risultano quote associative da rinnovare. Non viene inviata una notifica per ogni singolo socio.'},
-  projects:{title:'Progetti',body:'Alle 09:00 del giorno precedente alla prossima azione di un progetto viene inviato un promemoria al responsabile del progetto; se non c’è un responsabile, l’avviso viene inviato agli utenti operativi.'},
+  members:{title:'Soci',body:'Disponibile per Admin e Tesoriere. Il lunedì alle 09:00 (ora italiana) viene inviato un riepilogo se risultano quote associative da rinnovare. Non viene inviata una notifica per ogni singolo socio.'},
+  projects:{title:'Progetti',body:'Alle 09:00 (ora italiana) del giorno precedente alla prossima azione di un progetto viene inviato un promemoria al responsabile del progetto; se non c’è un responsabile, l’avviso viene inviato agli utenti operativi.'},
   users:{title:'Utenti',body:'Solo Admin. Ricevi una push quando compare un nuovo account in stato “In attesa” che richiede approvazione.'}
 };
 
