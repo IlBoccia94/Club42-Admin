@@ -159,7 +159,7 @@ function renderEventCalendar(){
   const first=new Date(y,m,1),last=new Date(y,m+1,0);
   $('eventMonthLabel').textContent=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(first);
   const start=(first.getDay()+6)%7,total=Math.ceil((start+last.getDate())/7)*7;
-  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const tp=datePartsInZone(new Date(),'Europe/Rome'),today=`${tp.year}-${String(tp.month).padStart(2,'0')}-${String(tp.day).padStart(2,'0')}`;
   let html='';
   for(let i=0;i<total;i++){
     const day=i-start+1;
