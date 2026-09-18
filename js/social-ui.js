@@ -1,6 +1,6 @@
 export function buildSocialUi(){
   if(!document.querySelector('link[href^="social.css"]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260918-seriesactions1';document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260918-seriesactions2';document.head.appendChild(link);
   }
   const nav=document.querySelector('.nav-item[data-view="social"]');
   if(nav){const badge=nav.querySelector('.nav-badge');if(badge)badge.remove()}
@@ -75,37 +75,6 @@ export function buildSocialUi(){
        <label class="social-check"><input type="checkbox" id="check_hook">Hook forte nel primo secondo</label><label class="social-check"><input type="checkbox" id="check_clear">Tema subito comprensibile</label><label class="social-check"><input type="checkbox" id="check_human">Persona, storia o emozione</label><label class="social-check"><input type="checkbox" id="check_outsider">Comprensibile a un non follower</label><label class="social-check"><input type="checkbox" id="check_share">Motivo per essere condiviso</label><label class="social-check"><input type="checkbox" id="check_local">Rilevante localmente</label><label class="social-check"><input type="checkbox" id="check_cta">CTA sensata</label><label class="social-check"><input type="checkbox" id="check_identity">Rafforza identità Club42</label><label class="social-check"><input type="checkbox" id="check_desire">Fa desiderare partecipazione</label><label class="social-check"><input type="checkbox" id="check_repurpose">Riutilizzabile in altri tagli</label>
       </div></div>
     </div><div class="modal-actions"><button type="button" class="btn danger" id="socialDeleteBtn" style="display:none;margin-right:auto">Elimina</button><button type="button" class="btn" id="socialMetricsBtn" style="display:none">Metriche</button><button type="button" class="btn" data-social-close="socialContentDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
-    <dialog id="socialSeriesActionDlg" class="social-series-action-dialog">
-      <div class="modal social-series-action-modal">
-        <div class="modal-head">
-          <div>
-            <div class="social-series-kicker">↻ Serie ricorrente</div>
-            <h3 id="socialSeriesActionTitle">Come vuoi procedere?</h3>
-            <p id="socialSeriesActionText" class="social-series-action-text"></p>
-          </div>
-          <button type="button" class="close" id="socialSeriesActionClose" aria-label="Chiudi">×</button>
-        </div>
-        <div class="social-series-scope-list">
-          <button type="button" class="social-series-scope" data-series-scope="single">
-            <span class="social-series-scope-icon">1</span>
-            <span><b>Solo questo contenuto</b><small>Modifica o elimina soltanto l'occorrenza che hai aperto.</small></span>
-            <em id="socialSeriesSingleCount">1</em>
-          </button>
-          <button type="button" class="social-series-scope" data-series-scope="future">
-            <span class="social-series-scope-icon">→</span>
-            <span><b>Questo e tutti i successivi</b><small>Interviene da questa occorrenza in avanti, lasciando intatti i precedenti.</small></span>
-            <em id="socialSeriesFutureCount">0</em>
-          </button>
-          <button type="button" class="social-series-scope" data-series-scope="all">
-            <span class="social-series-scope-icon">↻</span>
-            <span><b>Tutta la serie</b><small>Interviene su tutte le occorrenze della stessa serie.</small></span>
-            <em id="socialSeriesAllCount">0</em>
-          </button>
-        </div>
-        <div id="socialSeriesDateNote" class="social-series-date-note" hidden>📅 Nelle modifiche multiple ogni occorrenza mantiene la propria data. Un'eventuale nuova data inserita nel form viene applicata solo al contenuto che hai aperto.</div>
-        <div class="modal-actions"><button type="button" class="btn" id="socialSeriesActionCancel">Annulla</button></div>
-      </div>
-    </dialog>
     <dialog id="socialMetricsDlg" class="social-dialog-wide"><form class="modal" id="socialMetricsForm"><div class="modal-head"><div><h3>Risultati</h3><div class="muted" id="metricsContentTitle"></div></div><button type="button" class="close" data-social-close="socialMetricsDlg">×</button></div><div class="metrics-grid"><div class="metrics-section-title">Distribuzione e interazioni</div>
       <div class="field"><label>Visualizzazioni</label><input id="sm_views" type="number" min="0"></div><div class="field"><label>Reach</label><input id="sm_reach" type="number" min="0"></div><div class="field"><label>Reach non follower</label><input id="sm_non_follower_reach" type="number" min="0"></div><div class="field"><label>Like</label><input id="sm_likes" type="number" min="0"></div><div class="field"><label>Commenti</label><input id="sm_comments" type="number" min="0"></div><div class="field"><label>Condivisioni</label><input id="sm_shares" type="number" min="0"></div><div class="field"><label>Salvataggi</label><input id="sm_saves" type="number" min="0"></div><div class="field"><label>Visite profilo</label><input id="sm_profile_visits" type="number" min="0"></div><div class="field"><label>Follower generati</label><input id="sm_followers_gained" type="number" min="0"></div>
       <div class="metrics-section-title">Retention Reel</div><div class="field"><label>Watch time medio (sec)</label><input id="sm_avg_watch_time_seconds" type="number" min="0" step="0.01"></div><div class="field"><label>Completion rate %</label><input id="sm_completion_rate" type="number" min="0" max="100" step="0.01"></div><div></div>
