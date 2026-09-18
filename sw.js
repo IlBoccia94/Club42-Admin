@@ -26,8 +26,9 @@ self.addEventListener('push', event => {
   const options = {
     body: payload.body || '',
     icon: payload.icon || DEFAULT_ICON,
-    tag: payload.category ? `club42-${payload.category}` : undefined,
+    tag: payload.tag || (payload.category ? `club42-${payload.category}` : undefined),
     renotify: true,
+    timestamp: payload.sentAt ? Date.parse(payload.sentAt) : undefined,
     data: {
       url: payload.url || `${APP_BASE}#dashboard`
     },
