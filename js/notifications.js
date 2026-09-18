@@ -5,7 +5,7 @@ import {getServiceWorkerRegistration,isStandalone,isIos,canPromptInstall,promptI
 const VAPID_PUBLIC_KEY='BLVXtniv5aw-9oXQbV9b7pCjeKGzNYahsUNcFvBi_RuwbMLZdvcDEq3Zx9RBVT2wkCXQaZCfzb3uGegWGKwD_JA';
 const categories=['tasks','events','social','cash','members','projects','users'];
 const info={
-  tasks:{title:'Task',body:'Assegnazioni e blocchi vengono elaborati entro circa un minuto. I promemoria di scadenza partono alle 09:00 (Europe/Rome) del giorno prima e una volta quando il task risulta scaduto.'},
+  tasks:{title:'Task',body:'Assegnazioni e blocchi vengono elaborati entro circa un minuto. I promemoria di scadenza partono alle 09:00 (Europe/Rome) del giorno prima e una volta quando il task risulta scaduto. Gli Admin possono inoltre inviare una richiesta manuale di attenzione al responsabile: questa push è forzata e non dipende dalla preferenza Task.'},
   events:{title:'Eventi',body:'Il raggiungimento della capienza viene elaborato entro circa un minuto. Il promemoria del giorno precedente parte alle 09:00 (Europe/Rome).'},
   social:{title:'Social',body:'Ricevi una push circa 2 ore prima dell’orario programmato di un contenuto Social e una volta quando un contenuto programmato risulta in ritardo ma non pubblicato. Se il contenuto ha un assegnatario, l’avviso va a lui; altrimenti agli utenti operativi.'},
   cash:{title:'Cassa',body:'Disponibile per Admin e Tesoriere. Un nuovo movimento registrato da un altro utente viene notificato entro circa un minuto. Le modifiche a movimenti esistenti non generano push.'},
