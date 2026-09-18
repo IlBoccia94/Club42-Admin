@@ -82,9 +82,60 @@ function googleCalendarUrl(e){
   if(details)params.set('details',details);
   return 'https://calendar.google.com/calendar/r/eventedit?'+params.toString();
 }
+function calendarIntentPayload(e){
+  let details=[e.guestDescription,e.notes].filter(Boolean).join('\n\n');
+  if(e.isFree)details=[details,'Gratuito'].filter(Boolean).join('\n\n');
+
+  let start,end,allDay=!e.time;
+  if(e.time){
+    start=zonedDateTime(e.date,e.time);
+    if(e.endTime){
+      let endDate=e.endDate||e.date;
+      end=zonedDateTime(endDate,e.endTime);
+      if(end<=start&&(!e.endDate||e.endDate===e.date))end=zonedDateTime(addDaysIso(e.date,1),e.endTime);
+    }else if(e.endDate&&e.endDate!==e.date){
+      end=zonedDateTime(e.endDate,'23:59');
+      details=[details,'Nota: ora fine non specificata nel gestionale; verifica l’orario di fine prima di salvare.'].filter(Boolean).join('\n\n');
+    }else{
+      end=new Date(start.getTime()+60*60*1000);
+      details=[details,'Nota: ora fine non specificata nel gestionale; Google Calendar propone 1 ora di durata. Verifica prima di salvare.'].filter(Boolean).join('\n\n');
+    }
+  }else{
+    start=zonedDateTime(e.date,'00:00');
+    end=zonedDateTime(addDaysIso(e.endDate||e.date,1),'00:00');
+    if(e.endTime)details=[details,'Ora fine indicata nel gestionale: '+e.endTime+'. L’evento viene aperto come giornata intera perché manca l’ora di inizio.'].filter(Boolean).join('\n\n');
+  }
+
+  return{title:e.name||'',location:e.place||'',description:details,startMs:start.getTime(),endMs:end.getTime(),allDay};
+}
+function androidCalendarIntentUrl(e,fallbackUrl){
+  const p=calendarIntentPayload(e);
+  const extra=(type,key,value)=>`${type}.${key}=${encodeURIComponent(String(value))};`;
+  return 'intent://com.android.calendar/events#Intent;'
+    +'scheme=content;'
+    +'action=android.intent.action.INSERT;'
+    +'package=com.google.android.calendar;'
+    +extra('S','title',p.title)
+    +extra('S','description',p.description)
+    +extra('S','eventLocation',p.location)
+    +extra('l','beginTime',p.startMs)
+    +extra('l','endTime',p.endMs)
+    +extra('B','allDay',p.allDay)
+    +extra('S','browser_fallback_url',fallbackUrl)
+    +'end';
+}
 function openGoogleCalendarEvent(id){
   const e=app.state.events.find(x=>x.id===id);if(!e)return;
-  const win=window.open(googleCalendarUrl(e),'_blank','noopener,noreferrer');
+  const webUrl=googleCalendarUrl(e);
+  const isAndroid=/Android/i.test(navigator.userAgent||'');
+
+  if(isAndroid){
+    window.location.href=androidCalendarIntentUrl(e,webUrl);
+    toast('Apro Google Calendar con l’evento già compilato. Controlla il calendario scelto e premi Salva.');
+    return;
+  }
+
+  const win=window.open(webUrl,'_blank','noopener,noreferrer');
   if(!win)toast('Il browser ha bloccato l’apertura di Google Calendar.');
   else toast('Bozza aperta nel Google Calendar Club42. Dopo averla salvata, spunta “Inserito”.');
 }
