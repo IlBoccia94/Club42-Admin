@@ -44,7 +44,7 @@ function ensureReadabilityStyles(){
   if(document.querySelector('link[href^="readability.css"]'))return;
   const link=document.createElement('link');
   link.rel='stylesheet';
-  link.href='readability.css?v=20260918-1';
+  link.href='readability.css?v=20260918-2';
   document.head.appendChild(link);
 }
 
