@@ -8,8 +8,8 @@ import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=202609
 import {initUsers,loadUsers} from './users.js?v=20260918-consentfix1';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260917-2';
-import {buildNotificationsUi} from './notifications-ui.js?v=20260917-1';
-import {initNotifications,loadNotifications} from './notifications.js?v=20260918-push-audit1';
+import {buildNotificationsUi} from './notifications-ui.js?v=20260918-push-audit2';
+import {initNotifications,loadNotifications} from './notifications.js?v=20260918-push-audit2';
 import {buildSocialUi} from './social-ui.js';
 import {initSocial,loadSocial} from './social.js';
 import {initSocialExtras} from './social-extras.js';
