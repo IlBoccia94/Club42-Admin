@@ -1,7 +1,7 @@
 import {$,app,db,LEGACY_KEY,download,esc,selected,list,fmtDate,badge,toast,syncStatus} from './core.js';
 import {showView} from './router.js';
 
-let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage',eventContactDraft=new Set();
+let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage';
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
 function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
@@ -100,147 +100,19 @@ async function setEventCalendarAdded(id,value){
 }
 
 function ensureEventContactsField(){
-  if($('eContacts'))return;
-  const notes=$('eNotes')?.closest('.field');
-  if(!notes)return;
-
-  notes.insertAdjacentHTML('beforebegin',`
-    <div class="field full event-contact-field">
-      <label>Collaboratori / contatti</label>
-      <select id="eContacts" multiple hidden aria-hidden="true"></select>
-      <div class="event-contact-picker">
-        <div class="event-contact-selected-box" id="eContactSelected"></div>
-        <button class="btn event-contact-open" id="eContactOpen" type="button">＋ Seleziona collaboratori</button>
-      </div>
-      <div class="event-contact-hint">Nel riquadro compaiono solo i collaboratori selezionati. Il collegamento alimenta automaticamente lo storico collaborazioni.</div>
-    </div>`);
-
-  document.body.insertAdjacentHTML('beforeend',`
-    <dialog id="eventContactsDlg" class="event-contacts-dialog">
-      <div class="modal event-contact-modal">
-        <div class="modal-head">
-          <div>
-            <h3>Seleziona collaboratori</h3>
-            <p class="event-contact-modal-subtitle">Cerca nella rubrica e scegli uno o più contatti.</p>
-          </div>
-          <button type="button" class="close" id="eventContactsClose" aria-label="Chiudi">×</button>
-        </div>
-        <div class="event-contact-search">
-          <input id="eventContactSearch" type="search" placeholder="🔎 Cerca nome o organizzazione…" autocomplete="off">
-          <span id="eventContactCount">0 selezionati</span>
-        </div>
-        <div class="event-contact-options" id="eventContactOptions"></div>
-        <div class="modal-actions event-contact-modal-actions">
-          <button type="button" class="btn" id="eventContactsCancel">Annulla</button>
-          <button type="button" class="btn primary" id="eventContactsApply">Conferma selezione</button>
-        </div>
-      </div>
-    </dialog>`);
-
-  $('eContactOpen').onclick=openEventContactPicker;
-  $('eventContactSearch').oninput=renderEventContactPicker;
-  $('eventContactsCancel').onclick=()=>$('eventContactsDlg').close();
-  $('eventContactsClose').onclick=()=>$('eventContactsDlg').close();
-  $('eventContactsApply').onclick=applyEventContactPicker;
+ if($('eContacts'))return;
+ const notes=$('eNotes')?.closest('.field');
+ if(!notes)return;
+ notes.insertAdjacentHTML('beforebegin',`<div class="field full"><label>Collaboratori / contatti</label><select id="eContacts" class="event-contact-select" multiple></select><div class="event-contact-hint">Seleziona uno o più contatti della rubrica. Il collegamento alimenta automaticamente lo storico collaborazioni.</div></div>`);
 }
-
-function selectedEventContactIds(){
-  const el=$('eContacts');
-  return new Set(el?[...el.selectedOptions].map(o=>o.value):[]);
+function ensureGuestFields(){
+ if($('eGuestVisible'))return;
+ const notes=$('eNotes')?.closest('.field');
+ if(!notes)return;
+ notes.insertAdjacentHTML('afterend',`<div class="field full guest-event-settings"><label>Pagina guest / area soci</label><label class="guest-visibility-check"><input id="eGuestVisible" type="checkbox"> Pubblica l'evento completo ai soci</label><label class="guest-visibility-check"><input id="eGuestTeaser" type="checkbox"> Mostra come “Prossimamente”</label><div class="guest-setting-hint">Le due modalità sono alternative. “Prossimamente” mostra soltanto titolo e descrizione, senza data, ora, luogo, prezzo, calendario o iscrizione.</div><label>Descrizione per i soci</label><textarea id="eGuestDescription" rows="3" placeholder="Testo pubblico dell'evento. Le note interne sopra non verranno mai mostrate ai Guest."></textarea></div>`);
 }
-
-function renderSelectedEventContacts(){
-  const root=$('eContactSelected');if(!root)return;
-  const ids=selectedEventContactIds();
-  const chosen=eventContacts
-    .filter(c=>ids.has(String(c.id)))
-    .sort((a,b)=>(a.name||'').localeCompare(b.name||'','it'));
-
-  if(!chosen.length){
-    root.innerHTML='<div class="event-contact-empty">Nessun collaboratore selezionato</div>';
-    return;
-  }
-
-  root.innerHTML=chosen.map(c=>`
-    <div class="event-contact-chip">
-      <div class="event-contact-chip-copy">
-        <b>${esc(c.name)}</b>
-        ${c.organization?`<span>${esc(c.organization)}</span>`:''}
-      </div>
-      <button type="button" data-remove-contact="${c.id}" aria-label="Rimuovi ${esc(c.name)}">×</button>
-    </div>`).join('');
-
-  root.querySelectorAll('[data-remove-contact]').forEach(btn=>btn.onclick=()=>{
-    const id=btn.dataset.removeContact;
-    const option=[...$('eContacts').options].find(o=>o.value===id);
-    if(option)option.selected=false;
-    renderSelectedEventContacts();
-  });
-}
-
-function renderEventContactPicker(){
-  const root=$('eventContactOptions');if(!root)return;
-  const q=($('eventContactSearch')?.value||'').trim().toLowerCase();
-  const rows=eventContacts
-    .filter(c=>!q||[c.name,c.organization].some(v=>String(v||'').toLowerCase().includes(q)))
-    .sort((a,b)=>{
-      const as=eventContactDraft.has(String(a.id))?0:1;
-      const bs=eventContactDraft.has(String(b.id))?0:1;
-      return as-bs||(a.name||'').localeCompare(b.name||'','it');
-    });
-
-  if($('eventContactCount'))$('eventContactCount').textContent=`${eventContactDraft.size} ${eventContactDraft.size===1?'selezionato':'selezionati'}`;
-
-  root.innerHTML=rows.length?rows.map(c=>{
-    const id=String(c.id),checked=eventContactDraft.has(id);
-    return `
-      <label class="event-contact-option ${checked?'selected':''}">
-        <input type="checkbox" value="${esc(id)}" ${checked?'checked':''}>
-        <span class="event-contact-option-check">✓</span>
-        <span class="event-contact-option-copy">
-          <b>${esc(c.name)}</b>
-          <small>${c.organization?esc(c.organization):'Nessuna organizzazione'}${c.active?'':' · Archiviato'}</small>
-        </span>
-      </label>`;
-  }).join(''):'<div class="event-contact-no-results">Nessun collaboratore trovato.</div>';
-
-  root.querySelectorAll('input[type="checkbox"]').forEach(input=>input.onchange=()=>{
-    const id=input.value;
-    if(input.checked)eventContactDraft.add(id);else eventContactDraft.delete(id);
-    input.closest('.event-contact-option')?.classList.toggle('selected',input.checked);
-    if($('eventContactCount'))$('eventContactCount').textContent=`${eventContactDraft.size} ${eventContactDraft.size===1?'selezionato':'selezionati'}`;
-  });
-}
-
-function openEventContactPicker(){
-  eventContactDraft=selectedEventContactIds();
-  if($('eventContactSearch'))$('eventContactSearch').value='';
-  renderEventContactPicker();
-  $('eventContactsDlg').showModal();
-  setTimeout(()=>$('eventContactSearch')?.focus(),40);
-}
-
-function applyEventContactPicker(){
-  const el=$('eContacts');if(!el)return;
-  [...el.options].forEach(o=>o.selected=eventContactDraft.has(o.value));
-  renderSelectedEventContacts();
-  $('eventContactsDlg').close();
-}
-
-function fillEventContacts(){
-  const el=$('eContacts');if(!el)return;
-  const current=selectedEventContactIds();
-  el.innerHTML=eventContacts.map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}${c.active?'':' · archiviato'}</option>`).join('');
-  [...el.options].forEach(o=>o.selected=current.has(o.value));
-  renderSelectedEventContacts();
-}
-
-function setEventContactSelection(eventId){
-  const el=$('eContacts');if(!el)return;
-  const ids=new Set(eventId?eventContactLinks.filter(x=>x.event_id===eventId).map(x=>String(x.contact_id)):[]);
-  [...el.options].forEach(o=>o.selected=ids.has(o.value));
-  renderSelectedEventContacts();
-}
+function fillEventContacts(){const el=$('eContacts');if(!el)return;el.innerHTML=eventContacts.map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}${c.active?'':' · archiviato'}</option>`).join('')}
+function setEventContactSelection(eventId){const el=$('eContacts');if(!el)return;const ids=new Set(eventId?eventContactLinks.filter(x=>x.event_id===eventId).map(x=>x.contact_id):[]);[...el.options].forEach(o=>o.selected=ids.has(o.value))}
 
 function ensureEventCalendarUi(){
   const view=$('view-events'),grid=view?.querySelector('.module-grid');
