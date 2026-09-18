@@ -1,7 +1,7 @@
 import {$,app,db,LEGACY_KEY,esc,selected,list,fmtDate,badge,toast,syncStatus} from './core.js';
 import {showView} from './router.js';
 
-let eventContacts=[],eventContactLinks=[];
+let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage';
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
 function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
@@ -112,6 +112,78 @@ function ensureGuestFields(){
 }
 function fillEventContacts(){const el=$('eContacts');if(!el)return;el.innerHTML=eventContacts.map(c=>`<option value="${c.id}">${esc(c.name)}${c.organization?' · '+esc(c.organization):''}${c.active?'':' · archiviato'}</option>`).join('')}
 function setEventContactSelection(eventId){const el=$('eContacts');if(!el)return;const ids=new Set(eventId?eventContactLinks.filter(x=>x.event_id===eventId).map(x=>x.contact_id):[]);[...el.options].forEach(o=>o.selected=ids.has(o.value))}
+
+function ensureEventCalendarUi(){
+  const view=$('view-events'),grid=view?.querySelector('.module-grid');
+  if(!view||!grid||$('eventCalendarPanel'))return;
+  grid.id='eventManagementPanel';
+  grid.insertAdjacentHTML('beforebegin',`
+    <div class="event-view-tabs">
+      <button class="event-view-tab active" type="button" data-event-view="manage">Gestione</button>
+      <button class="event-view-tab" type="button" data-event-view="calendar">Calendario</button>
+    </div>
+    <section class="card event-calendar-panel" id="eventCalendarPanel" hidden>
+      <div class="event-calendar-toolbar">
+        <div><div class="panel-kicker">Programma Club42</div><h3>Vista mensile</h3></div>
+        <div class="event-month-nav">
+          <button class="icon-btn" id="eventPrevMonth" type="button" aria-label="Mese precedente">‹</button>
+          <b id="eventMonthLabel"></b>
+          <button class="icon-btn" id="eventNextMonth" type="button" aria-label="Mese successivo">›</button>
+          <button class="btn" id="eventToday" type="button">Oggi</button>
+        </div>
+      </div>
+      <div class="event-calendar-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+      <div class="event-calendar-grid" id="eventCalendarGrid"></div>
+    </section>`);
+
+  view.querySelectorAll('[data-event-view]').forEach(btn=>btn.addEventListener('click',()=>showEventView(btn.dataset.eventView)));
+  $('eventPrevMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()-1,1);renderEventCalendar()};
+  $('eventNextMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()+1,1);renderEventCalendar()};
+  $('eventToday').onclick=()=>{eventCalendarCursor=new Date();renderEventCalendar()};
+}
+function showEventView(mode='manage'){
+  eventViewMode=mode==='calendar'?'calendar':'manage';
+  const calendar=$('eventCalendarPanel'),management=$('eventManagementPanel');
+  if(calendar)calendar.hidden=eventViewMode!=='calendar';
+  if(management)management.hidden=eventViewMode==='calendar';
+  document.querySelectorAll('[data-event-view]').forEach(btn=>btn.classList.toggle('active',btn.dataset.eventView===eventViewMode));
+  if(eventViewMode==='calendar')renderEventCalendar();
+}
+function eventOccursOn(e,key){
+  const end=e.endDate||e.date;
+  return !!e.date&&e.date<=key&&key<=end;
+}
+function renderEventCalendar(){
+  const root=$('eventCalendarGrid');if(!root)return;
+  const y=eventCalendarCursor.getFullYear(),m=eventCalendarCursor.getMonth();
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  $('eventMonthLabel').textContent=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(first);
+  const start=(first.getDay()+6)%7,total=Math.ceil((start+last.getDate())/7)*7;
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  let html='';
+  for(let i=0;i<total;i++){
+    const day=i-start+1;
+    if(day<1||day>last.getDate()){html+='<div class="event-cal-day outside"></div>';continue}
+    const key=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const rows=app.state.events.filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
+    html+=`<div class="event-cal-day ${key===today?'today':''}"><div class="event-cal-day-num">${day}</div><div class="event-cal-items">${rows.map(e=>{
+      const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date;
+      const phase=!multi?'':starts?' start':ends?' end':' middle';
+      const time=starts&&e.time?e.time+' · ':'';
+      return `<button type="button" class="event-cal-item${phase} ${e.googleCalendarAdded?'calendar-synced':''}" onclick="openEventFromCalendar('${e.id}')"><span>${esc(time)}${multi&&!starts?'↳ ':''}</span><b>${esc(e.name)}</b></button>`;
+    }).join('')}</div></div>`;
+  }
+  root.innerHTML=html;
+}
+async function openEventFromCalendar(id){
+  const e=app.state.events.find(x=>x.id===id);
+  if(e){
+    const d=new Date(e.date+'T12:00:00');
+    eventCalendarCursor=new Date(d.getFullYear(),d.getMonth(),1);
+  }
+  await selectEvent(id,false);
+  showEventView('manage');
+}
 async function refreshEventContactData(){const [cr,hr]=await Promise.all([db.rpc('club42_event_contact_directory'),db.rpc('club42_event_contact_links')]);if(cr.error||hr.error){console.error(cr.error||hr.error);return}eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();if($('eventDlg')?.open)setEventContactSelection(app.editEventId);render()}
 async function syncEventContacts(eventId,base){
  const el=$('eContacts');if(!el)return;
@@ -154,6 +226,7 @@ function renderDashboard(){
 
 export function render(){
   const e=selected();if(e&&!app.state.selected)app.state.selected=e.id;
+  renderEventCalendar();
   $('events').innerHTML=app.state.events.length?app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;const guestBadge=x.guestTeaser?'<span class="event-guest-badge teaser">◌ Prossimamente</span>':x.guestVisible?'<span class="event-guest-badge">● Pagina soci</span>':'';const time=eventTimeLabel(x),price=eventPriceLabel(x);return `<div class="event-card ${x.id===app.state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}${guestBadge}</div><div class="event-card-meta">${esc(eventDateLabel(x))}${time?' · '+esc(time):''}<br>${esc(x.place||'Luogo da definire')}<br>${price?esc(price)+' · ':''}${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-calendar-row" onclick="event.stopPropagation()"><button class="event-calendar-open" type="button" onclick="openGoogleCalendarEvent('${x.id}')" title="Apri una bozza precompilata nel Google Calendar Club42">G&nbsp; Calendar</button><label class="event-calendar-check ${x.googleCalendarAdded?'done':''}"><input type="checkbox" ${x.googleCalendarAdded?'checked':''} onchange="setEventCalendarAdded('${x.id}',this.checked)"> <span>${x.googleCalendarAdded?'Inserito':'Da inserire'}</span></label></div><div class="event-card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
   renderDashboard();
   if(!e){$('eventName').textContent='Nessun evento';$('eventMeta').textContent='Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
@@ -177,12 +250,12 @@ function openPerson(id=null){const e=selected();if(!e){openEvent();return}app.ed
 async function deletePerson(id){const p=app.state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;const {error}=await db.from('event_registrations').delete().eq('id',id);if(error)return toast(error.message);toast('Iscritto eliminato');await loadRemote()}
 
 export function initEvents(){
-  ensureEventContactsField();ensureGuestFields();document.addEventListener('club42:contacts-changed',refreshEventContactData);
+  ensureEventContactsField();ensureGuestFields();ensureEventCalendarUi();document.addEventListener('club42:contacts-changed',refreshEventContactData);
   $('eGuestVisible').onchange=()=>{if($('eGuestVisible').checked)$('eGuestTeaser').checked=false};
   $('eGuestTeaser').onchange=()=>{if($('eGuestTeaser').checked)$('eGuestVisible').checked=false};
   $('eFree').onchange=syncEventPriceControl;
   $('eDate').onchange=syncEndDateMin;
-  window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;window.openGoogleCalendarEvent=openGoogleCalendarEvent;window.setEventCalendarAdded=setEventCalendarAdded;
+  window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;window.openGoogleCalendarEvent=openGoogleCalendarEvent;window.setEventCalendarAdded=setEventCalendarAdded;window.openEventFromCalendar=openEventFromCalendar;
   $('eventForm').addEventListener('submit',async ev=>{ev.preventDefault();const startDate=$('eDate').value,endDate=$('eEndDate').value||null;if(endDate&&endDate<startDate)return toast('La data fine non può essere precedente alla data inizio');const isFree=$('eFree').checked;const base={name:$('eName').value.trim(),event_date:startDate,event_end_date:endDate,event_time:$('eTime').value||null,event_end_time:$('eEndTime').value||null,place:$('ePlace').value.trim()||null,capacity:Number($('eCapacity').value)||0,price:isFree?null:($('ePrice').value===''?null:Number($('ePrice').value)),is_free:isFree,notes:$('eNotes').value.trim()||null,guest_visible:$('eGuestVisible').checked,guest_teaser:$('eGuestTeaser').checked,guest_description:$('eGuestDescription').value.trim()||null};let result;if(app.editEventId)result=await db.from('events').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editEventId).select('id').single();else result=await db.from('events').insert({...base,created_by:app.currentUser.id}).select('id').single();if(result.error)return toast(result.error.message);try{await syncEventContacts(result.data.id,base)}catch(error){console.error(error);return toast('Evento salvato, ma errore nel collegamento collaboratori')}$('eventDlg').close();toast(app.editEventId?'Evento aggiornato':'Evento creato');await loadRemote()});
   $('personForm').addEventListener('submit',async ev=>{ev.preventDefault();const e=selected();const base={event_id:e.id,name:$('pName').value.trim(),phone:$('pPhone').value.trim()||null,email:$('pEmail').value.trim()||null,status:$('pStatus').value,paid:$('pPaid').value==='yes',member:$('pMember').value==='yes',dietary_requirements:$('pDiet').value.trim()||null,notes:$('pNotes').value.trim()||null};let result;if(app.editPersonId)result=await db.from('event_registrations').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editPersonId);else result=await db.from('event_registrations').insert({...base,created_by:app.currentUser.id});if(result.error)return toast(result.error.message);$('personDlg').close();toast(app.editPersonId?'Iscritto aggiornato':'Iscritto aggiunto');await loadRemote()});
   ['globalNewEvent','heroNewEvent','quickEvent','sideNewEvent'].forEach(id=>$(id).onclick=()=>openEvent());['addPerson','quickPerson'].forEach(id=>$(id).onclick=()=>openPerson());$('search').oninput=renderPeople;$('statusFilter').onchange=renderPeople;
