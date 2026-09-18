@@ -2,8 +2,9 @@ import {$,app,db,LEGACY_KEY,esc,selected,list,fmtDate,badge,toast,syncStatus} fr
 import {showView} from './router.js';
 
 let eventContacts=[],eventContactLinks=[];
+const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
-function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||''}}
+function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
 function mapPerson(r){return{id:r.id,eventId:r.event_id,name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
 
 function eventDateLabel(e){return e?.endDate&&e.endDate!==e.date?`${fmtDate(e.date)} → ${fmtDate(e.endDate)}`:fmtDate(e?.date||'')}
@@ -28,6 +29,73 @@ function syncEndDateMin(){
   if(!$('eEndDate'))return;
   $('eEndDate').min=start;
   if(start&&$('eEndDate').value&&$('eEndDate').value<start)$('eEndDate').value='';
+}
+
+function addDaysIso(value,days){
+  const d=new Date(value+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);
+}
+function datePartsInZone(date,timeZone='Europe/Rome'){
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(date);
+  const get=t=>Number(parts.find(p=>p.type===t)?.value||0);
+  return{year:get('year'),month:get('month'),day:get('day'),hour:get('hour'),minute:get('minute'),second:get('second')};
+}
+function zonedDateTime(date,time='00:00',timeZone='Europe/Rome'){
+  const [y,m,d]=date.split('-').map(Number),[hh,mm]=time.split(':').map(Number);
+  const wanted=Date.UTC(y,m-1,d,hh||0,mm||0,0);let guess=wanted;
+  for(let i=0;i<4;i++){
+    const p=datePartsInZone(new Date(guess),timeZone);
+    const represented=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute,p.second);
+    const delta=wanted-represented;guess+=delta;if(delta===0)break;
+  }
+  return new Date(guess);
+}
+function googleStamp(date){
+  return date.toISOString().replace(/[-:]/g,'').replace('.000','');
+}
+function googleAllDayStamp(date){return String(date||'').replaceAll('-','')}
+function googleCalendarUrl(e){
+  const params=new URLSearchParams({action:'TEMPLATE',text:e.name,location:e.place||'',authuser:CLUB_CALENDAR_EMAIL,stz:'Europe/Rome',etz:'Europe/Rome'});
+  let details=[e.guestDescription,e.notes].filter(Boolean).join('\n\n');
+  if(e.isFree)details=[details,'Gratuito'].filter(Boolean).join('\n\n');
+
+  if(e.time){
+    const start=zonedDateTime(e.date,e.time);
+    let end;
+    if(e.endTime){
+      let endDate=e.endDate||e.date;
+      end=zonedDateTime(endDate,e.endTime);
+      if(end<=start&&!e.endDate)end=zonedDateTime(addDaysIso(e.date,1),e.endTime);
+    }else if(e.endDate&&e.endDate!==e.date){
+      end=zonedDateTime(e.endDate,'23:59');
+      details=[details,'Nota: ora fine non specificata nel gestionale; verifica l’orario di fine prima di salvare.'].filter(Boolean).join('\n\n');
+    }else{
+      end=new Date(start.getTime()+60*60*1000);
+      details=[details,'Nota: ora fine non specificata nel gestionale; Google Calendar propone 1 ora di durata. Verifica prima di salvare.'].filter(Boolean).join('\n\n');
+    }
+    params.set('dates',googleStamp(start)+'/'+googleStamp(end));
+  }else{
+    const endExclusive=addDaysIso(e.endDate||e.date,1);
+    params.set('dates',googleAllDayStamp(e.date)+'/'+googleAllDayStamp(endExclusive));
+    if(e.endTime)details=[details,'Ora fine indicata nel gestionale: '+e.endTime+'. L’evento viene aperto come giornata intera perché manca l’ora di inizio.'].filter(Boolean).join('\n\n');
+  }
+
+  if(details)params.set('details',details);
+  return 'https://calendar.google.com/calendar/r/eventedit?'+params.toString();
+}
+function openGoogleCalendarEvent(id){
+  const e=app.state.events.find(x=>x.id===id);if(!e)return;
+  const win=window.open(googleCalendarUrl(e),'_blank','noopener,noreferrer');
+  if(!win)toast('Il browser ha bloccato l’apertura di Google Calendar.');
+  else toast('Bozza aperta nel Google Calendar Club42. Dopo averla salvata, spunta “Inserito”.');
+}
+async function setEventCalendarAdded(id,value){
+  const e=app.state.events.find(x=>x.id===id);if(!e)return;
+  const {error}=await db.from('events').update({google_calendar_added:!!value,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error){toast(error.message);return}
+  e.googleCalendarAdded=!!value;
+  e.googleCalendarAddedAt=value?new Date().toISOString():'';
+  toast(value?'Evento segnato come inserito nel Google Calendar':'Evento segnato come non inserito nel Google Calendar');
+  render();
 }
 
 function ensureEventContactsField(){
@@ -86,7 +154,7 @@ function renderDashboard(){
 
 export function render(){
   const e=selected();if(e&&!app.state.selected)app.state.selected=e.id;
-  $('events').innerHTML=app.state.events.length?app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;const guestBadge=x.guestTeaser?'<span class="event-guest-badge teaser">◌ Prossimamente</span>':x.guestVisible?'<span class="event-guest-badge">● Pagina soci</span>':'';const time=eventTimeLabel(x),price=eventPriceLabel(x);return `<div class="event-card ${x.id===app.state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}${guestBadge}</div><div class="event-card-meta">${esc(eventDateLabel(x))}${time?' · '+esc(time):''}<br>${esc(x.place||'Luogo da definire')}<br>${price?esc(price)+' · ':''}${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
+  $('events').innerHTML=app.state.events.length?app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>{const n=list(x.id).filter(p=>p.status==='confirmed').length;const guestBadge=x.guestTeaser?'<span class="event-guest-badge teaser">◌ Prossimamente</span>':x.guestVisible?'<span class="event-guest-badge">● Pagina soci</span>':'';const time=eventTimeLabel(x),price=eventPriceLabel(x);return `<div class="event-card ${x.id===app.state.selected?'active':''}" onclick="selectEvent('${x.id}')"><div class="event-card-title">${esc(x.name)}${guestBadge}</div><div class="event-card-meta">${esc(eventDateLabel(x))}${time?' · '+esc(time):''}<br>${esc(x.place||'Luogo da definire')}<br>${price?esc(price)+' · ':''}${x.capacity?`${n}/${x.capacity} posti`:`${n} confermati`}</div><div class="event-calendar-row" onclick="event.stopPropagation()"><button class="event-calendar-open" type="button" onclick="openGoogleCalendarEvent('${x.id}')" title="Apri una bozza precompilata nel Google Calendar Club42">G&nbsp; Calendar</button><label class="event-calendar-check ${x.googleCalendarAdded?'done':''}"><input type="checkbox" ${x.googleCalendarAdded?'checked':''} onchange="setEventCalendarAdded('${x.id}',this.checked)"> <span>${x.googleCalendarAdded?'Inserito':'Da inserire'}</span></label></div><div class="event-card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEvent('${x.id}')">✎</button><button class="icon-btn" onclick="event.stopPropagation();deleteEvent('${x.id}')">×</button></div></div>`}).join(''):'<div class="empty">Nessun evento.</div>';
   renderDashboard();
   if(!e){$('eventName').textContent='Nessun evento';$('eventMeta').textContent='Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
   const collaborators=eventContactLinks.filter(x=>x.event_id===e.id).length;
@@ -114,7 +182,7 @@ export function initEvents(){
   $('eGuestTeaser').onchange=()=>{if($('eGuestTeaser').checked)$('eGuestVisible').checked=false};
   $('eFree').onchange=syncEventPriceControl;
   $('eDate').onchange=syncEndDateMin;
-  window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;
+  window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;window.openGoogleCalendarEvent=openGoogleCalendarEvent;window.setEventCalendarAdded=setEventCalendarAdded;
   $('eventForm').addEventListener('submit',async ev=>{ev.preventDefault();const startDate=$('eDate').value,endDate=$('eEndDate').value||null;if(endDate&&endDate<startDate)return toast('La data fine non può essere precedente alla data inizio');const isFree=$('eFree').checked;const base={name:$('eName').value.trim(),event_date:startDate,event_end_date:endDate,event_time:$('eTime').value||null,event_end_time:$('eEndTime').value||null,place:$('ePlace').value.trim()||null,capacity:Number($('eCapacity').value)||0,price:isFree?null:($('ePrice').value===''?null:Number($('ePrice').value)),is_free:isFree,notes:$('eNotes').value.trim()||null,guest_visible:$('eGuestVisible').checked,guest_teaser:$('eGuestTeaser').checked,guest_description:$('eGuestDescription').value.trim()||null};let result;if(app.editEventId)result=await db.from('events').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editEventId).select('id').single();else result=await db.from('events').insert({...base,created_by:app.currentUser.id}).select('id').single();if(result.error)return toast(result.error.message);try{await syncEventContacts(result.data.id,base)}catch(error){console.error(error);return toast('Evento salvato, ma errore nel collegamento collaboratori')}$('eventDlg').close();toast(app.editEventId?'Evento aggiornato':'Evento creato');await loadRemote()});
   $('personForm').addEventListener('submit',async ev=>{ev.preventDefault();const e=selected();const base={event_id:e.id,name:$('pName').value.trim(),phone:$('pPhone').value.trim()||null,email:$('pEmail').value.trim()||null,status:$('pStatus').value,paid:$('pPaid').value==='yes',member:$('pMember').value==='yes',dietary_requirements:$('pDiet').value.trim()||null,notes:$('pNotes').value.trim()||null};let result;if(app.editPersonId)result=await db.from('event_registrations').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editPersonId);else result=await db.from('event_registrations').insert({...base,created_by:app.currentUser.id});if(result.error)return toast(result.error.message);$('personDlg').close();toast(app.editPersonId?'Iscritto aggiornato':'Iscritto aggiunto');await loadRemote()});
   ['globalNewEvent','heroNewEvent','quickEvent','sideNewEvent'].forEach(id=>$(id).onclick=()=>openEvent());['addPerson','quickPerson'].forEach(id=>$(id).onclick=()=>openPerson());$('search').oninput=renderPeople;$('statusFilter').onchange=renderPeople;
