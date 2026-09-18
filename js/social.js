@@ -1,6 +1,6 @@
 import {$,app,db,esc,fmtDate,toast} from './core.js';
 
-let contents=[],formats=[],metricsById={},socialUsers=[],calendarCursor=new Date(),activeTab='calendar',editContentId=null,metricsContentId=null;
+let contents=[],formats=[],metricsById={},socialUsers=[],calendarCursor=new Date(),activeTab='calendar',editContentId=null,metricsContentId=null,seriesScopeResolver=null;
 
 const statusLabels={idea:'Idea',planned:'Pianificato',production:'In produzione',review:'Revisione',ready:'Pronto',scheduled:'Programmato',published:'Pubblicato',archived:'Archiviato'};
 const typeLabels={reel:'Reel',carousel:'Carousel',story:'Stories',post:'Post',live:'Live',other:'Altro'};
@@ -229,6 +229,71 @@ function resetRecurrenceForm(){
  document.querySelectorAll('[data-recur-weekday]').forEach(x=>x.checked=false);
  $('scRecurrencePanel').hidden=true;$('scRecurrenceExisting').hidden=true;
 }
+function seriesRowsForScope(content,scope){
+ if(!content)return[];
+ if(scope==='single'||!content.recurrence_group_id)return[content];
+ const all=contents
+  .filter(x=>x.recurrence_group_id===content.recurrence_group_id)
+  .sort((a,b)=>(Number(a.recurrence_sequence)||9999)-(Number(b.recurrence_sequence)||9999)||(a.scheduled_date||'9999').localeCompare(b.scheduled_date||'9999'));
+ if(scope==='all')return all;
+ const seq=Number(content.recurrence_sequence);
+ if(Number.isFinite(seq)&&seq>0)return all.filter(x=>Number(x.recurrence_sequence)>=seq);
+ if(content.scheduled_date)return all.filter(x=>(x.scheduled_date||'')>=content.scheduled_date);
+ const index=all.findIndex(x=>x.id===content.id);
+ return index>=0?all.slice(index):[content];
+}
+function settleSeriesScope(scope=null){
+ const dlg=$('socialSeriesActionDlg');
+ if(dlg?.open)dlg.close();
+ const resolver=seriesScopeResolver;seriesScopeResolver=null;
+ if(resolver)resolver(scope);
+}
+function chooseSeriesScope(action,content){
+ if(!content?.recurrence_group_id)return Promise.resolve('single');
+ const single=seriesRowsForScope(content,'single').length;
+ const future=seriesRowsForScope(content,'future').length;
+ const all=seriesRowsForScope(content,'all').length;
+ $('socialSeriesSingleCount').textContent=String(single);
+ $('socialSeriesFutureCount').textContent=String(future);
+ $('socialSeriesAllCount').textContent=String(all);
+ const deleting=action==='delete';
+ $('socialSeriesActionDlg').classList.toggle('delete-mode',deleting);
+ $('socialSeriesActionTitle').textContent=deleting?'Quali contenuti vuoi eliminare?':'A quali contenuti vuoi applicare le modifiche?';
+ $('socialSeriesActionText').textContent=deleting
+  ?'L’eliminazione è definitiva. Scegli quanto della serie vuoi rimuovere.'
+  :'Scegli se aggiornare soltanto questa occorrenza, da questa in avanti oppure l’intera serie.';
+ $('socialSeriesDateNote').hidden=deleting;
+ return new Promise(resolve=>{
+  if(seriesScopeResolver)seriesScopeResolver(null);
+  seriesScopeResolver=resolve;
+  $('socialSeriesActionDlg').showModal();
+ });
+}
+async function updateRecurringContent(content,row,scope){
+ const targets=seriesRowsForScope(content,scope);
+ if(!targets.length)return{error:{message:'Nessun contenuto della serie trovato.'},count:0};
+ if(scope==='single'){
+  const result=await db.from('social_content').update(row).eq('id',content.id);
+  return{...result,count:1};
+ }
+ const bulkRow={...row};
+ delete bulkRow.scheduled_date;
+ const ids=targets.map(x=>x.id);
+ const result=await db.from('social_content').update(bulkRow).in('id',ids);
+ if(result.error)return{...result,count:0};
+ if(row.scheduled_date!==content.scheduled_date){
+  const dateResult=await db.from('social_content').update({scheduled_date:row.scheduled_date}).eq('id',content.id);
+  if(dateResult.error)return{error:dateResult.error,count:ids.length};
+ }
+ return{...result,count:ids.length};
+}
+async function deleteRecurringContent(content,scope){
+ const targets=seriesRowsForScope(content,scope);
+ if(!targets.length)return{error:{message:'Nessun contenuto della serie trovato.'},count:0};
+ const result=await db.from('social_content').delete().in('id',targets.map(x=>x.id));
+ return{...result,count:targets.length};
+}
+
 function clearContentForm(){
  editContentId=null;
  $('socialContentDlgTitle').textContent='Nuovo contenuto';
@@ -257,10 +322,19 @@ async function saveContent(ev){
  const row={title:$('scTitle').value.trim(),platform:$('scPlatform').value,content_type:$('scType').value,objective:$('scObjective').value,pillar:$('scPillar').value,status:$('scStatus').value,priority:$('scPriority').value,scheduled_date:$('scDate').value||null,scheduled_time:$('scTime').value||null,format_id:$('scFormat').value||null,event_id:$('scEvent').value||null,assigned_to:$('scAssigned').value||null,hook:$('scHook').value.trim()||null,cta:$('scCta').value.trim()||null,caption:$('scCaption').value.trim()||null,production_notes:$('scNotes').value.trim()||null,asset_url:$('scAsset').value.trim()||null,published_url:$('scPublishedUrl').value.trim()||null,checklist};
  if(row.status==='published'&&!editContentId)row.published_at=new Date().toISOString();
 
- let r;
+ let r,affected=0;
  if(editContentId){
-  if(row.status==='published'&&!byId(editContentId)?.published_at)row.published_at=new Date().toISOString();
-  r=await db.from('social_content').update(row).eq('id',editContentId);
+  const current=byId(editContentId);
+  if(row.status==='published'&&!current?.published_at)row.published_at=new Date().toISOString();
+  if(current?.recurrence_group_id){
+   const scope=await chooseSeriesScope('edit',current);
+   if(!scope)return;
+   r=await updateRecurringContent(current,row,scope);
+   affected=r.count||0;
+  }else{
+   r=await db.from('social_content').update(row).eq('id',editContentId);
+   affected=1;
+  }
  }else if($('scRecurring')?.checked){
   const generated=generateRecurrenceDates();
   if(generated.error)return toast(generated.error);
@@ -280,10 +354,27 @@ async function saveContent(ev){
  }
  if(r.error)return toast(r.error.message);
  $('socialContentDlg').close();
- if(editContentId)toast('Contenuto aggiornato');else if(!$('scRecurring')?.checked)toast('Contenuto creato');
+ if(editContentId)toast(affected>1?`${affected} contenuti della serie aggiornati`:'Contenuto aggiornato');else if(!$('scRecurring')?.checked)toast('Contenuto creato');
  await loadSocial()
 }
-async function deleteContent(){if(!editContentId)return;if(!confirm('Eliminare definitivamente questo contenuto editoriale?'))return;const {error}=await db.from('social_content').delete().eq('id',editContentId);if(error)return toast(error.message);$('socialContentDlg').close();toast('Contenuto eliminato');await loadSocial()}
+async function deleteContent(){
+ if(!editContentId)return;
+ const current=byId(editContentId);if(!current)return;
+ let result,count=1;
+ if(current.recurrence_group_id){
+  const scope=await chooseSeriesScope('delete',current);
+  if(!scope)return;
+  result=await deleteRecurringContent(current,scope);
+  count=result.count||0;
+ }else{
+  if(!confirm('Eliminare definitivamente questo contenuto editoriale?'))return;
+  result=await db.from('social_content').delete().eq('id',editContentId);
+ }
+ if(result.error)return toast(result.error.message);
+ $('socialContentDlg').close();
+ toast(count>1?`${count} contenuti della serie eliminati`:'Contenuto eliminato');
+ await loadSocial()
+}
 
 window.openSocialMetrics=id=>{metricsContentId=id;const c=byId(id);if(!c)return;const m=metricsById[id]||{};$('metricsContentTitle').textContent=c.title;['views','reach','non_follower_reach','likes','comments','shares','saves','profile_visits','followers_gained','avg_watch_time_seconds','completion_rate','link_clicks','dm_inquiries','bookings','first_time_attendees'].forEach(k=>{$('sm_'+k).value=m[k]??0});$('socialMetricsDlg').showModal()};
 async function saveMetrics(ev){ev.preventDefault();const row={content_id:metricsContentId};['views','reach','non_follower_reach','likes','comments','shares','saves','profile_visits','followers_gained','avg_watch_time_seconds','completion_rate','link_clicks','dm_inquiries','bookings','first_time_attendees'].forEach(k=>row[k]=Number($('sm_'+k).value)||0);const {error}=await db.from('social_metrics').upsert(row,{onConflict:'content_id'});if(error)return toast(error.message);$('socialMetricsDlg').close();toast('Metriche aggiornate');await loadSocial()}
@@ -303,5 +394,9 @@ export function initSocial(){
  ['scRecurrenceType','scRecurrenceInterval','scRecurrenceEndMode','scRecurrenceCount','scRecurrenceUntil','scRecurrenceMonthDay','scRecurrenceNth','scRecurrenceWeekday'].forEach(id=>$(id).addEventListener(id==='scRecurrenceInterval'||id==='scRecurrenceCount'||id==='scRecurrenceMonthDay'?'input':'change',syncRecurrenceUi));
  document.querySelectorAll('[data-recur-weekday]').forEach(x=>x.onchange=renderRecurrencePreview);
  $('scDate').addEventListener('change',()=>{if($('scRecurring').checked){seedWeeklyDayFromStart();syncRecurrenceUi()}});
+ document.querySelectorAll('[data-series-scope]').forEach(btn=>btn.onclick=()=>settleSeriesScope(btn.dataset.seriesScope));
+ $('socialSeriesActionCancel').onclick=()=>settleSeriesScope(null);
+ $('socialSeriesActionClose').onclick=()=>settleSeriesScope(null);
+ $('socialSeriesActionDlg').addEventListener('cancel',ev=>{ev.preventDefault();settleSeriesScope(null)});
  $('scFormat').onchange=()=>{const f=formats.find(x=>x.id===$('scFormat').value);if(!f)return;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar};
 }
