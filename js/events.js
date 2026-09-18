@@ -159,7 +159,7 @@ export function render(){
   if(!e){$('eventName').textContent='Nessun evento';$('eventMeta').textContent='Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
   const collaborators=eventContactLinks.filter(x=>x.event_id===e.id).length;
   const guestState=e.guestTeaser?' · prossimamente ai soci':e.guestVisible?' · visibile ai soci':'';
-  const timeLabel=eventTimeLabel(e),priceLabel=eventPriceLabel(e);$('eventName').textContent=e.name;$('eventMeta').textContent=`${eventDateLabel(e)}${timeLabel?' · '+timeLabel:''}${e.place?' · '+e.place:''}${priceLabel?' · '+priceLabel:''}${e.capacity?' · capienza '+e.capacity:''}${collaborators?' · '+collaborators+' collaboratori':''}${guestState}`;
+  const timeLabel=eventTimeLabel(e),priceLabel=eventPriceLabel(e),calendarState=e.googleCalendarAdded?' · Calendar Club42 ✓':' · Calendar da inserire';$('eventName').textContent=e.name;$('eventMeta').textContent=`${eventDateLabel(e)}${timeLabel?' · '+timeLabel:''}${e.place?' · '+e.place:''}${priceLabel?' · '+priceLabel:''}${e.capacity?' · capienza '+e.capacity:''}${collaborators?' · '+collaborators+' collaboratori':''}${guestState}${calendarState}`;
   const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');$('sConfirmed').textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');$('sWait').textContent=pp.filter(p=>p.status==='waitlist').length;$('sPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('sMembers').textContent=confirmed.filter(p=>p.member==='yes').length;renderPeople();
 }
 
