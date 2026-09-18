@@ -140,12 +140,21 @@ function ensureEventCalendarUi(){
   $('eventPrevMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()-1,1);renderEventCalendar()};
   $('eventNextMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()+1,1);renderEventCalendar()};
   $('eventToday').onclick=()=>{eventCalendarCursor=new Date();renderEventCalendar()};
+  showEventView(eventViewMode);
 }
 function showEventView(mode='manage'){
   eventViewMode=mode==='calendar'?'calendar':'manage';
   const calendar=$('eventCalendarPanel'),management=$('eventManagementPanel');
-  if(calendar)calendar.hidden=eventViewMode!=='calendar';
-  if(management)management.hidden=eventViewMode==='calendar';
+  if(calendar){
+    const visible=eventViewMode==='calendar';
+    calendar.hidden=!visible;
+    calendar.style.display=visible?'':'none';
+  }
+  if(management){
+    const visible=eventViewMode==='manage';
+    management.hidden=!visible;
+    management.style.display=visible?'':'none';
+  }
   document.querySelectorAll('[data-event-view]').forEach(btn=>btn.classList.toggle('active',btn.dataset.eventView===eventViewMode));
   if(eventViewMode==='calendar')renderEventCalendar();
 }
