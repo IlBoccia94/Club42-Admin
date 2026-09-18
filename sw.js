@@ -11,7 +11,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if(event.request.method!=='GET')return;
-  event.respondWith(fetch(event.request));
+  const url=new URL(event.request.url);
+  const sameOrigin=url.origin===self.location.origin;
+  const type=event.request.destination;
+  const freshAsset=sameOrigin&&(type==='document'||type==='script'||type==='style');
+  event.respondWith(freshAsset?fetch(event.request,{cache:'no-store'}):fetch(event.request));
 });
 
 self.addEventListener('push', event => {
