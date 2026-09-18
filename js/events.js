@@ -1,4 +1,4 @@
-import {$,app,db,LEGACY_KEY,esc,selected,list,fmtDate,badge,toast,syncStatus} from './core.js';
+import {$,app,db,LEGACY_KEY,download,esc,selected,list,fmtDate,badge,toast,syncStatus} from './core.js';
 import {showView} from './router.js';
 
 let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage';
@@ -49,63 +49,45 @@ function zonedDateTime(date,time='00:00',timeZone='Europe/Rome'){
   }
   return new Date(guess);
 }
-function googleStamp(date){
-  return date.toISOString().replace(/[-:]/g,'').replace('.000','');
-}
-function googleAllDayStamp(date){return String(date||'').replaceAll('-','')}
-function googleCalendarUrl(e){
-  const params=new URLSearchParams({action:'TEMPLATE',text:e.name,location:e.place||'',authuser:CLUB_CALENDAR_EMAIL,stz:'Europe/Rome',etz:'Europe/Rome'});
-  let details=[e.guestDescription,e.notes].filter(Boolean).join('\n\n');
-  if(e.isFree)details=[details,'Gratuito'].filter(Boolean).join('\n\n');
-
-  if(e.time){
-    const start=zonedDateTime(e.date,e.time);
-    let end;
-    if(e.endTime){
-      let endDate=e.endDate||e.date;
-      end=zonedDateTime(endDate,e.endTime);
-      if(end<=start&&(!e.endDate||e.endDate===e.date))end=zonedDateTime(addDaysIso(e.date,1),e.endTime);
-    }else if(e.endDate&&e.endDate!==e.date){
-      end=zonedDateTime(e.endDate,'23:59');
-      details=[details,'Nota: ora fine non specificata nel gestionale; verifica l’orario di fine prima di salvare.'].filter(Boolean).join('\n\n');
-    }else{
-      end=new Date(start.getTime()+60*60*1000);
-      details=[details,'Nota: ora fine non specificata nel gestionale; Google Calendar propone 1 ora di durata. Verifica prima di salvare.'].filter(Boolean).join('\n\n');
-    }
-    params.set('dates',googleStamp(start)+'/'+googleStamp(end));
-  }else{
-    const endExclusive=addDaysIso(e.endDate||e.date,1);
-    params.set('dates',googleAllDayStamp(e.date)+'/'+googleAllDayStamp(endExclusive));
-    if(e.endTime)details=[details,'Ora fine indicata nel gestionale: '+e.endTime+'. L’evento viene aperto come giornata intera perché manca l’ora di inizio.'].filter(Boolean).join('\n\n');
-  }
-
-  if(details)params.set('details',details);
-  return 'https://calendar.google.com/calendar/r/eventedit?'+params.toString();
-}
-function forceCalendarWebInChrome(webUrl){
-  try{
-    const u=new URL(webUrl);
-    return 'intent://'+u.host+u.pathname+u.search
-      +'#Intent;scheme=https;package=com.android.chrome;'
-      +'S.browser_fallback_url='+encodeURIComponent(webUrl)+';end';
-  }catch{
-    return webUrl;
-  }
+function icsEscape(v=''){return String(v).replaceAll('\\','\\\\').replaceAll('\n','\\n').replaceAll(',','\\,').replaceAll(';','\\;')}
+function icsDate(value){return String(value).replaceAll('-','')}
+function icsTime(value){return String(value||'').slice(0,5).replace(':','')+'00'}
+function calendarFileName(e){
+  const slug=String(e.name||'evento').toLowerCase().replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'')||'evento';
+  return `club42-${e.date}-${slug}.ics`;
 }
 function openGoogleCalendarEvent(id){
-  const e=app.state.events.find(x=>x.id===id);if(!e)return;
-  const webUrl=googleCalendarUrl(e);
-  const isAndroid=/Android/i.test(navigator.userAgent||'');
+  const e=app.state.events.find(x=>x.id===id);if(!e||!e.date)return;
 
-  if(isAndroid){
-    window.location.href=forceCalendarWebInChrome(webUrl);
-    toast('Apro il modulo Google Calendar già compilato in Chrome. Controlla i dati e premi Salva.');
-    return;
+  const start=e.time
+    ? `DTSTART;TZID=Europe/Rome:${icsDate(e.date)}T${icsTime(e.time)}`
+    : `DTSTART;VALUE=DATE:${icsDate(e.date)}`;
+
+  const lines=[
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Club42//Gestionale//IT',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${e.id}@club42`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}`,
+    start,
+    `SUMMARY:${icsEscape(e.name)}`
+  ];
+
+  if(e.time&&e.endTime){
+    lines.push(`DTEND;TZID=Europe/Rome:${icsDate(e.endDate||e.date)}T${icsTime(e.endTime)}`);
+  }else if(!e.time){
+    lines.push(`DTEND;VALUE=DATE:${icsDate(addDaysIso(e.endDate||e.date,1))}`);
   }
 
-  const win=window.open(webUrl,'_blank','noopener,noreferrer');
-  if(!win)toast('Il browser ha bloccato l’apertura di Google Calendar.');
-  else toast('Bozza aperta in Google Calendar. Controlla i dati e premi Salva.');
+  if(e.place)lines.push(`LOCATION:${icsEscape(e.place)}`);
+  const description=[e.guestDescription,e.notes].filter(Boolean).join('\n\n');
+  if(description)lines.push(`DESCRIPTION:${icsEscape(description)}`);
+
+  lines.push('END:VEVENT','END:VCALENDAR');
+  download(calendarFileName(e),lines.join('\r\n'),'text/calendar;charset=utf-8');
+  toast('File calendario creato. Aprilo con Google Calendar e premi Salva.');
 }
 async function setEventCalendarAdded(id,value){
   const e=app.state.events.find(x=>x.id===id);if(!e)return;
