@@ -68,11 +68,13 @@ function eventMeta(e,includeDateRange=false){
   return bits.join('');
 }
 function calendarButton(e){return `<button type="button" class="guest-calendar-btn" onclick="addGuestEventToCalendar('${e.id}')"><span>＋</span> Aggiungi al calendario</button>`}
+function canSelfRegister(){
+  return ['admin','staff','treasurer','guest'].includes(app.currentProfile?.role||'');
+}
 function registrationButton(e){
-  const isGuest=app.currentProfile?.role==='guest';
   if(e.registration_status==='confirmed')return '<button type="button" class="guest-register-btn registered" disabled><span>✓</span> Sei iscritto</button>';
   if(e.registration_status==='waitlist')return '<button type="button" class="guest-register-btn waitlisted" disabled><span>⏳</span> In lista d’attesa</button>';
-  if(!isGuest)return '<button type="button" class="guest-register-btn" onclick="previewGuestRegistration()"><span>＋</span> Iscriviti</button>';
+  if(!canSelfRegister())return '<button type="button" class="guest-register-btn" disabled><span>＋</span> Iscriviti</button>';
   return `<button type="button" class="guest-register-btn" data-register-event="${e.id}" onclick="registerGuestEvent('${e.id}',this)"><span>＋</span> Iscriviti</button>`;
 }
 function eventActions(e){return `<div class="guest-event-actions">${registrationButton(e)}${calendarButton(e)}</div>`}
@@ -136,9 +138,9 @@ window.addGuestEventToCalendar=id=>{
   lines.push('END:VEVENT','END:VCALENDAR');
   download(`club42-${e.event_date}-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.ics`,lines.join('\r\n'),'text/calendar;charset=utf-8');
 };
-window.previewGuestRegistration=()=>toast('Anteprima: l’iscrizione è disponibile agli utenti Guest.');
+window.previewGuestRegistration=()=>toast('Iscrizione non disponibile per questo profilo.');
 window.registerGuestEvent=async(id,button)=>{
-  if(app.currentProfile?.role!=='guest')return;
+  if(!canSelfRegister())return toast('Questo profilo non può iscriversi all’evento.');
   if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Iscrizione in corso';}
   const {data,error}=await db.rpc('club42_guest_register_event',{p_event_id:id});
   if(error){console.error(error);toast(error.message||'Non è stato possibile completare l’iscrizione');await loadGuestPage();return}
