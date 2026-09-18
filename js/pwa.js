@@ -71,7 +71,7 @@ export async function initPwa(){
   });
   if(!('serviceWorker' in navigator))return null;
   try{
-    swRegistration=await navigator.serviceWorker.register('./sw.js?v=20260917-2',{scope:'./'});
+    swRegistration=await navigator.serviceWorker.register('./sw.js?v=20260918-push-audit1',{scope:'./'});
     await navigator.serviceWorker.ready;
     return swRegistration;
   }catch(error){
