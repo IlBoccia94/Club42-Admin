@@ -1,5 +1,5 @@
 export function buildTasksUi(){
-  if(!document.querySelector('link[href="tasks.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='tasks.css';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="tasks.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='tasks.css?v=20260918-attention1';document.head.appendChild(l)}
   const nav=document.querySelector('.nav-item[data-view="tasks"]');if(nav){const b=nav.querySelector('.nav-badge');if(b)b.remove()}
   const view=document.getElementById('view-tasks');if(view)view.innerHTML=`<div class="tasks-shell">
     <section class="card tasks-hero"><div class="tasks-hero-inner"><div><div class="hero-eyebrow">Club42 · Control room</div><h2>Task</h2><p>Priorità chiare, responsabilità visibili e zero attività dimenticate. Tutti i task del Club, compresi quelli dei progetti, vivono qui.</p></div><button class="btn primary" id="newTaskBtn">＋ Nuovo task</button></div></section>
