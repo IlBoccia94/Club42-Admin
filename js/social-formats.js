@@ -1,7 +1,9 @@
 import {$,app,db,esc,toast} from './core.js';
-import {loadSocial} from './social.js';
 
 let managedFormats=[];
+async function reloadSocial(){
+  if(typeof window.club42LoadSocial==='function')await window.club42LoadSocial();
+}
 let editFormatId=null;
 let observer=null;
 let observerHost=null;
@@ -131,7 +133,7 @@ async function deleteFormat(id){
   if(error)return toast(error.message);
   if($('socialFormatDlg')?.open)$('socialFormatDlg').close();
   toast('Format eliminato');
-  await loadSocial();
+  await reloadSocial();
   await refreshSocialFormats();
 }
 
@@ -157,7 +159,7 @@ async function saveFormat(ev){
   }
   $('socialFormatDlg').close();
   toast(editFormatId?'Format aggiornato':'Format creato');
-  await loadSocial();
+  await reloadSocial();
   await refreshSocialFormats();
 }
 
