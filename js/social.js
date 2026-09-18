@@ -110,9 +110,11 @@ function socialNthWeekday(year,month,nth,weekday){
  return socialMonthCandidate(year,month,day);
 }
 function socialUuid(){
- if(globalThis.crypto?.randomUUID)return crypto.randomUUID();
- const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
- return [...bytes].map((b,i)=>([4,6,8,10].includes(i)?'-':'')+b.toString(16).padStart(2,'0')).join('');
+ const c=globalThis.crypto;
+ if(c?.randomUUID)return c.randomUUID();
+ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{
+  const r=Math.random()*16|0,v=ch==='x'?r:(r&3)|8;return v.toString(16)
+ });
 }
 function recurrenceRuleFromForm(){
  return{
@@ -179,6 +181,10 @@ function generateRecurrenceDates(){
    if(until&&d&&d>until)break;
    accept(d);offset+=rule.interval;
   }
+ }
+ if(rule.endMode==='until'&&dates.length>=limit){
+  const last=socialDateFromIso(dates[dates.length-1]);
+  if(last&&until&&last<until)return{dates,error:'La serie supera il limite di 104 occorrenze. Accorcia il periodo o aumenta l’intervallo.'};
  }
  if(dates.length<2)return{dates,error:'La ricorrenza deve generare almeno 2 contenuti. Modifica intervallo o fine serie.'};
  return{dates:dates.slice(0,limit),rule};
