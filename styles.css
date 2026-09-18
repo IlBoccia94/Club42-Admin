@@ -37,3 +37,11 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
 @media(max-width:420px){.metric-grid{grid-template-columns:1fr 1fr}.metric-card span{font-size:8.5px}.metric-icon{margin-bottom:11px}.quick-grid{grid-template-columns:1fr}.event-hero-top>.row{grid-template-columns:1fr}.event-stats{gap:7px}.event-stat{padding:11px 9px}.event-stat b{font-size:23px}td{grid-template-columns:78px minmax(0,1fr);gap:8px}.topbar-actions .btn.primary{font-size:10.5px;padding:9px 8px}}
 
 .event-field-hint{font-size:9px;color:var(--muted);line-height:1.4}.event-price-control{display:grid;gap:7px}.event-free-check{display:flex!important;align-items:center;gap:8px;width:max-content;font-family:var(--font-body)!important;font-size:10px!important;font-weight:600!important;color:var(--ink)!important}.event-free-check input{width:auto;min-width:0;accent-color:var(--blue)}#ePrice:disabled{opacity:.6;background:#f0eee8;cursor:not-allowed}
+
+.event-calendar-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding-top:8px;border-top:1px solid rgba(33,98,119,.08)}
+.event-calendar-open{border:1px solid rgba(33,98,119,.18);background:#fff;color:var(--blue);border-radius:9px;padding:6px 8px;font-family:var(--font-subtitle);font-size:8.5px;font-weight:800;line-height:1;box-shadow:none}
+.event-calendar-open:hover{background:var(--blue-soft)}
+.event-calendar-check{display:inline-flex!important;align-items:center;gap:5px;width:max-content;font-family:var(--font-subtitle)!important;font-size:8px!important;font-weight:800!important;color:#7a6b43!important;background:#fff8df;border:1px solid rgba(255,198,11,.25);border-radius:999px;padding:5px 7px;line-height:1!important}
+.event-calendar-check.done{background:#e7f6ed;border-color:rgba(40,119,74,.15);color:#28774a!important}
+.event-calendar-check input{width:auto!important;min-width:0!important;margin:0;accent-color:#28774a}
+@media(max-width:900px){.event-calendar-row{gap:6px}.event-calendar-open{padding:6px 7px}.event-calendar-check{padding:5px 6px}}
