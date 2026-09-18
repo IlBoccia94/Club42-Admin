@@ -52,6 +52,7 @@ th{font-size:10.5px}
 .dash-task-meta span{font-size:9.75px}
 
 /* Task */
+.task-focus-copy h4,.task-card h4,.task-archive-row h4{font-size:15px;line-height:1.25}
 .task-focus-copy p{font-size:10.75px}
 .task-focus-meta,.task-pill,.task-kanban-toolbar span,.task-column-head span{font-size:10.25px}
 .task-card p{font-size:10.5px}
@@ -61,6 +62,8 @@ th{font-size:10.5px}
 .task-archive-row p{font-size:10.25px}
 
 /* Progetti */
+.project-radar-item h4,.project-card h4,.project-board-card h4,.project-archive-row h4{font-size:15px;line-height:1.25}
+.project-task-item h5{font-size:14px;line-height:1.25}
 .project-card p,.project-radar-item p,.project-archive-row p,.project-update-item p{font-size:11px}
 .project-board-card p,.project-task-item p{font-size:10.5px}
 .project-card-meta span,.project-badge,.project-column-head span,.project-update-item b{font-size:10.25px}
