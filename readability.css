@@ -1,51 +1,117 @@
-/* Micro-regolazione di leggibilità: solo testi secondari molto piccoli.
-   Caricato per ultimo per non alterare gerarchia, titoli o layout. */
+/* Regolazione globale di leggibilità.
+   Caricato per ultimo: aumenta solo testi piccoli/secondari e lascia invariati i titoli principali. */
+
+/* Shell, navigazione e testi comuni */
+.brand-copy span{font-size:11.5px}
+.nav-label{font-size:11px}
+.nav-badge{font-size:9.5px}
+.sidebar-foot{font-size:12px}
+.sidebar-foot b{font-size:13px}
+.page-title p{font-size:13px}
+.hero-eyebrow{font-size:11px}
+.dashboard-hero p{font-size:14px}
+.metric-card span{font-size:11.5px}
+.metric-card small{font-size:12px}
+.section-head p{font-size:12px}
+.date-tile span{font-size:10.5px}
+.upcoming-event p{font-size:12px}
+.quick-action small{font-size:11.5px}
+.panel-kicker{font-size:10.5px}
+.eyebrow{font-size:10.5px}
+.panel-head span{font-size:12px}
+.field label{font-size:12px}
+th,td{font-size:12.5px}
+th{font-size:10.5px}
+.badge{font-size:10px}
+.empty{font-size:12px}
+.foot{font-size:11.5px}
+.placeholder p{font-size:13px}
+.coming-pill{font-size:10.5px}
+.toast{font-size:12.5px}
+.event-field-hint{font-size:10.5px}
+.event-free-check{font-size:11.5px}
 
 /* Eventi */
-.event-card-meta{font-size:10.7px}
-@media(max-width:650px){.event-hero p{font-size:11px}.event-stat span{font-size:9px}}
+.event-card-meta{font-size:12px}
+.event-hero p{font-size:12.5px}
+.event-stat span{font-size:10.5px}
+.event-calendar-open{font-size:10px}
+.event-calendar-check{font-size:9.5px}
+.event-view-tab{font-size:11.5px}
+.event-month-nav b{font-size:12.5px}
+.event-calendar-weekdays span{font-size:10px}
+.event-cal-day-num{font-size:10.5px}
+.event-cal-item span{font-size:8.5px}
+.event-cal-item b{font-size:9.5px}
+.event-contact-hint{font-size:10px}
 
 /* Dashboard */
-.dash-attention-copy span,.dash-pulse-copy span{font-size:9px}
-.dash-task-main p{font-size:9.25px}
-.dash-task-meta b{font-size:9px}
-.dash-task-meta span{font-size:8.25px}
+.dash-attention-copy span,.dash-pulse-copy span{font-size:10.5px}
+.dash-task-main p{font-size:10.75px}
+.dash-task-meta b{font-size:10.5px}
+.dash-task-meta span{font-size:9.75px}
 
 /* Task */
-.task-focus-copy p{font-size:9.25px}
-.task-focus-meta,.task-pill,.task-kanban-toolbar span,.task-column-head span{font-size:8.75px}
-.task-card p{font-size:9px}
-.task-card-meta span{font-size:8.25px}
-.task-owner-row label{font-size:8.75px}
-.task-deadline-day span{font-size:8px}
-.task-archive-row p{font-size:8.75px}
+.task-focus-copy p{font-size:10.75px}
+.task-focus-meta,.task-pill,.task-kanban-toolbar span,.task-column-head span{font-size:10.25px}
+.task-card p{font-size:10.5px}
+.task-card-meta span{font-size:9.75px}
+.task-owner-row label{font-size:10.25px}
+.task-deadline-day span{font-size:9.5px}
+.task-archive-row p{font-size:10.25px}
 
 /* Progetti */
-.project-card p,.project-radar-item p,.project-archive-row p,.project-update-item p{font-size:9.5px}
-.project-board-card p,.project-task-item p{font-size:9px}
-.project-card-meta span,.project-badge,.project-column-head span,.project-update-item b{font-size:8.75px}
-.project-update-item small{font-size:8px}
+.project-card p,.project-radar-item p,.project-archive-row p,.project-update-item p{font-size:11px}
+.project-board-card p,.project-task-item p{font-size:10.5px}
+.project-card-meta span,.project-badge,.project-column-head span,.project-update-item b{font-size:10.25px}
+.project-update-item small{font-size:9.5px}
 
 /* Contatti e collaborazioni */
-.contact-org,.contact-meta,.collaboration-body p,.contact-history-item b{font-size:9.5px}
-.contact-card-foot span,.contact-history-item span{font-size:8.25px}
-.collaboration-title span,.collaboration-body small,.contact-history-head span,.event-contact-hint{font-size:8.5px}
+.contact-org,.contact-meta,.collaboration-body p,.contact-history-item b{font-size:11px}
+.contact-card-foot span,.contact-history-item span{font-size:9.75px}
+.collaboration-title span,.collaboration-body small,.contact-history-head span{font-size:10px}
 
-/* Social: solo descrizioni e metadati, non il calendario compatto */
-.social-card p,.social-format small,.social-check{font-size:9.5px}
-.social-card-meta span,.social-type,.social-analytics-summary span,.social-status{font-size:8.5px}
+/* Social */
+.social-card p,.social-format small,.social-check{font-size:11px}
+.social-card-meta span,.social-type,.social-analytics-summary span,.social-status{font-size:10px}
 
 /* Cassa */
-.cash-user-hint{font-size:9.5px}
-.cash-mobile-meta span,.cash-chart-legend small{font-size:8.5px}
-.cash-reimbursement-badge{font-size:7.5px}
+.cash-user-hint{font-size:11px}
+.cash-mobile-meta span,.cash-chart-legend small{font-size:10px}
+.cash-reimbursement-badge{font-size:9px}
 
 /* Feedback */
-.feedback-help,.feedback-sort-note,.feedback-item-top time,.feedback-author,.feedback-resolved-meta{font-size:8.5px}
-.feedback-update p{font-size:9.5px}
-.feedback-update span,.feedback-no-updates{font-size:8px}
+.feedback-help,.feedback-sort-note,.feedback-item-top time,.feedback-author,.feedback-resolved-meta{font-size:10px}
+.feedback-update p{font-size:11px}
+.feedback-update span,.feedback-no-updates{font-size:9.5px}
 
 /* Newsletter */
-.newsletter-recipient-copy span,.newsletter-recipient-note,.newsletter-toolbar button,.newsletter-attachment-info b{font-size:9.5px}
-.newsletter-attachments-head span,.newsletter-attachment-info span,.newsletter-history-main span,.newsletter-history-result span,.newsletter-history-status,.newsletter-consent-help{font-size:8.5px}
-.newsletter-user-badge,.newsletter-role-pill{font-size:7.5px}
+.newsletter-recipient-copy span,.newsletter-recipient-note,.newsletter-toolbar button,.newsletter-attachment-info b{font-size:11px}
+.newsletter-attachments-head span,.newsletter-attachment-info span,.newsletter-history-main span,.newsletter-history-result span,.newsletter-history-status,.newsletter-consent-help{font-size:10px}
+.newsletter-user-badge,.newsletter-role-pill{font-size:9px}
+
+/* Accesso, utenti e form */
+.auth-card p{font-size:13px}
+.auth-note{font-size:11.5px}
+.auth-error{font-size:12px}
+.auth-pending code{font-size:11.5px}
+.auth-newsletter-check{font-size:12px}
+.auth-signup-consent p{font-size:11.5px!important}
+.sync-badge{font-size:11.5px}
+.user-chip span{font-size:11.5px}
+.user-chip .role{font-size:10px}
+.users-head p{font-size:12.5px}
+.user-metric span{font-size:11.5px}
+.status-pill,.role-pill{font-size:10px}
+.user-card .email{font-size:11.5px}
+.form-hint{font-size:11.5px}
+
+/* Mobile: evita che i testi secondari tornino troppo piccoli */
+@media(max-width:650px){
+  .event-hero p{font-size:12px}
+  .event-stat span{font-size:10px}
+  td{font-size:12px}
+  td::before{font-size:10.5px}
+  .metric-card span{font-size:10px}
+  .topbar-actions .btn.primary{font-size:11.5px}
+}
