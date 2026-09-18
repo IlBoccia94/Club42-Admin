@@ -28,7 +28,7 @@ import {initContacts,loadContacts} from './contacts.js?v=20260917-contactsfull1'
 import {buildGuestUi} from './guest-ui.js?v=20260918-daterange2';
 import {buildFeedbackUi} from './feedback-ui.js?v=20260918-workflow1';
 import {initFeedback,loadFeedback} from './feedback.js?v=20260918-workflow1';
-import {loadGuestPage} from './guest.js?v=20260918-daterange2';
+import {loadGuestPage} from './guest.js?v=20260918-staffregister1';
 import {buildNewsletterUi} from './newsletter-ui.js?v=20260918-recipients1';
 import {initNewsletter,loadNewsletter} from './newsletter.js?v=20260918-recipients1';
 
