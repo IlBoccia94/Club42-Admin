@@ -64,7 +64,7 @@ function googleCalendarUrl(e){
     if(e.endTime){
       let endDate=e.endDate||e.date;
       end=zonedDateTime(endDate,e.endTime);
-      if(end<=start&&!e.endDate)end=zonedDateTime(addDaysIso(e.date,1),e.endTime);
+      if(end<=start&&(!e.endDate||e.endDate===e.date))end=zonedDateTime(addDaysIso(e.date,1),e.endTime);
     }else if(e.endDate&&e.endDate!==e.date){
       end=zonedDateTime(e.endDate,'23:59');
       details=[details,'Nota: ora fine non specificata nel gestionale; verifica l’orario di fine prima di salvare.'].filter(Boolean).join('\n\n');
