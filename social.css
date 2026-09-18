@@ -13,3 +13,34 @@
  .social-checklist{grid-template-columns:1fr}.metrics-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.social-dialog-wide{width:calc(100% - 12px);max-width:calc(100% - 12px)}
 }
 @media(max-width:390px){.social-hero{padding:16px 14px}.social-summary{grid-template-columns:1fr 1fr}.social-tab{padding:8px 10px}.social-calendar-card{padding:8px}.social-month-nav{grid-template-columns:36px minmax(0,1fr) 36px}.social-month-nav .btn{grid-column:1/-1;width:100%}.social-day{min-height:56px;padding:3px}.social-cal-item b{font-size:6px}.metrics-grid{grid-template-columns:1fr}}
+
+
+/* Social recurrence */
+.social-recurrence-field{margin-top:2px}
+.social-recurring-toggle{display:flex!important;align-items:center;gap:9px;width:max-content;max-width:100%;font-family:var(--font-subtitle)!important;font-size:12px!important;font-weight:800!important;color:var(--blue)!important;cursor:pointer}
+.social-recurring-toggle input{width:18px!important;height:18px;min-width:18px;margin:0;accent-color:var(--blue)}
+.social-recurrence-panel{margin-top:3px;padding:13px;border:1px solid rgba(33,98,119,.14);border-radius:15px;background:linear-gradient(135deg,rgba(229,240,242,.72),rgba(255,253,250,.96));display:grid;gap:12px}
+.social-recurrence-panel[hidden],.social-recurrence-section[hidden],#scRecurrenceCountField[hidden],#scRecurrenceUntilField[hidden],.social-recurrence-existing[hidden]{display:none!important}
+.social-recurrence-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.social-recurrence-interval{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;align-items:center}
+.social-recurrence-interval span{font-size:11px;color:var(--muted)}
+.social-recurrence-section{display:grid;gap:7px}
+.social-recurrence-section>label{font-family:var(--font-subtitle);font-size:11px;font-weight:800;color:var(--blue)}
+.social-weekday-picker{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.social-weekday-picker label{display:block!important;cursor:pointer}
+.social-weekday-picker input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.social-weekday-picker span{display:grid;place-items:center;min-height:36px;border-radius:10px;border:1px solid rgba(33,98,119,.15);background:var(--white);font-family:var(--font-subtitle);font-size:10px;font-weight:800;color:var(--muted);transition:.15s}
+.social-weekday-picker input:checked+span{background:var(--blue);color:white;border-color:var(--blue);box-shadow:0 5px 12px rgba(33,98,119,.15)}
+.social-recurrence-help{font-size:10.5px;line-height:1.45;color:var(--muted)}
+.social-recurrence-preview{padding:10px 11px;border-radius:12px;background:var(--white);border:1px solid rgba(33,98,119,.11);display:grid;gap:3px}
+.social-recurrence-preview b{font-family:var(--font-subtitle);font-size:11px;color:var(--blue)}
+.social-recurrence-preview span{font-size:10.5px;line-height:1.5;color:var(--muted)}
+.social-recurrence-preview.error{background:var(--coral-soft);border-color:rgba(250,107,99,.2);color:#9b3d38;font-size:10.5px}
+.social-recurrence-existing{margin-top:5px;padding:9px 11px;border-radius:11px;background:var(--yellow-soft);color:#725900;font-size:10.5px;line-height:1.45}
+@media(max-width:650px){
+ .social-recurrence-panel{padding:11px}
+ .social-recurrence-grid{grid-template-columns:1fr}
+ .social-weekday-picker{gap:4px}
+ .social-weekday-picker span{min-height:34px;font-size:9px}
+ .social-recurrence-interval{grid-template-columns:76px minmax(0,1fr)}
+}
