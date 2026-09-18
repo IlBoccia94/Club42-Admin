@@ -2,3 +2,27 @@
 @media(max-width:1050px){.task-focus-grid{grid-template-columns:1fr}.task-focus-grid.secondary{grid-template-columns:1fr 1fr}.task-toolbar{grid-template-columns:1fr 1fr 1fr}.task-toolbar input{grid-column:1/-1}.task-analytics-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.tasks-shell{gap:11px}.tasks-shell>*{min-width:0;max-width:100%}.tasks-hero{padding:18px 16px;border-radius:18px}.tasks-hero-inner{flex-direction:column;width:100%;gap:14px}.tasks-hero-inner>div{width:100%}.tasks-hero-inner .btn{width:100%}.tasks-hero h2{font-size:31px;line-height:1.05}.tasks-hero p{font-size:11px}.tasks-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.task-kpi{padding:12px}.task-kpi b{font-size:26px}.task-kpi span{font-size:8px}.task-kpi small{font-size:7.5px}.tasks-tabs{width:100%;gap:6px;padding-bottom:3px}.tasks-tab{padding:9px 12px;font-size:10px}.task-focus-grid,.task-focus-grid.secondary{grid-template-columns:minmax(0,1fr);gap:10px;margin-top:0}.task-focus-grid.secondary{margin-top:10px}.task-panel{padding:12px}.task-focus-item{grid-template-columns:auto minmax(0,1fr);align-items:start}.task-focus-meta{grid-column:2;text-align:left;white-space:normal}.task-kanban-toolbar{align-items:stretch;flex-direction:column}.task-kanban-toolbar select{width:100%;min-width:0}.task-kanban-wrap{width:100%;max-width:100%;overflow-x:auto}.task-kanban{grid-template-columns:repeat(5,210px);gap:8px;min-width:max-content;width:max-content}.task-column{min-height:320px}.task-analytics-grid{grid-template-columns:minmax(0,1fr);gap:10px}.task-chart-wide{grid-column:auto}.task-donut-wrap{grid-template-columns:1fr;justify-items:center}.task-legend{width:100%}.task-toolbar{grid-template-columns:1fr 1fr;width:100%}.task-toolbar input{grid-column:1/-1}.task-archive-row{grid-template-columns:minmax(0,1fr);gap:7px}.task-dialog{width:calc(100% - 12px);max-width:calc(100% - 12px)}.task-deadline-chart{grid-template-columns:repeat(14,34px)}}
 @media(max-width:390px){.tasks-hero{padding:16px 14px}.tasks-summary{grid-template-columns:1fr 1fr}.task-toolbar{grid-template-columns:1fr}.task-toolbar input{grid-column:auto}.tasks-tab{padding:8px 10px}.task-donut{width:145px}}
+
+
+/* Admin task attention */
+.task-attention-btn{
+  width:28px;height:28px;min-width:28px;padding:0;border:1px solid rgba(33,98,119,.16);
+  border-radius:9px;background:var(--white);display:inline-grid;place-items:center;
+  font-size:14px;line-height:1;cursor:pointer;box-shadow:0 3px 8px rgba(33,98,119,.05);
+  transition:.15s;vertical-align:middle
+}
+.task-attention-btn:hover:not(:disabled){background:var(--yellow-soft);border-color:rgba(255,198,11,.55);transform:translateY(-1px)}
+.task-attention-btn:active:not(:disabled){transform:translateY(0)}
+.task-attention-btn:disabled{opacity:.32;cursor:not-allowed;filter:grayscale(1)}
+.task-attention-btn.sending{animation:taskBellPulse .8s ease-in-out infinite alternate}
+.task-attention-btn.compact{width:27px;height:27px;min-width:27px;font-size:13px}
+.task-focus-meta-top{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.task-card-top-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+.task-archive-row{grid-template-columns:minmax(0,1.6fr) .65fr .65fr .8fr .8fr auto auto}
+@keyframes taskBellPulse{from{transform:scale(1)}to{transform:scale(1.12)}}
+
+@media(max-width:700px){
+  .task-focus-meta-top{justify-content:flex-start}
+  .task-archive-row{grid-template-columns:minmax(0,1fr)}
+  .task-archive-row>.task-attention-btn{justify-self:start}
+}
