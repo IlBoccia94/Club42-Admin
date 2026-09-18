@@ -65,7 +65,7 @@ export function buildNotificationsUi(){
       </div>
 
       <section class="card notif-info-strip">
-        <div><strong>Come funzionano le push?</strong><span>Il browser consegna gli avvisi tramite il service worker: la pagina non deve essere aperta. Permessi del sistema, risparmio energetico o “Non disturbare” possono comunque ritardarle o silenziarle.</span></div>
+        <div><strong>Come funzionano le push?</strong><span>Gli avvisi immediati vengono elaborati circa ogni minuto; quelli programmati alle 09:00 usano sempre il fuso Europe/Rome. Il browser li consegna tramite il service worker anche a pagina chiusa. Risparmio energetico o “Non disturbare” possono comunque ritardarne la visualizzazione sul dispositivo.</span></div>
         <button class="btn" id="notifAllInfo">ⓘ Quando vengono inviate?</button>
       </section>
     </div>`;
