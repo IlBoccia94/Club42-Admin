@@ -1,6 +1,6 @@
 export function buildSocialUi(){
-  if(!document.querySelector('link[href="social.css"]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css';document.head.appendChild(link);
+  if(!document.querySelector('link[href^="social.css"]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260918-recurrence1';document.head.appendChild(link);
   }
   const nav=document.querySelector('.nav-item[data-view="social"]');
   if(nav){const badge=nav.querySelector('.nav-badge');if(badge)badge.remove()}
@@ -26,6 +26,44 @@ export function buildSocialUi(){
       <div class="field"><label>Stato</label><select id="scStatus"><option value="idea">Idea</option><option value="planned">Pianificato</option><option value="production">In produzione</option><option value="review">Revisione</option><option value="ready">Pronto</option><option value="scheduled">Programmato</option><option value="published">Pubblicato</option><option value="archived">Archiviato</option></select></div>
       <div class="field"><label>Priorità</label><select id="scPriority"><option value="low">Bassa</option><option value="medium">Media</option><option value="high">Alta</option></select></div>
       <div class="field"><label>Data</label><input id="scDate" type="date"></div><div class="field"><label>Ora</label><input id="scTime" type="time"></div>
+      <div class="field full social-recurrence-field">
+        <label class="social-recurring-toggle"><input id="scRecurring" type="checkbox"> Contenuto ricorrente</label>
+        <div id="scRecurrencePanel" class="social-recurrence-panel" hidden>
+          <div class="social-recurrence-grid">
+            <div class="field"><label>Ripeti</label><select id="scRecurrenceType"><option value="weekly">Ogni settimana</option><option value="daily">Ogni N giorni</option><option value="monthly_day">Ogni mese · giorno del mese</option><option value="monthly_weekday">Ogni mese · es. primo lunedì</option></select></div>
+            <div class="field"><label>Intervallo</label><div class="social-recurrence-interval"><input id="scRecurrenceInterval" type="number" min="1" max="12" value="1"><span id="scRecurrenceUnit">settimana/e</span></div></div>
+          </div>
+          <div id="scRecurrenceWeekly" class="social-recurrence-section">
+            <label>Giorni della settimana</label>
+            <div class="social-weekday-picker">
+              <label><input type="checkbox" data-recur-weekday value="1"><span>Lun</span></label>
+              <label><input type="checkbox" data-recur-weekday value="2"><span>Mar</span></label>
+              <label><input type="checkbox" data-recur-weekday value="3"><span>Mer</span></label>
+              <label><input type="checkbox" data-recur-weekday value="4"><span>Gio</span></label>
+              <label><input type="checkbox" data-recur-weekday value="5"><span>Ven</span></label>
+              <label><input type="checkbox" data-recur-weekday value="6"><span>Sab</span></label>
+              <label><input type="checkbox" data-recur-weekday value="0"><span>Dom</span></label>
+            </div>
+          </div>
+          <div id="scRecurrenceMonthlyDay" class="social-recurrence-section" hidden>
+            <div class="field"><label>Giorno del mese</label><input id="scRecurrenceMonthDay" type="number" min="1" max="31" value="1"></div>
+            <div class="social-recurrence-help">Nei mesi che non hanno quel giorno (es. 31 febbraio), l'occorrenza viene saltata.</div>
+          </div>
+          <div id="scRecurrenceMonthlyWeekday" class="social-recurrence-section" hidden>
+            <div class="social-recurrence-grid">
+              <div class="field"><label>Posizione</label><select id="scRecurrenceNth"><option value="1">Primo</option><option value="2">Secondo</option><option value="3">Terzo</option><option value="4">Quarto</option><option value="last">Ultimo</option></select></div>
+              <div class="field"><label>Giorno</label><select id="scRecurrenceWeekday"><option value="1">Lunedì</option><option value="2">Martedì</option><option value="3">Mercoledì</option><option value="4">Giovedì</option><option value="5">Venerdì</option><option value="6">Sabato</option><option value="0">Domenica</option></select></div>
+            </div>
+          </div>
+          <div class="social-recurrence-grid">
+            <div class="field"><label>Termina</label><select id="scRecurrenceEndMode"><option value="count">Dopo un numero di occorrenze</option><option value="until">A una data precisa</option></select></div>
+            <div class="field" id="scRecurrenceCountField"><label>Numero occorrenze</label><input id="scRecurrenceCount" type="number" min="2" max="104" value="12"></div>
+            <div class="field" id="scRecurrenceUntilField" hidden><label>Fino al</label><input id="scRecurrenceUntil" type="date"></div>
+          </div>
+          <div id="scRecurrencePreview" class="social-recurrence-preview"></div>
+        </div>
+        <div id="scRecurrenceExisting" class="social-recurrence-existing" hidden>↻ Questa è una singola occorrenza di una serie ricorrente. Le modifiche valgono solo per questa data.</div>
+      </div>
       <div class="field"><label>Format</label><select id="scFormat"></select></div><div class="field"><label>Evento collegato</label><select id="scEvent"></select></div>
       <div class="field full"><label>Responsabile</label><select id="scAssigned"></select></div>
       <div class="field full"><label>Hook</label><textarea id="scHook" rows="2" placeholder="Il gancio dei primi secondi..."></textarea></div>
