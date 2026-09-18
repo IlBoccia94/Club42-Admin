@@ -242,6 +242,48 @@ function seriesRowsForScope(content,scope){
  const index=all.findIndex(x=>x.id===content.id);
  return index>=0?all.slice(index):[content];
 }
+function ensureSeriesScopeDialog(){
+ if($('socialSeriesActionDlg'))return true;
+ document.body.insertAdjacentHTML('beforeend',`
+  <dialog id="socialSeriesActionDlg" class="social-series-action-dialog">
+    <div class="modal social-series-action-modal">
+      <div class="modal-head">
+        <div>
+          <div class="social-series-kicker">↻ Serie ricorrente</div>
+          <h3 id="socialSeriesActionTitle">Come vuoi procedere?</h3>
+          <p id="socialSeriesActionText" class="social-series-action-text"></p>
+        </div>
+        <button type="button" class="close" id="socialSeriesActionClose" aria-label="Chiudi">×</button>
+      </div>
+      <div class="social-series-scope-list">
+        <button type="button" class="social-series-scope" data-series-scope="single">
+          <span class="social-series-scope-icon">1</span>
+          <span><b>Solo questo contenuto</b><small>Interviene soltanto sull'occorrenza che hai aperto.</small></span>
+          <em id="socialSeriesSingleCount">1</em>
+        </button>
+        <button type="button" class="social-series-scope" data-series-scope="future">
+          <span class="social-series-scope-icon">→</span>
+          <span><b>Questo e tutti i successivi</b><small>Interviene da questa occorrenza in avanti, lasciando intatti i precedenti.</small></span>
+          <em id="socialSeriesFutureCount">0</em>
+        </button>
+        <button type="button" class="social-series-scope" data-series-scope="all">
+          <span class="social-series-scope-icon">↻</span>
+          <span><b>Tutta la serie</b><small>Interviene su tutte le occorrenze della stessa serie.</small></span>
+          <em id="socialSeriesAllCount">0</em>
+        </button>
+      </div>
+      <div id="socialSeriesDateNote" class="social-series-date-note" hidden>📅 Nelle modifiche multiple ogni occorrenza mantiene la propria data. Un'eventuale nuova data inserita nel form viene applicata solo al contenuto che hai aperto.</div>
+      <div class="modal-actions"><button type="button" class="btn" id="socialSeriesActionCancel">Annulla</button></div>
+    </div>
+  </dialog>`);
+ const dlg=$('socialSeriesActionDlg');
+ if(!dlg)return false;
+ document.querySelectorAll('[data-series-scope]').forEach(btn=>btn.onclick=()=>settleSeriesScope(btn.dataset.seriesScope));
+ $('socialSeriesActionCancel').onclick=()=>settleSeriesScope(null);
+ $('socialSeriesActionClose').onclick=()=>settleSeriesScope(null);
+ dlg.addEventListener('cancel',ev=>{ev.preventDefault();settleSeriesScope(null)});
+ return true;
+}
 function settleSeriesScope(scope=null){
  const dlg=$('socialSeriesActionDlg');
  if(dlg?.open)dlg.close();
@@ -250,6 +292,10 @@ function settleSeriesScope(scope=null){
 }
 function chooseSeriesScope(action,content){
  if(!content?.recurrence_group_id)return Promise.resolve('single');
+ if(!ensureSeriesScopeDialog()){
+  toast('Impossibile aprire la scelta della serie.');
+  return Promise.resolve(null);
+ }
  const single=seriesRowsForScope(content,'single').length;
  const future=seriesRowsForScope(content,'future').length;
  const all=seriesRowsForScope(content,'all').length;
@@ -266,7 +312,16 @@ function chooseSeriesScope(action,content){
  return new Promise(resolve=>{
   if(seriesScopeResolver)seriesScopeResolver(null);
   seriesScopeResolver=resolve;
-  $('socialSeriesActionDlg').showModal();
+  const dlg=$('socialSeriesActionDlg');
+  try{
+   if(dlg.open)dlg.close();
+   dlg.showModal();
+  }catch(error){
+   console.error('Apertura selezione serie Social',error);
+   seriesScopeResolver=null;
+   resolve(null);
+   toast('Impossibile aprire la scelta della serie.');
+  }
  });
 }
 async function updateRecurringContent(content,row,scope){
@@ -307,13 +362,41 @@ function clearContentForm(){
 window.newSocialContent=(date='')=>{clearContentForm();$('scDate').value=date;seedWeeklyDayFromStart();$('socialContentDlg').showModal()};
 window.newFromFormat=id=>{clearContentForm();const f=formats.find(x=>x.id===id);if(f){$('scFormat').value=f.id;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar;$('scTitle').value=f.name}$('socialContentDlg').showModal()};
 window.openSocialContent=id=>{
- const c=byId(id);if(!c)return;editContentId=id;
- $('socialContentDlgTitle').textContent='Modifica contenuto';
- $('scTitle').value=c.title;$('scPlatform').value=c.platform;$('scType').value=c.content_type;$('scObjective').value=c.objective;$('scPillar').value=c.pillar;$('scStatus').value=c.status;$('scPriority').value=c.priority;$('scDate').value=c.scheduled_date||'';$('scTime').value=(c.scheduled_time||'').slice(0,5);$('scFormat').value=c.format_id||'';$('scEvent').value=c.event_id||'';$('scAssigned').value=c.assigned_to||'';$('scHook').value=c.hook||'';$('scCta').value=c.cta||'';$('scCaption').value=c.caption||'';$('scNotes').value=c.production_notes||'';$('scAsset').value=c.asset_url||'';$('scPublishedUrl').value=c.published_url||'';
- resetRecurrenceForm();$('scRecurring').disabled=true;$('scRecurrenceExisting').hidden=!c.recurrence_group_id;
- checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=!!c.checklist?.[k]});
- $('socialDeleteBtn').style.display='inline-flex';$('socialMetricsBtn').style.display=c.status==='published'?'inline-flex':'none';
- $('socialContentDlg').showModal()
+ try{
+  const c=byId(id);if(!c)return toast('Contenuto non trovato.');
+  const dlg=$('socialContentDlg');if(!dlg)return toast('Modulo Social non disponibile. Ricarica la pagina.');
+  editContentId=id;
+  $('socialContentDlgTitle').textContent='Modifica contenuto';
+  $('scTitle').value=c.title||'';
+  $('scPlatform').value=c.platform||'instagram';
+  $('scType').value=c.content_type||'reel';
+  $('scObjective').value=c.objective||'discovery';
+  $('scPillar').value=c.pillar||'locality';
+  $('scStatus').value=c.status||'idea';
+  $('scPriority').value=c.priority||'medium';
+  $('scDate').value=c.scheduled_date||'';
+  $('scTime').value=(c.scheduled_time||'').slice(0,5);
+  $('scFormat').value=c.format_id||'';
+  $('scEvent').value=c.event_id||'';
+  $('scAssigned').value=c.assigned_to||'';
+  $('scHook').value=c.hook||'';
+  $('scCta').value=c.cta||'';
+  $('scCaption').value=c.caption||'';
+  $('scNotes').value=c.production_notes||'';
+  $('scAsset').value=c.asset_url||'';
+  $('scPublishedUrl').value=c.published_url||'';
+  resetRecurrenceForm();
+  $('scRecurring').disabled=true;
+  $('scRecurrenceExisting').hidden=!c.recurrence_group_id;
+  checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=!!c.checklist?.[k]});
+  $('socialDeleteBtn').style.display='inline-flex';
+  $('socialMetricsBtn').style.display=c.status==='published'?'inline-flex':'none';
+  if(dlg.open)dlg.close();
+  dlg.showModal();
+ }catch(error){
+  console.error('Apertura contenuto Social',error);
+  toast('Errore nell’apertura del contenuto. Ricarica la pagina e riprova.');
+ }
 };
 
 async function saveContent(ev){
@@ -394,9 +477,5 @@ export function initSocial(){
  ['scRecurrenceType','scRecurrenceInterval','scRecurrenceEndMode','scRecurrenceCount','scRecurrenceUntil','scRecurrenceMonthDay','scRecurrenceNth','scRecurrenceWeekday'].forEach(id=>$(id).addEventListener(id==='scRecurrenceInterval'||id==='scRecurrenceCount'||id==='scRecurrenceMonthDay'?'input':'change',syncRecurrenceUi));
  document.querySelectorAll('[data-recur-weekday]').forEach(x=>x.onchange=renderRecurrencePreview);
  $('scDate').addEventListener('change',()=>{if($('scRecurring').checked){seedWeeklyDayFromStart();syncRecurrenceUi()}});
- document.querySelectorAll('[data-series-scope]').forEach(btn=>btn.onclick=()=>settleSeriesScope(btn.dataset.seriesScope));
- $('socialSeriesActionCancel').onclick=()=>settleSeriesScope(null);
- $('socialSeriesActionClose').onclick=()=>settleSeriesScope(null);
- $('socialSeriesActionDlg').addEventListener('cancel',ev=>{ev.preventDefault();settleSeriesScope(null)});
  $('scFormat').onchange=()=>{const f=formats.find(x=>x.id===$('scFormat').value);if(!f)return;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar};
 }
