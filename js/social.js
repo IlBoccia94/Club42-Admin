@@ -11,7 +11,7 @@ const checklistItems=[
 ];
 
 function typeBadge(t){return `<span class="social-type">${typeLabels[t]||t}</span>`}
-function byId(id){return contents.find(x=>x.id===id)}
+function byId(id){const key=String(id??'').trim();return contents.find(x=>String(x.id??'').trim()===key)}
 function personName(id){return socialUsers.find(x=>x.user_id===id)?.display_name||''}
 function localDate(d){if(!d)return'';return fmtDate(d)}
 
@@ -26,6 +26,7 @@ export async function loadSocial(){
  contents=cr.data||[];formats=fr.data||[];socialUsers=ur.data||[];metricsById=Object.fromEntries((mr.data||[]).map(m=>[m.content_id,m]));
  populateSocialSelects();renderSocial();
 }
+window.club42LoadSocial=()=>loadSocial();
 
 function populateSocialSelects(){
  if(!$('scFormat'))return;
