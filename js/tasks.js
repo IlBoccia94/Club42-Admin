@@ -1,10 +1,11 @@
 import {$,app,db,esc,fmtDate,toast,SUPABASE_URL,SUPABASE_KEY} from './core.js';
 
-let tasks=[],users=[],projects=[],events=[],editTaskId=null,activeTab='focus',dragTaskId=null;
+let tasks=[],users=[],projects=[],events=[],editTaskId=null,activeTab='focus',dragTaskId=null,taskQuickFilter='all';
 const statusLabels={backlog:'Backlog',todo:'Da fare',doing:'In corso',blocked:'Bloccato',done:'Fatto'};
 const priorityLabels={urgent:'Urgente',high:'Alta',medium:'Media',low:'Bassa'};
 const categoryLabels={general:'Generale',project:'Progetto',event:'Evento',admin:'Amministrazione',social:'Social',communication:'Comunicazione',finance:'Finanze'};
 const priorityRank={urgent:4,high:3,medium:2,low:1};
+const taskQuickFilterLabels={open:'Aperti',today:'Oggi',overdue:'In ritardo',blocked:'Bloccati'};
 
 function localToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function dateObj(s){return s?new Date(s+'T12:00:00'):null}
@@ -17,6 +18,34 @@ function isOverdue(t){return isOpen(t)&&t.due_date&&t.due_date<localToday()}
 function dueText(t){if(!t.due_date)return'Senza scadenza';const today=localToday();if(t.due_date===today)return'Oggi';if(t.due_date<today)return`Scaduto · ${fmtDate(t.due_date)}`;return fmtDate(t.due_date)}
 function taskContext(t){if(t.project_id)return projectName(t.project_id);if(t.event_id)return eventName(t.event_id);return categoryLabels[t.category]||'Generale'}
 function attentionScore(t){let s=0;if(t.status==='blocked')s+=12;if(isOverdue(t))s+=10;if(t.due_date===localToday()&&isOpen(t))s+=8;if(t.priority==='urgent')s+=6;else if(t.priority==='high')s+=3;if(t.status==='doing')s+=2;if(!t.due_date&&isOpen(t))s-=2;return s}
+function matchesTaskQuickFilter(t){
+ if(taskQuickFilter==='open')return isOpen(t);
+ if(taskQuickFilter==='today')return isOpen(t)&&t.due_date===localToday();
+ if(taskQuickFilter==='overdue')return isOverdue(t);
+ if(taskQuickFilter==='blocked')return t.status==='blocked';
+ return true;
+}
+function syncTaskQuickFilterUi(){
+ document.querySelectorAll('.task-kpi').forEach(btn=>{
+  const active=taskQuickFilter===btn.dataset.taskKpi;
+  btn.classList.toggle('active-filter',active);
+  btn.setAttribute('aria-pressed',active?'true':'false');
+ });
+ const bar=$('taskQuickFilterBar');
+ if(!bar)return;
+ const active=taskQuickFilter!=='all';
+ bar.hidden=!active;
+ if(active&&$('taskQuickFilterLabel'))$('taskQuickFilterLabel').textContent=taskQuickFilterLabels[taskQuickFilter]||'Filtro attivo';
+}
+function setTaskQuickFilter(type='all',{navigate=true}={}){
+ const next=taskQuickFilterLabels[type]?type:'all';
+ taskQuickFilter=next;
+ if(next==='all')sessionStorage.removeItem('club42_tasks_quick_filter');
+ else sessionStorage.setItem('club42_tasks_quick_filter',next);
+ syncTaskQuickFilterUi();
+ if(navigate)setTab('archive');
+ else if(activeTab==='archive')renderArchive();
+}
 function canForceTaskAttention(){return app.currentProfile?.role==='admin'}
 function taskAttentionButton(t,compact=false){
  if(!canForceTaskAttention())return '';
@@ -85,6 +114,7 @@ function renderTasks(){
  $('taskTodayKpi').textContent=tasks.filter(t=>isOpen(t)&&t.due_date===today).length;
  $('taskOverdueKpi').textContent=tasks.filter(isOverdue).length;
  $('taskBlockedKpi').textContent=tasks.filter(t=>t.status==='blocked').length;
+ syncTaskQuickFilterUi();
  renderFocus();renderKanban();renderAnalytics();renderArchive();
 }
 
@@ -111,7 +141,7 @@ function renderStatusChart(){const cols={backlog:'#c9c7c0',todo:'#ffc60b',doing:
 function renderOwnerChart(){const open=tasks.filter(isOpen);const rows=[...users.map(u=>({id:u.user_id,name:u.display_name||u.email,count:open.filter(t=>t.assigned_to===u.user_id).length})),{id:null,name:'Non assegnati',count:open.filter(t=>!t.assigned_to).length}].filter(x=>x.count>0).sort((a,b)=>b.count-a.count);if(!rows.length){$('taskOwnerChart').innerHTML='<div class="task-empty">Nessun task aperto da distribuire.</div>';return}const max=Math.max(...rows.map(x=>x.count),1);$('taskOwnerChart').innerHTML=`<div class="task-owner-bars">${rows.map(r=>`<div class="task-owner-row"><label title="${esc(r.name)}">${esc(r.name)}</label><div class="task-owner-track"><i style="width:${Math.max(5,r.count/max*100)}%"></i></div><b>${r.count}</b></div>`).join('')}</div>`}
 function renderDeadlineChart(){const start=localToday();const days=Array.from({length:14},(_,i)=>addDays(start,i));const data=days.map(d=>({date:d,count:tasks.filter(t=>isOpen(t)&&t.due_date===d).length}));const max=Math.max(...data.map(x=>x.count),1);const fmt=new Intl.DateTimeFormat('it-IT',{weekday:'short'});$('taskDeadlineChart').innerHTML=`<div class="task-deadline-chart">${data.map(x=>{const dd=dateObj(x.date);const h=x.count?Math.max(8,Math.round(x.count/max*140)):3;return `<div class="task-deadline-day" title="${x.count} task · ${fmtDate(x.date)}"><div class="task-deadline-barslot"><div class="task-deadline-bar" style="height:${h}px;opacity:${x.count?1:.12}"></div></div><b>${String(dd.getDate()).padStart(2,'0')}</b><span>${fmt.format(dd).replace('.','')}</span></div>`}).join('')}</div>`}
 
-function renderArchive(){const q=$('taskSearch')?.value?.toLowerCase().trim()||'',sf=$('taskStatusFilter')?.value||'all',pf=$('taskPriorityFilter')?.value||'all',of=$('taskOwnerFilter')?.value||'all',prf=$('taskProjectFilter')?.value||'all';let rows=tasks.filter(t=>sf==='all'||t.status===sf).filter(t=>pf==='all'||t.priority===pf).filter(t=>of==='all'||(of==='none'?!t.assigned_to:t.assigned_to===of)).filter(t=>prf==='all'||t.project_id===prf);if(q)rows=rows.filter(t=>[t.title,t.description,t.notes,ownerName(t.assigned_to),projectName(t.project_id),eventName(t.event_id),...(t.labels||[])].some(v=>(v||'').toLowerCase().includes(q)));rows.sort((a,b)=>Number(isOpen(b))-Number(isOpen(a))||Number(isOverdue(b))-Number(isOverdue(a))||priorityRank[b.priority]-priorityRank[a.priority]||(a.due_date||'9999').localeCompare(b.due_date||'9999'));$('taskArchiveList').innerHTML=rows.length?rows.map(t=>`<article class="task-archive-row" onclick="openTask('${t.id}')"><div><h4>${esc(t.title)}</h4><p>${esc(t.description||t.notes||'')}</p></div><div><span class="task-pill">${statusLabels[t.status]}</span></div><div><span class="task-pill task-priority-${t.priority}">${priorityLabels[t.priority]}</span></div><div>${esc(ownerName(t.assigned_to))}</div><div>${esc(taskContext(t))}</div><div>${t.due_date?fmtDate(t.due_date):'—'}</div>${taskAttentionButton(t,true)}</article>`).join(''):'<div class="task-empty">Nessun task trovato.</div>'}
+function renderArchive(){const q=$('taskSearch')?.value?.toLowerCase().trim()||'',sf=$('taskStatusFilter')?.value||'all',pf=$('taskPriorityFilter')?.value||'all',of=$('taskOwnerFilter')?.value||'all',prf=$('taskProjectFilter')?.value||'all';let rows=tasks.filter(matchesTaskQuickFilter).filter(t=>sf==='all'||t.status===sf).filter(t=>pf==='all'||t.priority===pf).filter(t=>of==='all'||(of==='none'?!t.assigned_to:t.assigned_to===of)).filter(t=>prf==='all'||t.project_id===prf);if(q)rows=rows.filter(t=>[t.title,t.description,t.notes,ownerName(t.assigned_to),projectName(t.project_id),eventName(t.event_id),...(t.labels||[])].some(v=>(v||'').toLowerCase().includes(q)));rows.sort((a,b)=>Number(isOpen(b))-Number(isOpen(a))||Number(isOverdue(b))-Number(isOverdue(a))||priorityRank[b.priority]-priorityRank[a.priority]||(a.due_date||'9999').localeCompare(b.due_date||'9999'));$('taskArchiveList').innerHTML=rows.length?rows.map(t=>`<article class="task-archive-row" onclick="openTask('${t.id}')"><div><h4>${esc(t.title)}</h4><p>${esc(t.description||t.notes||'')}</p></div><div><span class="task-pill">${statusLabels[t.status]}</span></div><div><span class="task-pill task-priority-${t.priority}">${priorityLabels[t.priority]}</span></div><div>${esc(ownerName(t.assigned_to))}</div><div>${esc(taskContext(t))}</div><div>${t.due_date?fmtDate(t.due_date):'—'}</div>${taskAttentionButton(t,true)}</article>`).join(''):`<div class="task-empty">${taskQuickFilter!=='all'?'Nessun task corrisponde al filtro rapido “'+(taskQuickFilterLabels[taskQuickFilter]||'')+'”.':'Nessun task trovato.'}</div>`}
 
 function clearTaskForm(){editTaskId=null;$('taskForm').reset();$('taskDlgTitle').textContent='Nuovo task';$('taskStatus').value='todo';$('taskPriority').value='medium';$('taskCategory').value='general';$('taskDeleteBtn').style.display='none'}
 window.openTask=id=>{const t=tasks.find(x=>x.id===id);if(!t)return;editTaskId=id;$('taskDlgTitle').textContent=t.title;$('taskTitle').value=t.title;$('taskDescription').value=t.description||'';$('taskStatus').value=t.status;$('taskPriority').value=t.priority;$('taskCategory').value=t.category||'general';$('taskOwner').value=t.assigned_to||'';$('taskStart').value=t.start_date||'';$('taskDue').value=t.due_date||'';$('taskHours').value=t.estimated_hours??'';$('taskProject').value=t.project_id||'';$('taskEvent').value=t.event_id||'';$('taskLabels').value=(t.labels||[]).join(', ');$('taskNotes').value=t.notes||'';$('taskDeleteBtn').style.display='inline-flex';$('taskDlg').showModal()};
@@ -126,14 +156,20 @@ window.taskDragOver=ev=>{ev.preventDefault();ev.currentTarget.classList.add('dra
 window.taskDragLeave=ev=>{if(!ev.currentTarget.contains(ev.relatedTarget))ev.currentTarget.classList.remove('drag-over')};
 window.taskDrop=async(ev,status)=>{ev.preventDefault();ev.currentTarget.classList.remove('drag-over');const id=dragTaskId||ev.dataTransfer?.getData('text/plain');if(!id)return;const t=tasks.find(x=>x.id===id);if(!t||t.status===status)return;const {error}=await db.from('project_tasks').update({status}).eq('id',id);if(error)return toast(error.message);toast(`Task → ${statusLabels[status]}`);dragTaskId=null;await loadTasks()};
 
-function kpiAction(type){if(type==='blocked'){setTab('focus');$('taskBlockedList')?.scrollIntoView({behavior:'smooth',block:'center'});return}setTab('archive');if(type==='open'){$('taskStatusFilter').value='all';$('taskSearch').value=''}else if(type==='overdue'){$('taskStatusFilter').value='all';$('taskSearch').value=''}else if(type==='today'){$('taskStatusFilter').value='all';$('taskSearch').value=''}renderArchive()}
+function kpiAction(type){
+ const next=taskQuickFilter===type?'all':type;
+ setTaskQuickFilter(next,{navigate:true});
+}
 
 export function initTasks(){
  $('newTaskBtn').onclick=()=>{clearTaskForm();$('taskDlg').showModal()};
  $('taskClose').onclick=()=>$('taskDlg').close();$('taskCancel').onclick=()=>$('taskDlg').close();$('taskForm').onsubmit=saveTask;$('taskDeleteBtn').onclick=deleteTask;
  document.querySelectorAll('.tasks-tab').forEach(b=>b.onclick=()=>setTab(b.dataset.ttab));
  document.querySelectorAll('.task-kpi').forEach(b=>b.onclick=()=>kpiAction(b.dataset.taskKpi));
+ $('taskQuickFilterClear').onclick=()=>setTaskQuickFilter('all',{navigate:false});
  $('taskKanbanOwner').onchange=renderKanban;
  ['taskSearch','taskStatusFilter','taskPriorityFilter','taskOwnerFilter','taskProjectFilter'].forEach(id=>$(id).addEventListener(id==='taskSearch'?'input':'change',renderArchive));
+ const rememberedFilter=sessionStorage.getItem('club42_tasks_quick_filter');if(taskQuickFilterLabels[rememberedFilter])taskQuickFilter=rememberedFilter;
+ syncTaskQuickFilterUi();
  const remembered=sessionStorage.getItem('club42_tasks_tab');if(['focus','kanban','analytics','archive'].includes(remembered))setTab(remembered);
 }
