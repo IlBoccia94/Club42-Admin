@@ -1,6 +1,6 @@
 import {$,app,db,esc,fmtDate,toast} from './core.js';
 
-let contents=[],formats=[],metricsById={},socialUsers=[],calendarCursor=new Date(),activeTab='calendar',editContentId=null,metricsContentId=null,seriesScopeResolver=null;
+let contents=[],formats=[],metricsById={},socialUsers=[],socialVoteUsers=[],socialIdeaVotes=[],calendarCursor=new Date(),activeTab='calendar',editContentId=null,metricsContentId=null,seriesScopeResolver=null;
 
 const statusLabels={idea:'Idea',planned:'Pianificato',production:'In produzione',review:'Revisione',ready:'Pronto',scheduled:'Programmato',published:'Pubblicato',archived:'Archiviato'};
 const typeLabels={reel:'Reel',carousel:'Carousel',story:'Stories',post:'Post',live:'Live',other:'Altro'};
@@ -14,16 +14,35 @@ function typeBadge(t){return `<span class="social-type">${typeLabels[t]||t}</spa
 function byId(id){const key=String(id??'').trim();return contents.find(x=>String(x.id??'').trim()===key)}
 function personName(id){return socialUsers.find(x=>x.user_id===id)?.display_name||''}
 function localDate(d){if(!d)return'';return fmtDate(d)}
+function canVoteSocialIdea(){return ['admin','staff','treasurer'].includes(app.currentProfile?.role||'')}
+function socialVotesFor(id){return socialIdeaVotes.filter(v=>v.content_id===id)}
+function socialVoteUserName(id){const u=socialVoteUsers.find(x=>x.user_id===id)||socialUsers.find(x=>x.user_id===id);return u?.display_name||u?.email||'Utente non disponibile'}
+function socialIdeaVoteStats(id){const vv=socialVotesFor(id),me=vv.find(v=>v.voter_id===app.currentUser?.id);return{positive:vv.filter(v=>Number(v.vote)===1).length,negative:vv.filter(v=>Number(v.vote)===-1).length,mine:Number(me?.vote||0)}}
+function socialIdeaVoteControls(id,compact=false){const s=socialIdeaVoteStats(id);return `<div class="club-vote-strip${compact?' compact':''}" onclick="event.stopPropagation()"><button type="button" class="club-vote-btn positive ${s.mine===1?'active':''}" aria-label="Voto positivo" aria-pressed="${s.mine===1}" onclick="event.stopPropagation();setSocialIdeaVote('${id}',1)">👍 <b>${s.positive}</b></button><button type="button" class="club-vote-btn negative ${s.mine===-1?'active':''}" aria-label="Voto negativo" aria-pressed="${s.mine===-1}" onclick="event.stopPropagation();setSocialIdeaVote('${id}',-1)">👎 <b>${s.negative}</b></button><button type="button" class="club-vote-details" onclick="event.stopPropagation();openSocialIdeaVotes('${id}')">Chi ha votato</button></div>`}
+function ensureSocialIdeaVotesDialog(){if($('socialIdeaVotesDlg'))return;document.body.insertAdjacentHTML('beforeend',`<dialog id="socialIdeaVotesDlg" class="club-votes-dialog"><div class="modal club-votes-modal"><div class="modal-head"><div><div class="social-series-kicker">Valutazione trasparente</div><h3 id="socialIdeaVotesTitle">Voti idea</h3></div><button type="button" class="close" id="socialIdeaVotesClose">×</button></div><div id="socialIdeaVotesBody" class="club-votes-body"></div><div class="modal-actions"><button type="button" class="btn" id="socialIdeaVotesDone">Chiudi</button></div></div></dialog>`);$('socialIdeaVotesClose').onclick=()=>$('socialIdeaVotesDlg').close();$('socialIdeaVotesDone').onclick=()=>$('socialIdeaVotesDlg').close()}
+function renderSocialIdeaVotePanel(){
+ const wrap=$('socialIdeaVotePanelWrap'),root=$('socialIdeaVotePanel');if(!wrap||!root)return;
+ const item=editContentId?byId(editContentId):null;
+ const visible=!!item&&$('scStatus')?.value==='idea';
+ wrap.hidden=!visible;
+ if(!visible){root.innerHTML='';return}
+ root.innerHTML=socialIdeaVoteControls(item.id);
+}
+window.openSocialIdeaVotes=id=>{const item=byId(id);if(!item)return;ensureSocialIdeaVotesDialog();const vv=socialVotesFor(id).slice().sort((a,b)=>socialVoteUserName(a.voter_id).localeCompare(socialVoteUserName(b.voter_id),'it'));const pos=vv.filter(v=>Number(v.vote)===1),neg=vv.filter(v=>Number(v.vote)===-1);$('socialIdeaVotesTitle').textContent=item.title;const list=(rows,empty)=>rows.length?rows.map(v=>`<div class="club-voter-row"><span>${esc(socialVoteUserName(v.voter_id))}</span><b>${Number(v.vote)===1?'👍 Favorevole':'👎 Contrario'}</b></div>`).join(''):`<div class="club-votes-empty">${empty}</div>`;$('socialIdeaVotesBody').innerHTML=`<section><div class="club-votes-section-title"><span>👍 Favorevoli</span><b>${pos.length}</b></div>${list(pos,'Nessun voto positivo.')}</section><section><div class="club-votes-section-title"><span>👎 Contrari</span><b>${neg.length}</b></div>${list(neg,'Nessun voto negativo.')}</section>`;$('socialIdeaVotesDlg').showModal()}
+window.setSocialIdeaVote=async(id,vote)=>{if(!canVoteSocialIdea())return toast('Il tuo profilo non può votare le idee Social.');const item=byId(id);if(!item||item.status!=='idea')return toast('Si possono votare solo le idee Social.');const current=socialIdeaVotes.find(v=>v.content_id===id&&v.voter_id===app.currentUser?.id);let result;if(current&&Number(current.vote)===Number(vote))result=await db.from('social_idea_votes').delete().eq('content_id',id).eq('voter_id',app.currentUser.id);else result=await db.from('social_idea_votes').upsert({content_id:id,voter_id:app.currentUser.id,vote:Number(vote),updated_at:new Date().toISOString()},{onConflict:'content_id,voter_id'});if(result.error)return toast(result.error.message);await loadSocial();if(editContentId===id)renderSocialIdeaVotePanel();toast(current&&Number(current.vote)===Number(vote)?'Voto rimosso':'Voto registrato')}
+
 
 export async function loadSocial(){
- const [cr,fr,mr,ur]=await Promise.all([
+ const [cr,fr,mr,ur,vr,vur]=await Promise.all([
   db.from('social_content').select('*').order('scheduled_date',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false}),
   db.from('social_formats').select('*').eq('active',true).order('name'),
   db.from('social_metrics').select('*'),
-  db.from('admin_users').select('user_id,display_name,email,active,status').eq('active',true).eq('status','active').order('display_name')
+  db.from('admin_users').select('user_id,display_name,email,active,status').eq('active',true).eq('status','active').order('display_name'),
+  db.from('social_idea_votes').select('*'),
+  db.from('admin_users').select('user_id,display_name,email,role,active,status')
  ]);
- if(cr.error||fr.error||mr.error||ur.error){console.error(cr.error||fr.error||mr.error||ur.error);toast('Errore nel caricamento Social');return}
- contents=cr.data||[];formats=fr.data||[];socialUsers=ur.data||[];metricsById=Object.fromEntries((mr.data||[]).map(m=>[m.content_id,m]));
+ if(cr.error||fr.error||mr.error||ur.error||vr.error||vur.error){console.error(cr.error||fr.error||mr.error||ur.error||vr.error||vur.error);toast('Errore nel caricamento Social');return}
+ contents=cr.data||[];formats=fr.data||[];socialUsers=ur.data||[];socialIdeaVotes=vr.data||[];socialVoteUsers=vur.data||[];metricsById=Object.fromEntries((mr.data||[]).map(m=>[m.content_id,m]));
  populateSocialSelects();renderSocial();
 }
 window.club42LoadSocial=()=>loadSocial();
@@ -68,7 +87,7 @@ function socialCard(c){return `<article class="social-card" onclick="openSocialC
 function renderIdeas(){
  if(!$('socialIdeasList'))return;
  const ideas=contents.filter(c=>c.status==='idea');
- $('socialIdeasList').innerHTML=ideas.length?ideas.map(c=>`<article class="social-idea" onclick="openSocialContent('${c.id}')"><div>${typeBadge(c.content_type)} <span class="role-pill">${objectiveLabels[c.objective]}</span></div><h4>${esc(c.title)}</h4><p>${esc(c.hook||c.production_notes||'Nessun dettaglio ancora.')}</p></article>`).join(''):'<div class="empty">Nessuna idea salvata. È un ottimo momento per crearne una.</div>';
+ $('socialIdeasList').innerHTML=ideas.length?ideas.map(c=>`<article class="social-idea" onclick="openSocialContent('${c.id}')"><div>${typeBadge(c.content_type)} <span class="role-pill">${objectiveLabels[c.objective]}</span></div><h4>${esc(c.title)}</h4><p>${esc(c.hook||c.production_notes||'Nessun dettaglio ancora.')}</p>${socialIdeaVoteControls(c.id,true)}</article>`).join(''):'<div class="empty">Nessuna idea salvata. È un ottimo momento per crearne una.</div>';
  $('socialFormats').innerHTML=formats.map(f=>`<article class="social-format"><div>${typeBadge(f.default_type)} <span class="role-pill">${objectiveLabels[f.default_objective]}</span></div><h4>${esc(f.name)}</h4><p>${esc(f.description||'')}</p><small>KPI: ${esc(f.primary_kpi||'da definire')}</small><button class="btn" onclick="event.stopPropagation();newFromFormat('${f.id}')">Usa format</button></article>`).join('');
 }
 
@@ -358,6 +377,8 @@ function clearContentForm(){
  $('socialDeleteBtn').style.display='none';
  $('socialMetricsBtn').style.display='none';
  resetRecurrenceForm();
+ if($('socialIdeaVotePanelWrap'))$('socialIdeaVotePanelWrap').hidden=true;
+ if($('socialIdeaVotePanel'))$('socialIdeaVotePanel').innerHTML='';
  checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=false});
 }
 window.newSocialContent=(date='')=>{clearContentForm();$('scDate').value=date;seedWeeklyDayFromStart();$('socialContentDlg').showModal()};
@@ -389,6 +410,7 @@ window.openSocialContent=id=>{
   resetRecurrenceForm();
   $('scRecurring').disabled=true;
   $('scRecurrenceExisting').hidden=!c.recurrence_group_id;
+  renderSocialIdeaVotePanel();
   checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=!!c.checklist?.[k]});
   $('socialDeleteBtn').style.display='inline-flex';
   $('socialMetricsBtn').style.display=c.status==='published'?'inline-flex':'none';
@@ -478,5 +500,6 @@ export function initSocial(){
  ['scRecurrenceType','scRecurrenceInterval','scRecurrenceEndMode','scRecurrenceCount','scRecurrenceUntil','scRecurrenceMonthDay','scRecurrenceNth','scRecurrenceWeekday'].forEach(id=>$(id).addEventListener(id==='scRecurrenceInterval'||id==='scRecurrenceCount'||id==='scRecurrenceMonthDay'?'input':'change',syncRecurrenceUi));
  document.querySelectorAll('[data-recur-weekday]').forEach(x=>x.onchange=renderRecurrencePreview);
  $('scDate').addEventListener('change',()=>{if($('scRecurring').checked){seedWeeklyDayFromStart();syncRecurrenceUi()}});
+ $('scStatus').addEventListener('change',renderSocialIdeaVotePanel);
  $('scFormat').onchange=()=>{const f=formats.find(x=>x.id===$('scFormat').value);if(!f)return;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar};
 }
