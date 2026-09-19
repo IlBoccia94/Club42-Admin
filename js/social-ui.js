@@ -1,6 +1,6 @@
 export function buildSocialUi(){
   if(!document.querySelector('link[href^="social.css"]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260918-seriesactions2';document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260919-votes1';document.head.appendChild(link);
   }
   const nav=document.querySelector('.nav-item[data-view="social"]');
   if(nav){const badge=nav.querySelector('.nav-badge');if(badge)badge.remove()}
@@ -19,6 +19,10 @@ export function buildSocialUi(){
     document.body.insertAdjacentHTML('beforeend',`
     <dialog id="socialContentDlg" class="social-dialog-wide"><form class="modal" id="socialContentForm"><div class="modal-head"><h3 id="socialContentDlgTitle">Nuovo contenuto</h3><button type="button" class="close" data-social-close="socialContentDlg">×</button></div><div class="form-grid">
       <div class="field full"><label>Titolo / idea *</label><input id="scTitle" required placeholder="Es. A La Spezia non c'è niente da fare?"></div>
+      <div class="field full social-idea-vote-panel" id="socialIdeaVotePanelWrap" hidden>
+        <div class="social-idea-vote-head"><div><label>Valutazione idea</label><span>Voto trasparente · visibile a tutto lo staff</span></div></div>
+        <div id="socialIdeaVotePanel"></div>
+      </div>
       <div class="field"><label>Piattaforma</label><select id="scPlatform"><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="facebook">Facebook</option><option value="youtube">YouTube</option><option value="other">Altro</option></select></div>
       <div class="field"><label>Tipo</label><select id="scType"><option value="reel">Reel</option><option value="carousel">Carousel</option><option value="story">Stories</option><option value="post">Post</option><option value="live">Live</option><option value="other">Altro</option></select></div>
       <div class="field"><div class="field-label-row"><label>Obiettivo</label><button type="button" class="info-tip" aria-label="Spiegazione degli obiettivi">i</button><div class="info-popover"><b>Obiettivo = cosa vogliamo ottenere.</b><span><strong>Scoperta:</strong> raggiungere persone che non conoscono Club42.</span><span><strong>Community:</strong> aumentare relazione e interazioni con chi ci segue.</span><span><strong>Evento:</strong> dare attenzione a uno specifico appuntamento.</span><span><strong>Cultura:</strong> offrire valore culturale anche senza promuovere nulla.</span><span><strong>Conversione:</strong> ottenere un'azione concreta: prenotazione, iscrizione, tessera, click o DM.</span></div></div><select id="scObjective"><option value="discovery">Scoperta</option><option value="community">Community</option><option value="event">Evento</option><option value="culture">Cultura</option><option value="conversion">Conversione</option></select></div>
