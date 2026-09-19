@@ -1,6 +1,6 @@
 export function buildFeedbackUi(){
   if(!document.querySelector('link[href^="feedback.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='feedback.css?v=20260918-workflow1';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='feedback.css?v=20260919-edit1';document.head.appendChild(l);
   }
 
   if(!document.querySelector('.nav-item[data-view="feedback"]')){
