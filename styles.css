@@ -112,3 +112,36 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
   .event-contact-modal-actions{display:grid;grid-template-columns:1fr 1fr}
   .event-contact-modal-actions .btn{width:100%}
 }
+
+
+/* Transparent voting */
+.club-vote-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
+.club-vote-strip.compact{margin-top:7px}
+.club-vote-btn,.club-vote-details{
+  border:1px solid var(--line);background:var(--white);color:var(--blue);
+  border-radius:999px;min-height:30px;padding:5px 9px;font-family:var(--font-subtitle);
+  font-size:10px;font-weight:800;cursor:pointer;transition:.15s
+}
+.club-vote-btn{display:inline-flex;align-items:center;gap:4px}
+.club-vote-btn b{font-size:10px}
+.club-vote-btn:hover,.club-vote-details:hover{transform:translateY(-1px);border-color:rgba(33,98,119,.3)}
+.club-vote-btn.positive.active{background:#dff4e7;border-color:#9dceb0;color:#286b48}
+.club-vote-btn.negative.active{background:var(--coral-soft);border-color:#efb4ae;color:#9b3d38}
+.club-vote-details{background:transparent;color:var(--muted);font-weight:700}
+.club-votes-dialog{width:min(560px,calc(100% - 20px))}
+.club-votes-modal{display:grid;gap:12px}
+.club-votes-body{display:grid;gap:12px}
+.club-votes-body section{border:1px solid var(--line);border-radius:14px;padding:11px;background:var(--white)}
+.club-votes-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;font-family:var(--font-subtitle);font-size:11.5px;color:var(--blue)}
+.club-votes-section-title b{min-width:28px;text-align:center;background:var(--blue-soft);padding:4px 7px;border-radius:999px}
+.club-voter-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(33,98,119,.08);font-size:11px}
+.club-voter-row:first-of-type{border-top:0}
+.club-voter-row span{min-width:0;overflow-wrap:anywhere;color:var(--blue)}
+.club-voter-row b{font-family:var(--font-subtitle);font-size:10px;white-space:nowrap;color:var(--muted)}
+.club-votes-empty{padding:8px 0;color:var(--muted);font-size:10.5px}
+@media(max-width:650px){
+ .club-vote-strip{gap:5px}
+ .club-vote-btn,.club-vote-details{min-height:29px;padding:5px 8px;font-size:9.5px}
+ .club-votes-dialog{width:calc(100% - 12px)}
+ .club-voter-row{align-items:flex-start}
+}
