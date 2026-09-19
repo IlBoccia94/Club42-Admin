@@ -1,14 +1,18 @@
 export function buildTasksUi(){
-  if(!document.querySelector('link[href^="tasks.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='tasks.css?v=20260918-attention1';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="tasks.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='tasks.css?v=20260919-kpifilters1';document.head.appendChild(l)}
   const nav=document.querySelector('.nav-item[data-view="tasks"]');if(nav){const b=nav.querySelector('.nav-badge');if(b)b.remove()}
   const view=document.getElementById('view-tasks');if(view)view.innerHTML=`<div class="tasks-shell">
     <section class="card tasks-hero"><div class="tasks-hero-inner"><div><div class="hero-eyebrow">Club42 · Control room</div><h2>Task</h2><p>Priorità chiare, responsabilità visibili e zero attività dimenticate. Tutti i task del Club, compresi quelli dei progetti, vivono qui.</p></div><button class="btn primary" id="newTaskBtn">＋ Nuovo task</button></div></section>
 
     <div class="tasks-summary">
-      <button class="card task-kpi" data-task-kpi="open"><span>Aperti</span><b id="taskOpenKpi">0</b><small>da portare a termine</small></button>
-      <button class="card task-kpi" data-task-kpi="today"><span>Oggi</span><b id="taskTodayKpi">0</b><small>scadenza odierna</small></button>
-      <button class="card task-kpi" data-task-kpi="overdue"><span>In ritardo</span><b id="taskOverdueKpi">0</b><small>oltre la scadenza</small></button>
-      <button class="card task-kpi" data-task-kpi="blocked"><span>Bloccati</span><b id="taskBlockedKpi">0</b><small>richiedono intervento</small></button>
+      <button class="card task-kpi" data-task-kpi="open" aria-pressed="false"><span>Aperti</span><b id="taskOpenKpi">0</b><small>da portare a termine</small></button>
+      <button class="card task-kpi" data-task-kpi="today" aria-pressed="false"><span>Oggi</span><b id="taskTodayKpi">0</b><small>scadenza odierna</small></button>
+      <button class="card task-kpi" data-task-kpi="overdue" aria-pressed="false"><span>In ritardo</span><b id="taskOverdueKpi">0</b><small>oltre la scadenza</small></button>
+      <button class="card task-kpi" data-task-kpi="blocked" aria-pressed="false"><span>Bloccati</span><b id="taskBlockedKpi">0</b><small>richiedono intervento</small></button>
+    </div>
+    <div class="task-quick-filter-bar" id="taskQuickFilterBar" hidden>
+      <div><span>Filtro rapido</span><b id="taskQuickFilterLabel">—</b></div>
+      <button type="button" class="btn soft" id="taskQuickFilterClear">× Rimuovi filtro</button>
     </div>
 
     <div class="tasks-tabs">
