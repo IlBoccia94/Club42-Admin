@@ -14,3 +14,9 @@
  .project-dialog{width:calc(100% - 12px);max-width:calc(100% - 12px)}
 }
 @media(max-width:390px){.projects-hero{padding:16px 14px}.projects-summary{grid-template-columns:1fr 1fr}.projects-toolbar{grid-template-columns:1fr}.projects-toolbar input{grid-column:auto}.projects-tab{padding:8px 10px}}
+
+
+/* Project voting */
+.project-vote-side{background:linear-gradient(135deg,rgba(229,240,242,.58),rgba(255,253,250,.92))}
+.project-vote-side .club-vote-strip{margin-top:3px}
+.project-card .club-vote-strip{padding-top:2px;border-top:1px solid rgba(33,98,119,.07)}
