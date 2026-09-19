@@ -1,5 +1,5 @@
 export function buildProjectsUi(){
-  if(!document.querySelector('link[href^="projects.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='projects.css?v=20260919-portfoliofilter1';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="projects.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='projects.css?v=20260919-carddesc1';document.head.appendChild(l)}
   const nav=document.querySelector('.nav-item[data-view="projects"]');if(nav){const b=nav.querySelector('.nav-badge');if(b)b.remove()}
   const view=document.getElementById('view-projects');if(view)view.innerHTML=`<div class="projects-shell">
     <section class="card projects-hero"><div class="projects-hero-top"><div><div class="hero-eyebrow">Club42 · Portfolio</div><h2>Progetti</h2><p>Dall'idea al risultato: priorità, responsabilità, budget, task, decisioni e prossime azioni in un unico spazio.</p></div><button class="btn primary" id="newProjectBtn">＋ Nuovo progetto</button></div></section>
