@@ -76,3 +76,13 @@
  .social-series-scope b{font-size:12.5px}
  .social-series-scope small{font-size:10px}
 }
+
+
+/* Social idea voting */
+.social-idea-vote-panel{padding:11px 12px;border:1px solid rgba(33,98,119,.13);border-radius:14px;background:linear-gradient(135deg,rgba(229,240,242,.58),rgba(255,253,250,.96))}
+.social-idea-vote-panel[hidden]{display:none!important}
+.social-idea-vote-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:3px}
+.social-idea-vote-head>div{display:grid;gap:2px}
+.social-idea-vote-head label{font-family:var(--font-subtitle);font-size:11px;font-weight:800;color:var(--blue)}
+.social-idea-vote-head span{font-size:9.5px;color:var(--muted)}
+.social-idea .club-vote-strip{padding-top:7px;border-top:1px solid rgba(33,98,119,.07)}
