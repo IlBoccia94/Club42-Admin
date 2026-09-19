@@ -5,6 +5,8 @@ let feedbackRows=[];
 let feedbackUpdates=[];
 let initialized=false;
 let saving=false;
+let editFeedbackId=null;
+let editFeedbackUpdateId=null;
 const busyFeedbackIds=new Set();
 
 const priorityMeta={
@@ -42,7 +44,7 @@ function sortResolvedRows(rows){
 function renderNotes(row){
   const notes=updatesFor(row.id);
   const history=notes.length
-    ? `<div class="feedback-updates">${notes.map(n=>`<div class="feedback-update"><p>${esc(n.note).replaceAll('\n','<br>')}</p><span>${esc(n.created_by_name||'Utente Club42')} · ${esc(dateTime(n.created_at))}</span></div>`).join('')}</div>`
+    ? `<div class="feedback-updates">${notes.map(n=>`<div class="feedback-update"><div class="feedback-update-copy"><p>${esc(n.note).replaceAll('\n','<br>')}</p><span>${esc(n.created_by_name||'Utente Club42')} · ${esc(dateTime(n.created_at))}</span></div><button class="feedback-edit-note-btn" type="button" data-feedback-edit-note="${n.id}" title="Modifica nota" aria-label="Modifica nota">✎</button></div>`).join('')}</div>`
     : '<div class="feedback-no-updates">Nessuna nota di aggiornamento.</div>';
   return `<div class="feedback-update-area">
     <div class="feedback-update-title">Aggiornamenti</div>
@@ -69,7 +71,7 @@ function renderCard(row,resolved=false){
     <p class="feedback-description">${esc(row.description).replaceAll('\n','<br>')}</p>
     <div class="feedback-author">Richiesta da <strong>${esc(row.requested_by_name||'Utente Club42')}</strong></div>
     ${resolvedMeta}
-    <div class="feedback-card-actions">${stateAction}</div>
+    <div class="feedback-card-actions"><button class="btn soft feedback-edit-btn" type="button" data-feedback-edit="${row.id}">✎ Modifica feedback</button>${stateAction}</div>
     ${renderNotes(row)}
   </article>`;
 }
@@ -78,6 +80,79 @@ function bindListActions(root){
   root.querySelectorAll('[data-feedback-resolve]').forEach(btn=>btn.onclick=()=>setResolved(btn.dataset.feedbackResolve,true));
   root.querySelectorAll('[data-feedback-reopen]').forEach(btn=>btn.onclick=()=>setResolved(btn.dataset.feedbackReopen,false));
   root.querySelectorAll('[data-feedback-note]').forEach(btn=>btn.onclick=()=>addUpdate(btn.dataset.feedbackNote));
+  root.querySelectorAll('[data-feedback-edit]').forEach(btn=>btn.onclick=()=>openFeedbackEditor(btn.dataset.feedbackEdit));
+  root.querySelectorAll('[data-feedback-edit-note]').forEach(btn=>btn.onclick=()=>openFeedbackNoteEditor(btn.dataset.feedbackEditNote));
+}
+function ensureFeedbackEditors(){
+  if(!$('feedbackEditDlg')){
+    document.body.insertAdjacentHTML('beforeend',`
+      <dialog id="feedbackEditDlg" class="feedback-edit-dialog">
+        <form class="modal" id="feedbackEditForm">
+          <div class="modal-head"><div><div class="panel-kicker">Modifica richiesta</div><h3>Modifica feedback</h3></div><button type="button" class="close" id="feedbackEditClose">×</button></div>
+          <div class="form-grid">
+            <div class="field full"><label>Descrizione *</label><textarea id="feedbackEditDescription" rows="7" maxlength="4000" required></textarea></div>
+            <div class="field"><label>Priorità</label><select id="feedbackEditPriority"><option value="low">Bassa</option><option value="medium">Media</option><option value="high">Alta</option><option value="critical">Critica</option></select></div>
+          </div>
+          <div class="modal-actions"><button type="button" class="btn" id="feedbackEditCancel">Annulla</button><button class="btn primary" type="submit">Salva modifiche</button></div>
+        </form>
+      </dialog>
+      <dialog id="feedbackNoteEditDlg" class="feedback-edit-dialog">
+        <form class="modal" id="feedbackNoteEditForm">
+          <div class="modal-head"><div><div class="panel-kicker">Aggiornamento feedback</div><h3>Modifica nota</h3></div><button type="button" class="close" id="feedbackNoteEditClose">×</button></div>
+          <div class="field full"><label>Nota *</label><textarea id="feedbackNoteEditText" rows="6" maxlength="2000" required></textarea></div>
+          <div class="modal-actions"><button type="button" class="btn" id="feedbackNoteEditCancel">Annulla</button><button class="btn primary" type="submit">Salva nota</button></div>
+        </form>
+      </dialog>`);
+    $('feedbackEditClose').onclick=()=>$('feedbackEditDlg').close();
+    $('feedbackEditCancel').onclick=()=>$('feedbackEditDlg').close();
+    $('feedbackNoteEditClose').onclick=()=>$('feedbackNoteEditDlg').close();
+    $('feedbackNoteEditCancel').onclick=()=>$('feedbackNoteEditDlg').close();
+    $('feedbackEditForm').addEventListener('submit',saveFeedbackEdit);
+    $('feedbackNoteEditForm').addEventListener('submit',saveFeedbackNoteEdit);
+  }
+}
+function openFeedbackEditor(id){
+  const row=feedbackRows.find(r=>r.id===id);if(!row)return toast('Feedback non trovato');
+  ensureFeedbackEditors();editFeedbackId=id;
+  $('feedbackEditDescription').value=row.description||'';
+  $('feedbackEditPriority').value=row.priority||'medium';
+  $('feedbackEditDlg').showModal();
+}
+function openFeedbackNoteEditor(id){
+  const row=feedbackUpdates.find(r=>r.id===id);if(!row)return toast('Nota non trovata');
+  ensureFeedbackEditors();editFeedbackUpdateId=id;
+  $('feedbackNoteEditText').value=row.note||'';
+  $('feedbackNoteEditDlg').showModal();
+}
+async function saveFeedbackEdit(ev){
+  ev.preventDefault();
+  if(!canUseOperations()||!editFeedbackId)return;
+  const description=$('feedbackEditDescription').value.trim();
+  const priority=$('feedbackEditPriority').value;
+  if(description.length<3)return toast('Inserisci una descrizione più completa');
+  if(busyFeedbackIds.has(editFeedbackId))return;
+  busyFeedbackIds.add(editFeedbackId);
+  try{
+    const {data,error}=await db.from('feedback_requests').update({description,priority}).eq('id',editFeedbackId).select('id').maybeSingle();
+    if(error)throw error;if(!data)throw new Error('Feedback non aggiornato');
+    $('feedbackEditDlg').close();toast('Feedback modificato');await loadFeedback();
+  }catch(error){console.error(error);toast(error.message||'Errore durante la modifica del feedback')}
+  finally{busyFeedbackIds.delete(editFeedbackId)}
+}
+async function saveFeedbackNoteEdit(ev){
+  ev.preventDefault();
+  if(!canUseOperations()||!editFeedbackUpdateId)return;
+  const note=$('feedbackNoteEditText').value.trim();
+  if(!note)return toast('La nota non può essere vuota');
+  const key='note:'+editFeedbackUpdateId;
+  if(busyFeedbackIds.has(key))return;
+  busyFeedbackIds.add(key);
+  try{
+    const {data,error}=await db.from('feedback_updates').update({note}).eq('id',editFeedbackUpdateId).select('id').maybeSingle();
+    if(error)throw error;if(!data)throw new Error('Nota non aggiornata');
+    $('feedbackNoteEditDlg').close();toast('Nota modificata');await loadFeedback();
+  }catch(error){console.error(error);toast(error.message||'Errore durante la modifica della nota')}
+  finally{busyFeedbackIds.delete(key)}
 }
 function renderFeedback(){
   const openRoot=$('feedbackOpenList'),resolvedRoot=$('feedbackResolvedList');
