@@ -1,6 +1,6 @@
 import {$,app,db,esc,fmtDate,toast} from './core.js';
 
-let projects=[],tasks=[],updates=[],users=[],events=[],editProjectId=null,editTaskId=null,activeTab='radar';
+let projects=[],tasks=[],updates=[],users=[],voteUsers=[],events=[],projectVotes=[],editProjectId=null,editTaskId=null,activeTab='radar';
 const statusLabels={idea:'Idea',evaluation:'Valutazione',planning:'Pianificazione',confirmed:'Confermato',production:'Produzione',completed:'Completato',archived:'Archiviato',cancelled:'Annullato'};
 const priorityLabels={urgent:'Urgente',high:'Alta',medium:'Media',low:'Bassa'};
 const categoryLabels={event:'Evento',partnership:'Collaborazione',internal:'Interno',social:'Social',other:'Altro'};
@@ -14,17 +14,29 @@ function today(){return new Date().toISOString().slice(0,10)}
 function attentionScore(p){let s=0;const ts=projectTasks(p.id);if(ts.some(t=>t.status==='blocked'))s+=4;if(p.next_action_due&&p.next_action_due<today())s+=3;if(p.target_date&&p.target_date<today()&&!isClosed(p))s+=3;if(p.priority==='urgent')s+=2;if(!p.next_action&&!isClosed(p))s+=1;return s}
 function progress(p){const ts=projectTasks(p.id);if(ts.length)return Math.round(ts.filter(t=>t.status==='done').length/ts.length*100);const map={idea:5,evaluation:15,planning:35,confirmed:50,production:75,completed:100,archived:100,cancelled:0};return map[p.status]??0}
 function money(v){return v==null||v===''?'—':new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v))}
+function canVoteProject(){return ['admin','staff','treasurer'].includes(app.currentProfile?.role||'')}
+function projectVotesFor(id){return projectVotes.filter(v=>v.project_id===id)}
+function voteUserName(id){const u=voteUsers.find(x=>x.user_id===id)||users.find(x=>x.user_id===id);return u?.display_name||u?.email||'Utente non disponibile'}
+function projectVoteStats(id){const vv=projectVotesFor(id),me=vv.find(v=>v.voter_id===app.currentUser?.id);return{positive:vv.filter(v=>Number(v.vote)===1).length,negative:vv.filter(v=>Number(v.vote)===-1).length,mine:Number(me?.vote||0)}}
+function projectVoteControls(id,compact=false){const s=projectVoteStats(id);return `<div class="club-vote-strip${compact?' compact':''}" onclick="event.stopPropagation()"><button type="button" class="club-vote-btn positive ${s.mine===1?'active':''}" aria-label="Voto positivo" aria-pressed="${s.mine===1}" onclick="event.stopPropagation();setProjectVote('${id}',1)">👍 <b>${s.positive}</b></button><button type="button" class="club-vote-btn negative ${s.mine===-1?'active':''}" aria-label="Voto negativo" aria-pressed="${s.mine===-1}" onclick="event.stopPropagation();setProjectVote('${id}',-1)">👎 <b>${s.negative}</b></button><button type="button" class="club-vote-details" onclick="event.stopPropagation();openProjectVotes('${id}')">Chi ha votato</button></div>`}
+function ensureProjectVotesDialog(){if($('projectVotesDlg'))return;document.body.insertAdjacentHTML('beforeend',`<dialog id="projectVotesDlg" class="club-votes-dialog"><div class="modal club-votes-modal"><div class="modal-head"><div><div class="project-modal-kicker">Valutazione trasparente</div><h3 id="projectVotesTitle">Voti progetto</h3></div><button type="button" class="close" id="projectVotesClose">×</button></div><div id="projectVotesBody" class="club-votes-body"></div><div class="modal-actions"><button type="button" class="btn" id="projectVotesDone">Chiudi</button></div></div></dialog>`);$('projectVotesClose').onclick=()=>$('projectVotesDlg').close();$('projectVotesDone').onclick=()=>$('projectVotesDlg').close()}
+function renderProjectVotePanel(id){const root=$('projectVotePanel');if(!root)return;if(!id){root.innerHTML='<div class="project-empty">Salva prima il progetto per raccogliere voti.</div>';return}root.innerHTML=projectVoteControls(id)}
+window.openProjectVotes=id=>{const p=projects.find(x=>x.id===id);if(!p)return;ensureProjectVotesDialog();const vv=projectVotesFor(id).slice().sort((a,b)=>voteUserName(a.voter_id).localeCompare(voteUserName(b.voter_id),'it'));const pos=vv.filter(v=>Number(v.vote)===1),neg=vv.filter(v=>Number(v.vote)===-1);$('projectVotesTitle').textContent=p.title;const list=(rows,empty)=>rows.length?rows.map(v=>`<div class="club-voter-row"><span>${esc(voteUserName(v.voter_id))}</span><b>${Number(v.vote)===1?'👍 Favorevole':'👎 Contrario'}</b></div>`).join(''):`<div class="club-votes-empty">${empty}</div>`;$('projectVotesBody').innerHTML=`<section><div class="club-votes-section-title"><span>👍 Favorevoli</span><b>${pos.length}</b></div>${list(pos,'Nessun voto positivo.')}</section><section><div class="club-votes-section-title"><span>👎 Contrari</span><b>${neg.length}</b></div>${list(neg,'Nessun voto negativo.')}</section>`;$('projectVotesDlg').showModal()}
+window.setProjectVote=async(id,vote)=>{if(!canVoteProject())return toast('Il tuo profilo non può votare i progetti.');const current=projectVotes.find(v=>v.project_id===id&&v.voter_id===app.currentUser?.id);let result;if(current&&Number(current.vote)===Number(vote))result=await db.from('project_votes').delete().eq('project_id',id).eq('voter_id',app.currentUser.id);else result=await db.from('project_votes').upsert({project_id:id,voter_id:app.currentUser.id,vote:Number(vote),updated_at:new Date().toISOString()},{onConflict:'project_id,voter_id'});if(result.error)return toast(result.error.message);await loadProjects();if(editProjectId===id)renderProjectVotePanel(id);toast(current&&Number(current.vote)===Number(vote)?'Voto rimosso':'Voto registrato')}
+
 
 export async function loadProjects(){
- const [pr,tr,ur,ar,er]=await Promise.all([
+ const [pr,tr,ur,ar,vr,avr,er]=await Promise.all([
   db.from('projects').select('*').order('updated_at',{ascending:false}),
   db.from('project_tasks').select('*').order('sort_order').order('created_at'),
   db.from('project_updates').select('*').order('created_at',{ascending:false}),
   db.from('admin_users').select('user_id,display_name,email,role,active,status').eq('active',true),
+  db.from('project_votes').select('*'),
+  db.from('admin_users').select('user_id,display_name,email,role,active,status'),
   db.from('events').select('id,name,event_date').order('event_date',{ascending:false})
  ]);
- if(pr.error||tr.error||ur.error||ar.error||er.error){console.error(pr.error||tr.error||ur.error||ar.error||er.error);toast('Errore caricamento progetti');return}
- projects=pr.data||[];tasks=tr.data||[];updates=ur.data||[];users=ar.data||[];events=er.data||[];fillSelects();renderProjects();
+ if(pr.error||tr.error||ur.error||ar.error||vr.error||avr.error||er.error){console.error(pr.error||tr.error||ur.error||ar.error||vr.error||avr.error||er.error);toast('Errore caricamento progetti');return}
+ projects=pr.data||[];tasks=tr.data||[];updates=ur.data||[];users=ar.data||[];projectVotes=vr.data||[];voteUsers=avr.data||[];events=er.data||[];fillSelects();renderProjects();
 }
 
 function fillSelects(){const owners=['<option value="">Nessuno</option>',...users.map(u=>`<option value="${u.user_id}">${esc(u.display_name||u.email)}</option>`)].join('');$('prOwner').innerHTML=owners;$('ptOwner').innerHTML=owners;$('prEvent').innerHTML=['<option value="">Nessuno</option>',...events.map(e=>`<option value="${e.id}">${esc(e.name)}${e.event_date?' · '+fmtDate(e.event_date):''}</option>`)].join('')}
