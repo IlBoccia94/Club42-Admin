@@ -20,3 +20,18 @@
 .project-vote-side{background:linear-gradient(135deg,rgba(229,240,242,.58),rgba(255,253,250,.92))}
 .project-vote-side .club-vote-strip{margin-top:3px}
 .project-card .club-vote-strip{padding-top:2px;border-top:1px solid rgba(33,98,119,.07)}
+
+
+/* Portfolio status filter */
+.project-portfolio-head{align-items:center;gap:12px}
+.project-portfolio-filter{
+  width:auto;min-width:165px;max-width:220px;
+  padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:11px;
+  background:var(--white);color:var(--blue);font-family:var(--font-subtitle);
+  font-size:10.5px;font-weight:800;cursor:pointer
+}
+.project-portfolio-filter:focus{outline:none;border-color:rgba(33,98,119,.42);box-shadow:0 0 0 3px rgba(33,98,119,.08)}
+@media(max-width:700px){
+  .project-portfolio-head{align-items:stretch}
+  .project-portfolio-filter{width:100%;max-width:none;min-width:0;margin-top:2px}
+}
