@@ -183,9 +183,10 @@ async function ensureReadState(){
   const {data,error}=await db.from('director_chat_reads').select('last_read_at').eq('user_id',app.currentUser.id).maybeSingle();
   if(error){console.error('Chat read state',error);return null}
   if(data?.last_read_at){lastReadAt=data.last_read_at;return lastReadAt}
-  const now=new Date().toISOString();
+  const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-3);
+  const initialRead=cutoff.toISOString(),now=new Date().toISOString();
   const {data:created,error:createError}=await db.from('director_chat_reads')
-    .insert({user_id:app.currentUser.id,last_read_at:now,updated_at:now})
+    .insert({user_id:app.currentUser.id,last_read_at:initialRead,updated_at:now})
     .select('last_read_at').single();
   if(createError){console.error('Chat read init',createError);return null}
   lastReadAt=created.last_read_at;
