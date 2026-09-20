@@ -486,6 +486,7 @@ async function togglePollVote(messageId,optionId){
 async function openLinkedMessage(messageId){
   const message=messages.find(m=>m.id===messageId),m=message?.metadata||{};
   if(!message||message.message_type!=='link'||!m.entity_type||!m.entity_id)return;
+  openedFromHash=false;
   closeChat();
   const opener=window.club42?.openLinkedEntity;
   if(typeof opener!=='function')return toast('Apertura elemento non disponibile');
