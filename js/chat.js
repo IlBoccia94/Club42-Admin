@@ -371,10 +371,10 @@ async function openMessageInfo(messageId){
 }
 
 async function openPollInfo(messageId){
-  pollInfoMessageId=messageId;
   const message=messages.find(m=>m.id===messageId);
   if(!message||message.message_type!=='poll')return;
   showOverlay('club42PollInfoPanel');
+  pollInfoMessageId=messageId;
   const body=$('club42PollInfoBody');
   body.innerHTML='<div class="club42-chat-empty">Caricamento voti…</div>';
 
