@@ -4,7 +4,7 @@ import {initAuth,bootstrapAuth} from './auth.js?v=20260917-signup-newsletter1';
 import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa} from './pwa.js?v=20260918-freshassets1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
-import {initChat,loadChatForRole} from './chat.js?v=20260920-chat2';
+import {initChat,loadChatForRole} from './chat.js?v=20260920-richchat1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260918-contactpicker2';
 import {initUsers,loadUsers} from './users.js?v=20260918-consentfix1';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
@@ -17,7 +17,7 @@ import {initSocialExtras} from './social-extras.js';
 import {initSocialFormats} from './social-formats.js?v=20260919-socialsingle1';
 import {buildMembersUi} from './members-ui.js?v=20260918-cycle1';
 import {initMembers} from './members.js?v=20260918-cycle1';
-import {loadMembersForRole} from './member-access.js?v=20260918-cycle1';
+import {loadMembersForRole} from './member-access.js?v=20260920-richchat1';
 import {buildCashUi} from './cash-ui.js?v=20260918-reimburse1';
 import {initCash,loadCash} from './cash.js?v=20260918-reimburse1';
 import {buildProjectsUi} from './projects-ui.js?v=20260919-carddesc1';
@@ -62,6 +62,47 @@ async function onAuthorized(){
   await restoreRoute();
   await loadChatForRole();
   if(route.authCallback&&location.hash.includes('type=invite'))setTimeout(()=>{if(!$('passwordDlg').open)$('passwordDlg').showModal()},200);
+}
+
+async function openLinkedEntity(type,id){
+  if(!id)return false;
+  try{
+    if(type==='event'){
+      await loadRemote();
+      if(!app.state.events.some(e=>e.id===id))return false;
+      await showView('events',{eventId:id});
+      window.openEvent?.(id);
+      return $('eventDlg')?.open===true;
+    }
+    if(type==='project'){
+      await loadProjects();await showView('projects');window.openProject?.(id);
+      return $('projectDlg')?.open===true;
+    }
+    if(type==='task'){
+      await loadTasks();await showView('tasks');window.openTask?.(id);
+      return $('taskDlg')?.open===true;
+    }
+    if(type==='member'){
+      await loadMembersForRole();await showView('members');
+      if(app.currentProfile?.role==='admin'){
+        window.openMember?.(id);
+        return $('memberDlg')?.open===true;
+      }
+      return window.focusLimitedMember?.(id)===true;
+    }
+    if(type==='contact'){
+      await loadContacts();await showView('contacts');window.openContact?.(id);
+      return $('contactDlg')?.open===true;
+    }
+    if(type==='social'){
+      await loadSocial();await showView('social');window.openSocialContent?.(id);
+      return $('socialContentDlg')?.open===true;
+    }
+    return false;
+  }catch(error){
+    console.error('Apertura elemento collegato dalla chat',error);
+    return false;
+  }
 }
 
 function initShell(){
@@ -109,4 +150,4 @@ initAuth(onAuthorized);
 render();
 bootstrapAuth(onAuthorized);
 
-window.club42={showView,restoreRoute};
+window.club42={showView,restoreRoute,openLinkedEntity};
