@@ -4,6 +4,7 @@ import {initAuth,bootstrapAuth} from './auth.js?v=20260917-signup-newsletter1';
 import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa} from './pwa.js?v=20260918-freshassets1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
+import {initChat,loadChatForRole} from './chat.js?v=20260920-chat1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260918-contactpicker2';
 import {initUsers,loadUsers} from './users.js?v=20260918-consentfix1';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260917-2';
@@ -51,6 +52,7 @@ function ensureReadabilityStyles(){
 async function onAuthorized(){
   applyRoleUi();
   if(app.currentProfile?.role==='guest'){
+    await loadChatForRole();
     history.replaceState(null,'','#guest');
     await restoreRoute();
     return;
@@ -58,6 +60,7 @@ async function onAuthorized(){
   await loadRemote();
   const route=parseRoute();
   await restoreRoute();
+  await loadChatForRole();
   if(route.authCallback&&location.hash.includes('type=invite'))setTimeout(()=>{if(!$('passwordDlg').open)$('passwordDlg').showModal()},200);
 }
 
@@ -71,6 +74,7 @@ function initShell(){
 
 ensureSidebarLayout();
 initScrollTop();
+initChat();
 initPwa();
 buildDashboardUi();
 buildNotificationsUi();
