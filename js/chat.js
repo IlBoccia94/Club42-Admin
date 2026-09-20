@@ -156,7 +156,8 @@ function humanStatus(value){
     idea:'Idea',evaluation:'Valutazione',planning:'Pianificazione',confirmed:'Confermato',production:'Produzione',
     completed:'Completato',archived:'Archiviato',cancelled:'Annullato',backlog:'Backlog',todo:'Da fare',
     doing:'In corso',blocked:'Bloccato',done:'Fatto',planned:'Pianificato',review:'Revisione',ready:'Pronto',
-    scheduled:'Programmato',published:'Pubblicato',active:'Attivo',inactive:'Inattivo',suspended:'Sospeso'
+    scheduled:'Programmato',published:'Pubblicato',active:'Attivo',inactive:'Inattivo',suspended:'Sospeso',
+    reel:'Reel',carousel:'Carousel',story:'Stories',post:'Post',live:'Live',other:'Altro'
   };
   return map[value]||String(value||'');
 }
@@ -403,7 +404,7 @@ async function fetchLinkItems(type){
   if(type==='event')query=db.from('events').select('id,name,event_date,event_time,place,notes,guest_description').order('event_date',{ascending:false});
   else if(type==='project')query=db.from('projects').select('id,title,summary,objective,status,priority,target_date,partner').order('updated_at',{ascending:false});
   else if(type==='task')query=db.from('project_tasks').select('id,title,description,notes,status,priority,due_date').order('updated_at',{ascending:false});
-  else if(type==='member')query=db.from('members').select('id,member_number,first_name,last_name,status,join_date').order('member_number');
+  else if(type==='member')query=db.rpc('club42_member_directory');
   else if(type==='contact')query=db.from('contacts').select('id,name,organization,contact_type,city,favorite,notes').order('favorite',{ascending:false}).order('name');
   else query=db.from('social_content').select('id,title,hook,caption,production_notes,status,content_type,scheduled_date').order('updated_at',{ascending:false});
   const {data,error}=await query;if(error)throw error;
