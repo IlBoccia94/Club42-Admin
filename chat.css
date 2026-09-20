@@ -33,7 +33,7 @@
   background:#fff;box-shadow:0 30px 80px rgba(21,62,76,.28)
 }
 .club42-chat-dialog::backdrop{background:rgba(14,38,47,.48);backdrop-filter:blur(2px)}
-.club42-chat-shell{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fffdfa}
+.club42-chat-shell{position:relative;height:100%;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;background:#fffdfa}
 .club42-chat-head{
   display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
   padding:16px 17px 13px;border-bottom:1px solid var(--line);background:#fff
@@ -100,3 +100,150 @@
   .club42-chat-compose .btn{width:100%}
 }
 @media(prefers-reduced-motion:reduce){.club42-chat-fab{transition:none}}
+
+
+/* Rich chat */
+.club42-chat-info-btn{
+  width:20px;height:20px;min-width:20px;padding:0;border:0;border-radius:50%;
+  display:grid;place-items:center;background:transparent;color:var(--muted);
+  font-size:12px;font-weight:900;cursor:pointer;transition:.15s
+}
+.club42-chat-info-btn:hover{background:var(--blue-soft);color:var(--blue)}
+.club42-chat-message.own .club42-chat-message-meta{justify-content:flex-end}
+.club42-chat-message.poll,.club42-chat-message.link{max-width:min(88%,500px);width:100%}
+.club42-chat-rich{
+  width:100%;min-width:0;padding:12px;border:1px solid rgba(33,98,119,.14);
+  border-radius:15px;background:#fff;box-shadow:0 5px 16px rgba(21,62,76,.05);
+  color:var(--ink);text-align:left
+}
+.club42-rich-type{
+  margin-bottom:6px;font-family:var(--font-subtitle);font-size:8.5px;font-weight:900;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--coral)
+}
+.club42-chat-rich h5{
+  margin:0 0 8px;font-family:var(--font-subtitle);font-size:12px;line-height:1.35;color:var(--blue);
+  overflow-wrap:anywhere
+}
+.club42-chat-rich p{
+  margin:0 0 8px;color:var(--muted);font-size:9.5px;line-height:1.48;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden
+}
+
+.club42-chat-poll{background:linear-gradient(145deg,#fff,#f8fbfc)}
+.club42-poll-options{display:grid;gap:6px}
+.club42-poll-option{
+  width:100%;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:8px 9px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--ink);
+  text-align:left;cursor:pointer;font:inherit;transition:.15s
+}
+.club42-poll-option:hover{border-color:rgba(33,98,119,.3);background:#fbfdfd}
+.club42-poll-option.selected{border-color:rgba(33,98,119,.42);background:var(--blue-soft)}
+.club42-poll-check{
+  width:19px;height:19px;border:1px solid rgba(33,98,119,.23);border-radius:6px;
+  display:grid;place-items:center;color:#fff;background:#fff;font-size:10px;font-weight:900
+}
+.club42-poll-option.selected .club42-poll-check{background:var(--blue);border-color:var(--blue)}
+.club42-poll-label{font-size:10px;line-height:1.3;overflow-wrap:anywhere}
+.club42-poll-option b{
+  min-width:25px;padding:3px 6px;border-radius:999px;background:#f0f3f4;
+  color:var(--blue);font-size:8px;text-align:center
+}
+.club42-poll-foot{
+  display:flex;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-top:8px;
+  color:var(--muted);font-size:8px
+}
+
+.club42-chat-link-card{
+  appearance:none;-webkit-appearance:none;display:block;cursor:pointer;
+  background:linear-gradient(145deg,#fffaf8,#fff);border-left:4px solid var(--coral)
+}
+button.club42-chat-link-card{font:inherit}
+.club42-chat-link-card:hover{border-color:rgba(250,107,99,.5);border-left-color:var(--coral);box-shadow:0 8px 20px rgba(250,107,99,.08)}
+.club42-chat-link-card.preview{cursor:default;box-shadow:none}
+.club42-link-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.club42-link-meta span{
+  display:inline-flex;padding:4px 7px;border-radius:999px;background:#f2f4f4;
+  color:var(--blue);font-size:8px;font-weight:800
+}
+.club42-link-open{margin-top:9px;color:var(--coral);font-size:8.5px;font-weight:900}
+
+.club42-chat-tools{
+  display:flex;gap:7px;padding:8px 14px 0;background:#fff;border-top:1px solid var(--line)
+}
+.club42-chat-tools button{
+  border:1px solid var(--line);border-radius:999px;background:#fafcfc;color:var(--blue);
+  padding:6px 9px;font:inherit;font-size:9px;font-weight:800;cursor:pointer
+}
+.club42-chat-tools button:hover{background:var(--blue-soft);border-color:rgba(33,98,119,.24)}
+
+.club42-chat-overlay{
+  position:absolute;inset:0;z-index:8;display:grid;place-items:center;padding:14px;
+  background:rgba(14,38,47,.5);backdrop-filter:blur(2px)
+}
+.club42-chat-overlay[hidden]{display:none!important}
+.club42-chat-overlay-card{
+  width:min(560px,100%);max-height:calc(100% - 12px);overflow:auto;
+  display:grid;gap:12px;padding:15px;border-radius:17px;background:#fffdfa;
+  border:1px solid rgba(255,255,255,.45);box-shadow:0 20px 60px rgba(14,38,47,.26)
+}
+.club42-chat-overlay-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.club42-chat-overlay-head>div{display:grid;gap:2px}
+.club42-chat-overlay-head span{
+  color:var(--coral);font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.07em
+}
+.club42-chat-overlay-head h4{margin:0;color:var(--blue);font-family:var(--font-title);font-size:20px}
+.club42-chat-overlay-head>button{
+  width:31px;height:31px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--blue);
+  font-size:18px;cursor:pointer
+}
+.club42-chat-overlay-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+
+.club42-chat-info-body{display:grid;gap:10px}
+.club42-info-message-preview{
+  padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:#f8faf9;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px
+}
+.club42-info-message-preview b{font-family:var(--font-subtitle);font-size:10px;color:var(--blue)}
+.club42-info-message-preview span{font-size:8px;color:var(--muted)}
+.club42-info-message-preview p{grid-column:1/-1;margin:4px 0 0;font-size:9px;line-height:1.45;color:var(--ink)}
+.club42-chat-info-body section{border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:#fff}
+.club42-info-section-title{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;
+  font-family:var(--font-subtitle);font-size:9.5px;color:var(--blue)
+}
+.club42-info-section-title b{min-width:24px;padding:3px 6px;border-radius:999px;text-align:center;background:var(--blue-soft);font-size:8px}
+.club42-read-person{padding:7px 1px;border-top:1px solid rgba(33,98,119,.07);font-size:9.5px;color:var(--ink)}
+.club42-chat-empty.small{padding:9px 2px;text-align:left;font-size:9px}
+
+.club42-poll-settings{
+  display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr);gap:11px;align-items:end
+}
+.club42-poll-setting-hint{padding-bottom:8px;color:var(--muted);font-size:8.5px;line-height:1.4}
+.club42-poll-options-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.club42-poll-options-head b{font-family:var(--font-subtitle);font-size:10px;color:var(--blue)}
+.club42-poll-compose-options{display:grid;gap:7px}
+.club42-poll-compose-row{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:7px}
+.club42-poll-compose-row button{
+  border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--coral);font-size:18px;cursor:pointer
+}
+
+.club42-link-preview{min-height:110px;border:1px dashed rgba(33,98,119,.16);border-radius:14px;padding:8px;background:#fbfcfb}
+.club42-link-preview .club42-chat-empty{padding:30px 12px}
+.member-linked-focus{animation:club42-linked-member-pulse 2.2s ease}
+@keyframes club42-linked-member-pulse{
+  0%,100%{box-shadow:none}
+  15%,65%{box-shadow:0 0 0 4px rgba(250,107,99,.16),0 10px 28px rgba(21,62,76,.12);border-color:rgba(250,107,99,.6)}
+}
+
+@media(max-width:700px){
+  .club42-chat-message.poll,.club42-chat-message.link{max-width:96%}
+  .club42-chat-rich{padding:10px}
+  .club42-chat-tools{padding:7px 10px 0;overflow-x:auto}
+  .club42-chat-tools button{white-space:nowrap}
+  .club42-chat-overlay{padding:6px}
+  .club42-chat-overlay-card{width:100%;max-height:100%;padding:12px;border-radius:15px}
+  .club42-chat-overlay-actions{display:grid;grid-template-columns:1fr 1fr}
+  .club42-chat-overlay-actions .btn{width:100%}
+  .club42-poll-settings{grid-template-columns:1fr}
+  .club42-poll-setting-hint{padding-bottom:0}
+}
