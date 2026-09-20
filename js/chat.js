@@ -50,7 +50,7 @@ function ensureStyles(){
   if(document.querySelector('link[href^="chat.css"]'))return;
   const link=document.createElement('link');
   link.rel='stylesheet';
-  link.href='chat.css?v=20260920-richchat1';
+  link.href='chat.css?v=20260920-richchat2';
   document.head.appendChild(link);
 }
 
@@ -92,6 +92,13 @@ function buildUi(){
           <div class="club42-chat-overlay-card">
             <div class="club42-chat-overlay-head"><div><span>Messaggio</span><h4>Chi ha letto</h4></div><button type="button" data-chat-overlay-close="club42ChatInfoPanel">×</button></div>
             <div id="club42ChatInfoBody" class="club42-chat-info-body"></div>
+          </div>
+        </section>
+
+        <section id="club42PollInfoPanel" class="club42-chat-overlay" hidden aria-label="Dettaglio voti sondaggio">
+          <div class="club42-chat-overlay-card">
+            <div class="club42-chat-overlay-head"><div><span>Sondaggio</span><h4>Chi ha votato cosa</h4></div><button type="button" data-chat-overlay-close="club42PollInfoPanel">×</button></div>
+            <div id="club42PollInfoBody" class="club42-poll-info-body"></div>
           </div>
         </section>
 
@@ -273,6 +280,7 @@ function renderPoll(message){
     <h5>${esc(metadata.question||message.body||'Sondaggio')}</h5>
     <div class="club42-poll-options">${optionHtml}</div>
     <div class="club42-poll-foot"><span>Puoi scegliere fino a ${max} ${max===1?'risposta':'risposte'}</span><span>${voters} ${voters===1?'votante':'votanti'}</span></div>
+    <button type="button" class="club42-poll-info-link" data-chat-poll-info="${message.id}">ⓘ Chi ha votato cosa</button>
   </div>`;
 }
 function renderLink(message){
@@ -358,6 +366,48 @@ async function openMessageInfo(messageId){
     <div class="club42-info-message-preview"><b>${esc(message.sender_name)}</b><span>${esc(dateLabel(message.created_at))} · ${esc(formatTime(message.created_at))}</span><p>${esc(clampText(message.body,220))}</p></div>
     <section><div class="club42-info-section-title"><span>✓ Letto da</span><b>${read.length}</b></div>${read.length?read.map(person).join(''):'<div class="club42-chat-empty small">Nessuno ancora.</div>'}</section>
     <section><div class="club42-info-section-title"><span>○ Non ancora letto</span><b>${unread.length}</b></div>${unread.length?unread.map(person).join(''):'<div class="club42-chat-empty small">Tutti hanno letto.</div>'}</section>`;
+}
+
+async function openPollInfo(messageId){
+  const message=messages.find(m=>m.id===messageId);
+  if(!message||message.message_type!=='poll')return;
+  showOverlay('club42PollInfoPanel');
+  const body=$('club42PollInfoBody');
+  body.innerHTML='<div class="club42-chat-empty">Caricamento voti…</div>';
+
+  const {data:profiles,error}=await db.from('admin_users')
+    .select('user_id,display_name,email,role')
+    .in('user_id',[...new Set(votesFor(messageId).map(v=>v.user_id))]);
+  if(error){
+    console.error('Chat poll voters',error);
+    body.innerHTML='<div class="club42-chat-empty error">Impossibile caricare il dettaglio dei voti.</div>';
+    return;
+  }
+
+  const names=new Map((profiles||[]).map(p=>[p.user_id,p.display_name||p.email||'Utente Club42']));
+  const metadata=message.metadata||{};
+  const options=Array.isArray(metadata.options)?metadata.options:[];
+  const votes=votesFor(messageId);
+  const uniqueVoters=new Set(votes.map(v=>v.user_id)).size;
+
+  body.innerHTML=`
+    <div class="club42-poll-info-summary">
+      <b>${esc(metadata.question||message.body||'Sondaggio')}</b>
+      <span>${uniqueVoters} ${uniqueVoters===1?'persona ha votato':'persone hanno votato'}</span>
+    </div>
+    <div class="club42-poll-info-options">
+      ${options.map(opt=>{
+        const optionVotes=votes.filter(v=>v.option_id===opt.id);
+        return `<section class="club42-poll-info-option">
+          <div class="club42-poll-info-option-head"><span>${esc(opt.label)}</span><b>${optionVotes.length}</b></div>
+          <div class="club42-poll-voter-list">
+            ${optionVotes.length
+              ? optionVotes.map(v=>`<div class="club42-poll-voter">✓ ${esc(names.get(v.user_id)||'Utente non disponibile')}</div>`).join('')
+              : '<div class="club42-chat-empty small">Nessun voto.</div>'}
+          </div>
+        </section>`;
+      }).join('')}
+    </div>`;
 }
 
 function addPollOption(value=''){
@@ -579,6 +629,8 @@ export function initChat(){
   $('club42ChatMessages').addEventListener('click',ev=>{
     const info=ev.target.closest('[data-chat-info-message]');
     if(info)return openMessageInfo(info.dataset.chatInfoMessage);
+    const pollInfo=ev.target.closest('[data-chat-poll-info]');
+    if(pollInfo)return openPollInfo(pollInfo.dataset.chatPollInfo);
     const poll=ev.target.closest('[data-chat-poll-message]');
     if(poll)return togglePollVote(poll.dataset.chatPollMessage,poll.dataset.chatPollOption);
     const link=ev.target.closest('[data-chat-link-message]');
