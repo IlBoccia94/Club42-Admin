@@ -16,6 +16,15 @@ let messages=[];
 let sending=false;
 let openedFromHash=false;
 
+function chatClientId(){
+  const key='club42_chat_client_id';
+  let value=localStorage.getItem(key);
+  if(value)return value;
+  value=globalThis.crypto?.randomUUID?.()||('chat-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+  localStorage.setItem(key,value);
+  return value;
+}
+
 function canChat(){return !!app.currentUser&&CHAT_ROLES.has(app.currentProfile?.role)}
 function dlg(){return $('club42ChatDlg')}
 function chatIsOpen(){return !!dlg()?.open&&document.visibilityState==='visible'}
@@ -138,9 +147,10 @@ async function setPresence(open){
   const visible=open&&document.visibilityState==='visible';
   const {error}=await db.from('director_chat_presence').upsert({
     user_id:app.currentUser.id,
+    client_id:chatClientId(),
     is_open:visible,
     last_seen_at:new Date().toISOString()
-  },{onConflict:'user_id'});
+  },{onConflict:'user_id,client_id'});
   if(error)console.error('Chat presence',error);
 }
 function stopHeartbeat(){
@@ -205,11 +215,14 @@ function scrollToFirstUnread(){
 }
 function appendMessage(row,{scroll=false}={}){
   if(!row?.id||messages.some(m=>m.id===row.id))return;
+  const root=$('club42ChatMessages');
+  const previousTop=root?.scrollTop||0;
   messages.push(row);
   messages.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   if(dlg()?.open){
     renderMessages(null);
     if(scroll)requestAnimationFrame(()=>scrollToBottom('smooth'));
+    else if(root)root.scrollTop=previousTop;
   }
 }
 
@@ -312,6 +325,7 @@ async function unsubscribeRealtime(){
 }
 
 async function disableChat(){
+  if(enabled&&app.currentUser)await setPresence(false);
   enabled=false;
   $('club42ChatFab')?.setAttribute('hidden','');
   if(dlg()?.open)dlg().close();
