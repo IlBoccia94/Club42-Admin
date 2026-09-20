@@ -247,3 +247,38 @@ button.club42-chat-link-card{font:inherit}
   .club42-poll-settings{grid-template-columns:1fr}
   .club42-poll-setting-hint{padding-bottom:0}
 }
+
+
+/* Poll voter details */
+.club42-poll-info-link{
+  margin-top:8px;padding:0;border:0;background:transparent;color:var(--coral);
+  font:inherit;font-size:8.5px;font-weight:900;cursor:pointer;text-align:left
+}
+.club42-poll-info-link:hover{text-decoration:underline}
+.club42-poll-info-body{display:grid;gap:10px}
+.club42-poll-info-summary{
+  display:grid;gap:3px;padding:10px 11px;border:1px solid var(--line);
+  border-radius:12px;background:#f8faf9
+}
+.club42-poll-info-summary b{
+  color:var(--blue);font-family:var(--font-subtitle);font-size:10.5px;line-height:1.35
+}
+.club42-poll-info-summary span{color:var(--muted);font-size:8.5px}
+.club42-poll-info-options{display:grid;gap:9px}
+.club42-poll-info-option{
+  border:1px solid var(--line);border-radius:12px;padding:9px 10px;background:#fff
+}
+.club42-poll-info-option-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-bottom:6px;font-family:var(--font-subtitle);font-size:9.5px;color:var(--blue)
+}
+.club42-poll-info-option-head span{min-width:0;overflow-wrap:anywhere}
+.club42-poll-info-option-head b{
+  min-width:26px;padding:3px 6px;border-radius:999px;background:var(--blue-soft);
+  text-align:center;font-size:8px
+}
+.club42-poll-voter-list{display:grid}
+.club42-poll-voter{
+  padding:7px 1px;border-top:1px solid rgba(33,98,119,.07);
+  color:var(--ink);font-size:9.5px
+}
