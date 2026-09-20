@@ -28,6 +28,7 @@ let sending=false;
 let openedFromHash=false;
 let linkItems=[];
 let selectedLinkItem=null;
+let pollInfoMessageId=null;
 
 function canChat(){return !!app.currentUser&&CHAT_ROLES.has(app.currentProfile?.role)}
 function dlg(){return $('club42ChatDlg')}
@@ -338,6 +339,7 @@ function appendMessage(row,{scroll=false}={}){
 
 function closeOverlays(){
   document.querySelectorAll('.club42-chat-overlay').forEach(x=>x.hidden=true);
+  pollInfoMessageId=null;
 }
 function showOverlay(id){
   closeOverlays();
@@ -369,25 +371,31 @@ async function openMessageInfo(messageId){
 }
 
 async function openPollInfo(messageId){
+  pollInfoMessageId=messageId;
   const message=messages.find(m=>m.id===messageId);
   if(!message||message.message_type!=='poll')return;
   showOverlay('club42PollInfoPanel');
   const body=$('club42PollInfoBody');
   body.innerHTML='<div class="club42-chat-empty">Caricamento voti…</div>';
 
-  const {data:profiles,error}=await db.from('admin_users')
-    .select('user_id,display_name,email,role')
-    .in('user_id',[...new Set(votesFor(messageId).map(v=>v.user_id))]);
-  if(error){
-    console.error('Chat poll voters',error);
-    body.innerHTML='<div class="club42-chat-empty error">Impossibile caricare il dettaglio dei voti.</div>';
-    return;
+  const votes=votesFor(messageId);
+  const voterIds=[...new Set(votes.map(v=>v.user_id))];
+  let profiles=[];
+  if(voterIds.length){
+    const result=await db.from('admin_users')
+      .select('user_id,display_name,email,role')
+      .in('user_id',voterIds);
+    if(result.error){
+      console.error('Chat poll voters',result.error);
+      body.innerHTML='<div class="club42-chat-empty error">Impossibile caricare il dettaglio dei voti.</div>';
+      return;
+    }
+    profiles=result.data||[];
   }
 
-  const names=new Map((profiles||[]).map(p=>[p.user_id,p.display_name||p.email||'Utente Club42']));
+  const names=new Map(profiles.map(p=>[p.user_id,p.display_name||p.email||'Utente Club42']));
   const metadata=message.metadata||{};
   const options=Array.isArray(metadata.options)?metadata.options:[];
-  const votes=votesFor(messageId);
   const uniqueVoters=new Set(votes.map(v=>v.user_id)).size;
 
   body.innerHTML=`
@@ -583,11 +591,15 @@ function subscribeRealtime(){
     })
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'director_chat_poll_votes'},payload=>{
       const row=payload.new;
-      if(!pollVotes.some(v=>v.message_id===row.message_id&&v.user_id===row.user_id&&v.option_id===row.option_id)){pollVotes.push(row);rerenderPreserveScroll()}
+      if(!pollVotes.some(v=>v.message_id===row.message_id&&v.user_id===row.user_id&&v.option_id===row.option_id)){
+        pollVotes.push(row);rerenderPreserveScroll();
+        if(pollInfoMessageId===row.message_id)openPollInfo(row.message_id);
+      }
     })
     .on('postgres_changes',{event:'DELETE',schema:'public',table:'director_chat_poll_votes'},payload=>{
       const row=payload.old;
       pollVotes=pollVotes.filter(v=>!(v.message_id===row.message_id&&v.user_id===row.user_id&&v.option_id===row.option_id));rerenderPreserveScroll();
+      if(pollInfoMessageId===row.message_id)openPollInfo(row.message_id);
     })
     .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')console.warn('Chat realtime',status)});
 }
@@ -624,7 +636,10 @@ export function initChat(){
   $('club42ChatLinkForm').addEventListener('submit',sendLink);
   $('club42LinkType').onchange=ev=>{selectedLinkItem=null;loadLinkPicker(ev.target.value)};
   $('club42LinkItem').onchange=ev=>renderLinkPreview(linkItems.find(x=>x.id===ev.target.value)||null,$('club42LinkType').value);
-  document.querySelectorAll('[data-chat-overlay-close]').forEach(btn=>btn.onclick=()=>{$(btn.dataset.chatOverlayClose).hidden=true});
+  document.querySelectorAll('[data-chat-overlay-close]').forEach(btn=>btn.onclick=()=>{
+    $(btn.dataset.chatOverlayClose).hidden=true;
+    if(btn.dataset.chatOverlayClose==='club42PollInfoPanel')pollInfoMessageId=null;
+  });
 
   $('club42ChatMessages').addEventListener('click',ev=>{
     const info=ev.target.closest('[data-chat-info-message]');
