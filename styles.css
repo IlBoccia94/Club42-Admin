@@ -163,3 +163,16 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
   .event-view-tab{padding-inline:8px;font-size:9px}
   .event-ended-badge{display:inline-flex;margin-left:5px;margin-top:3px}
 }
+
+
+/* Ended events in calendar */
+.event-cal-item.ended{
+  background:#eef1f1;
+  color:#687a80;
+  border-color:rgba(104,122,128,.18);
+  box-shadow:inset 3px 0 0 #87979c;
+  opacity:.88
+}
+.event-cal-item.ended:hover{opacity:1;background:#e8eded}
+.event-cal-item.ended span{color:#7a898e;font-weight:900}
+.event-cal-item.ended b{color:#607278}
