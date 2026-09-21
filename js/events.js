@@ -329,12 +329,13 @@ function renderEventCalendar(){
     const day=i-start+1;
     if(day<1||day>last.getDate()){html+='<div class="event-cal-day outside"></div>';continue}
     const key=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const rows=activeEvents().filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
+    const rows=app.state.events.filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
     html+=`<div class="event-cal-day ${key===today?'today':''}"><div class="event-cal-day-num">${day}</div><div class="event-cal-items">${rows.map(e=>{
-      const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date;
+      const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date,ended=isEndedEvent(e);
       const phase=!multi?'':starts?' start':ends?' end':' middle';
       const time=starts&&e.time?e.time+' · ':'';
-      return `<button type="button" class="event-cal-item${phase} ${e.googleCalendarAdded?'calendar-synced':''}" onclick="openEventFromCalendar('${e.id}')"><span>${esc(time)}${multi&&!starts?'↳ ':''}</span><b>${esc(e.name)}</b></button>`;
+      const meta=`${ended?'Terminato · ':''}${time}${multi&&!starts?'↳ ':''}`;
+      return `<button type="button" class="event-cal-item${phase} ${e.googleCalendarAdded?'calendar-synced ':''}${ended?'ended':''}" onclick="openEventFromCalendar('${e.id}')"><span>${esc(meta)}</span><b>${esc(e.name)}</b></button>`;
     }).join('')}</div></div>`;
   }
   root.innerHTML=html;
