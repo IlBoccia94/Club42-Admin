@@ -145,3 +145,21 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
  .club-votes-dialog{width:calc(100% - 12px)}
  .club-voter-row{align-items:flex-start}
 }
+
+
+/* Event history */
+.event-ended-badge{
+  display:inline-flex;align-items:center;margin-left:7px;padding:3px 6px;border-radius:999px;
+  background:#eef1f2;color:#687a80;font-size:7.5px;font-weight:900;text-transform:uppercase;
+  letter-spacing:.04em;vertical-align:middle
+}
+.event-card.ended{background:linear-gradient(135deg,#fff,#f7f8f7)}
+.event-card.ended .event-card-title{color:#526d76}
+.event-card.ended.active{border-color:rgba(104,122,128,.34);background:linear-gradient(135deg,#fff,#f2f5f4)}
+.event-card.ended.active:before{background:#77898f}
+#eventSelectedEyebrow{transition:.15s}
+@media(max-width:700px){
+  .event-view-tabs{overflow:hidden}
+  .event-view-tab{padding-inline:8px;font-size:9px}
+  .event-ended-badge{display:inline-flex;margin-left:5px;margin-top:3px}
+}
