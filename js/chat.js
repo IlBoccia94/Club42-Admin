@@ -5,6 +5,7 @@ const PAGE_SIZE=1000;
 const PRESENCE_HEARTBEAT_MS=25000;
 const UNREAD_REFRESH_MS=60000;
 const MAX_POLL_OPTIONS=30;
+const SIMONE_CHAT_EDITOR_ID='c6b1f79f-0ff3-445d-b358-465a50022790';
 
 const LINK_TYPES={
   event:{label:'Evento',icon:'📅',view:'events'},
@@ -29,8 +30,10 @@ let openedFromHash=false;
 let linkItems=[];
 let selectedLinkItem=null;
 let pollInfoMessageId=null;
+let editMessageId=null;
 
 function canChat(){return !!app.currentUser&&CHAT_ROLES.has(app.currentProfile?.role)}
+function canEditTextMessage(message){return app.currentUser?.id===SIMONE_CHAT_EDITOR_ID&&message?.sender_id===app.currentUser.id&&message?.message_type==='text'}
 function dlg(){return $('club42ChatDlg')}
 function chatIsOpen(){return !!dlg()?.open&&document.visibilityState==='visible'}
 function uuid(){return globalThis.crypto?.randomUUID?.()||('id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2))}
@@ -51,7 +54,7 @@ function ensureStyles(){
   if(document.querySelector('link[href^="chat.css"]'))return;
   const link=document.createElement('link');
   link.rel='stylesheet';
-  link.href='chat.css?v=20260920-richchat2';
+  link.href='chat.css?v=20260921-messageedit1';
   document.head.appendChild(link);
 }
 
@@ -94,6 +97,15 @@ function buildUi(){
             <div class="club42-chat-overlay-head"><div><span>Messaggio</span><h4>Chi ha letto</h4></div><button type="button" data-chat-overlay-close="club42ChatInfoPanel">×</button></div>
             <div id="club42ChatInfoBody" class="club42-chat-info-body"></div>
           </div>
+        </section>
+
+        <section id="club42ChatEditPanel" class="club42-chat-overlay" hidden aria-label="Modifica messaggio">
+          <form id="club42ChatEditForm" class="club42-chat-overlay-card">
+            <div class="club42-chat-overlay-head"><div><span>Solo Simone</span><h4>Modifica messaggio</h4></div><button type="button" data-chat-overlay-close="club42ChatEditPanel">×</button></div>
+            <div class="field"><label>Testo *</label><textarea id="club42ChatEditText" rows="6" maxlength="4000" required></textarea></div>
+            <div class="club42-chat-edit-hint">Puoi modificare solo i tuoi messaggi di testo. Agli altri verrà mostrata la dicitura “modificato”.</div>
+            <div class="club42-chat-overlay-actions"><button type="button" class="btn" data-chat-overlay-close="club42ChatEditPanel">Annulla</button><button class="btn primary" type="submit">Salva modifica</button></div>
+          </form>
         </section>
 
         <section id="club42PollInfoPanel" class="club42-chat-overlay" hidden aria-label="Dettaglio voti sondaggio">
@@ -246,7 +258,7 @@ async function fetchMessages(){
   const rows=[];let from=0;
   while(true){
     const {data,error}=await db.from('director_chat_messages')
-      .select('id,sender_id,sender_name,body,message_type,metadata,created_at')
+      .select('id,sender_id,sender_name,body,message_type,metadata,created_at,edited_at')
       .gte('created_at',cutoff.toISOString()).order('created_at',{ascending:true})
       .range(from,from+PAGE_SIZE-1);
     if(error)throw error;
@@ -312,7 +324,7 @@ function renderMessages(firstUnreadId=null){
     const unread=firstUnreadId===m.id?'<div class="club42-chat-unread-marker" data-chat-first-unread><span>Nuovi messaggi</span></div>':'';
     const own=m.sender_id===app.currentUser?.id;
     return `${divider}${unread}<article class="club42-chat-message ${own?'own':'other'} ${m.message_type||'text'}" data-chat-message-id="${m.id}">
-      <div class="club42-chat-message-meta"><strong>${esc(m.sender_name||'Utente Club42')}</strong><time>${esc(formatTime(m.created_at))}</time><button type="button" class="club42-chat-info-btn" data-chat-info-message="${m.id}" title="Informazioni lettura" aria-label="Chi ha letto questo messaggio">ⓘ</button></div>
+      <div class="club42-chat-message-meta"><strong>${esc(m.sender_name||'Utente Club42')}</strong><time>${esc(formatTime(m.created_at))}</time>${m.edited_at?'<span class="club42-chat-edited">modificato</span>':''}${canEditTextMessage(m)?`<button type="button" class="club42-chat-edit-btn" data-chat-edit-message="${m.id}" title="Modifica messaggio" aria-label="Modifica questo messaggio">✎</button>`:''}<button type="button" class="club42-chat-info-btn" data-chat-info-message="${m.id}" title="Informazioni lettura" aria-label="Chi ha letto questo messaggio">ⓘ</button></div>
       ${renderMessageContent(m)}
     </article>`;
   }).join('');
@@ -340,10 +352,46 @@ function appendMessage(row,{scroll=false}={}){
 function closeOverlays(){
   document.querySelectorAll('.club42-chat-overlay').forEach(x=>x.hidden=true);
   pollInfoMessageId=null;
+  editMessageId=null;
 }
 function showOverlay(id){
   closeOverlays();
   const el=$(id);if(el)el.hidden=false;
+}
+
+function openMessageEditor(messageId){
+  const message=messages.find(m=>m.id===messageId);
+  if(!canEditTextMessage(message))return toast('Questo messaggio non è modificabile');
+  editMessageId=messageId;
+  $('club42ChatEditText').value=message.body||'';
+  showOverlay('club42ChatEditPanel');
+  editMessageId=messageId;
+  setTimeout(()=>{$('club42ChatEditText')?.focus();$('club42ChatEditText')?.setSelectionRange($('club42ChatEditText').value.length,$('club42ChatEditText').value.length)},40);
+}
+async function saveMessageEdit(ev){
+  ev.preventDefault();
+  const message=messages.find(m=>m.id===editMessageId);
+  if(!canEditTextMessage(message))return toast('Questo messaggio non è modificabile');
+  const body=$('club42ChatEditText').value.trim();
+  if(!body)return toast('Il messaggio non può essere vuoto');
+  const submit=$('club42ChatEditForm')?.querySelector('button[type="submit"]');
+  if(submit){submit.disabled=true;submit.textContent='Salvataggio…'}
+  try{
+    const {data,error}=await db.rpc('club42_edit_own_chat_message',{p_message_id:editMessageId,p_body:body});
+    if(error)throw error;
+    const updated=Array.isArray(data)?data[0]:data;
+    const row=messages.find(m=>m.id===editMessageId);
+    if(row&&updated){row.body=updated.body;row.edited_at=updated.edited_at}
+    $('club42ChatEditPanel').hidden=true;
+    editMessageId=null;
+    rerenderPreserveScroll();
+    toast('Messaggio modificato');
+  }catch(error){
+    console.error('Chat edit',error);
+    toast(error.message||'Modifica non riuscita');
+  }finally{
+    if(submit){submit.disabled=false;submit.textContent='Salva modifica'}
+  }
 }
 
 async function openMessageInfo(messageId){
@@ -585,6 +633,11 @@ function subscribeRealtime(){
       if(chatIsOpen()){appendMessage(row);markReadThrough(row.created_at)}
       else{unreadCount++;updateBadge()}
     })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'director_chat_messages'},payload=>{
+      const row=payload.new;
+      const index=messages.findIndex(m=>m.id===row.id);
+      if(index>=0){messages[index]={...messages[index],...row};rerenderPreserveScroll()}
+    })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'director_chat_reads',filter:`user_id=eq.${userId}`},payload=>{
       if(payload.new?.last_read_at)lastReadAt=payload.new.last_read_at;
       if(chatIsOpen()){unreadCount=0;updateBadge()}else refreshUnread();
@@ -628,6 +681,7 @@ export function initChat(){
   $('club42ChatDlg').addEventListener('close',onChatClosed);
   $('club42ChatDlg').addEventListener('click',ev=>{if(ev.target===dlg())closeChat()});
   $('club42ChatForm').addEventListener('submit',sendMessage);
+  $('club42ChatEditForm').addEventListener('submit',saveMessageEdit);
   $('club42ChatText').addEventListener('keydown',ev=>{if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();$('club42ChatForm').requestSubmit()}});
   $('club42ChatPollBtn').onclick=openPollComposer;
   $('club42ChatLinkBtn').onclick=openLinkComposer;
@@ -639,9 +693,12 @@ export function initChat(){
   document.querySelectorAll('[data-chat-overlay-close]').forEach(btn=>btn.onclick=()=>{
     $(btn.dataset.chatOverlayClose).hidden=true;
     if(btn.dataset.chatOverlayClose==='club42PollInfoPanel')pollInfoMessageId=null;
+    if(btn.dataset.chatOverlayClose==='club42ChatEditPanel')editMessageId=null;
   });
 
   $('club42ChatMessages').addEventListener('click',ev=>{
+    const edit=ev.target.closest('[data-chat-edit-message]');
+    if(edit)return openMessageEditor(edit.dataset.chatEditMessage);
     const info=ev.target.closest('[data-chat-info-message]');
     if(info)return openMessageInfo(info.dataset.chatInfoMessage);
     const pollInfo=ev.target.closest('[data-chat-poll-info]');
