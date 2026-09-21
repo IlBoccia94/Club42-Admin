@@ -282,3 +282,18 @@ button.club42-chat-link-card{font:inherit}
   padding:7px 1px;border-top:1px solid rgba(33,98,119,.07);
   color:var(--ink);font-size:9.5px
 }
+
+
+/* Simone message editing */
+.club42-chat-edit-btn{
+  width:20px;height:20px;min-width:20px;padding:0;border:0;border-radius:50%;
+  display:grid;place-items:center;background:transparent;color:var(--muted);
+  font-size:12px;font-weight:900;cursor:pointer;transition:.15s
+}
+.club42-chat-edit-btn:hover{background:var(--blue-soft);color:var(--blue)}
+.club42-chat-edited{
+  font-size:7.5px;font-style:italic;color:var(--muted);white-space:nowrap
+}
+.club42-chat-edit-hint{
+  margin-top:-3px;color:var(--muted);font-size:8.5px;line-height:1.45
+}
