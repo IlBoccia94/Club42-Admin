@@ -1,6 +1,6 @@
 export function buildSocialUi(){
   if(!document.querySelector('link[href^="social.css"]')){
-    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260919-votes1';document.head.appendChild(link);
+    const link=document.createElement('link');link.rel='stylesheet';link.href='social.css?v=20260924-eventpicker1';document.head.appendChild(link);
   }
   const nav=document.querySelector('.nav-item[data-view="social"]');
   if(nav){const badge=nav.querySelector('.nav-badge');if(badge)badge.remove()}
@@ -68,7 +68,7 @@ export function buildSocialUi(){
         </div>
         <div id="scRecurrenceExisting" class="social-recurrence-existing" hidden>↻ Questo contenuto appartiene a una serie ricorrente. Quando salvi o elimini potrai scegliere se agire solo su questo, da questo in poi oppure su tutta la serie.</div>
       </div>
-      <div class="field"><label>Format</label><select id="scFormat"></select></div><div class="field"><label>Evento collegato</label><select id="scEvent"></select></div>
+      <div class="field"><label>Format</label><select id="scFormat"></select></div><div class="field social-event-field"><label>Evento collegato</label><select id="scEvent" hidden aria-hidden="true"></select><button id="scEventPickerBtn" class="social-event-picker-btn" type="button"><span id="scEventPickerValue">Nessun evento</span><small>Scegli evento</small></button></div>
       <div class="field full"><label>Responsabile</label><select id="scAssigned"></select></div>
       <div class="field full"><label>Hook</label><textarea id="scHook" rows="2" placeholder="Il gancio dei primi secondi..."></textarea></div>
       <div class="field full"><label>Call to action</label><textarea id="scCta" rows="2" placeholder="Es. Mandalo all'amico che dice che a La Spezia non c'è niente da fare."></textarea></div>
@@ -78,7 +78,23 @@ export function buildSocialUi(){
       <div class="field full"><label>Checklist strategica prima della pubblicazione</label><div class="social-checklist">
        <label class="social-check"><input type="checkbox" id="check_hook">Hook forte nel primo secondo</label><label class="social-check"><input type="checkbox" id="check_clear">Tema subito comprensibile</label><label class="social-check"><input type="checkbox" id="check_human">Persona, storia o emozione</label><label class="social-check"><input type="checkbox" id="check_outsider">Comprensibile a un non follower</label><label class="social-check"><input type="checkbox" id="check_share">Motivo per essere condiviso</label><label class="social-check"><input type="checkbox" id="check_local">Rilevante localmente</label><label class="social-check"><input type="checkbox" id="check_cta">CTA sensata</label><label class="social-check"><input type="checkbox" id="check_identity">Rafforza identità Club42</label><label class="social-check"><input type="checkbox" id="check_desire">Fa desiderare partecipazione</label><label class="social-check"><input type="checkbox" id="check_repurpose">Riutilizzabile in altri tagli</label>
       </div></div>
-    </div><div class="modal-actions"><button type="button" class="btn danger" id="socialDeleteBtn" style="display:none;margin-right:auto">Elimina</button><button type="button" class="btn" id="socialMetricsBtn" style="display:none">Metriche</button><button type="button" class="btn" data-social-close="socialContentDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
+    </div><div class="modal-actions"><button type="button" class="btn danger" id="socialDeleteBtn" style="display:none;margin-right:auto">Elimina</button><button type="button" class="btn" id="socialMetricsBtn" style="display:none">Metriche</button><button type="button" class="btn" data-social-close="socialContentDlg">Annulla</button><button class="btn primary">Salva</button></div></form>
+      <section id="socialEventPickerOverlay" class="social-event-picker-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="socialEventPickerTitle">
+        <div class="social-event-picker-panel">
+          <div class="social-event-picker-head">
+            <div><span>Calendario eventi</span><h3 id="socialEventPickerTitle">Collega un evento</h3><p>Cerca e seleziona l'evento collegato al contenuto.</p></div>
+            <button id="socialEventPickerClose" type="button" aria-label="Chiudi selettore">×</button>
+          </div>
+          <div class="social-event-picker-filters">
+            <div class="field full"><label>Cerca</label><input id="socialEventPickerSearch" type="search" placeholder="Nome evento o luogo…" autocomplete="off"></div>
+            <label class="social-event-history-toggle"><input id="socialEventIncludeEnded" type="checkbox"> Includi eventi terminati</label>
+          </div>
+          <div id="socialEventCurrent" class="social-event-current" hidden></div>
+          <div class="social-event-picker-actions-top"><button id="socialEventClear" class="btn soft" type="button">Nessun evento</button><span id="socialEventPickerCount"></span></div>
+          <div id="socialEventPickerList" class="social-event-picker-list"></div>
+        </div>
+      </section>
+    </dialog>
     <dialog id="socialMetricsDlg" class="social-dialog-wide"><form class="modal" id="socialMetricsForm"><div class="modal-head"><div><h3>Risultati</h3><div class="muted" id="metricsContentTitle"></div></div><button type="button" class="close" data-social-close="socialMetricsDlg">×</button></div><div class="metrics-grid"><div class="metrics-section-title">Distribuzione e interazioni</div>
       <div class="field"><label>Visualizzazioni</label><input id="sm_views" type="number" min="0"></div><div class="field"><label>Reach</label><input id="sm_reach" type="number" min="0"></div><div class="field"><label>Reach non follower</label><input id="sm_non_follower_reach" type="number" min="0"></div><div class="field"><label>Like</label><input id="sm_likes" type="number" min="0"></div><div class="field"><label>Commenti</label><input id="sm_comments" type="number" min="0"></div><div class="field"><label>Condivisioni</label><input id="sm_shares" type="number" min="0"></div><div class="field"><label>Salvataggi</label><input id="sm_saves" type="number" min="0"></div><div class="field"><label>Visite profilo</label><input id="sm_profile_visits" type="number" min="0"></div><div class="field"><label>Follower generati</label><input id="sm_followers_gained" type="number" min="0"></div>
       <div class="metrics-section-title">Retention Reel</div><div class="field"><label>Watch time medio (sec)</label><input id="sm_avg_watch_time_seconds" type="number" min="0" step="0.01"></div><div class="field"><label>Completion rate %</label><input id="sm_completion_rate" type="number" min="0" max="100" step="0.01"></div><div></div>
