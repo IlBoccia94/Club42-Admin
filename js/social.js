@@ -50,8 +50,84 @@ window.club42LoadSocial=()=>loadSocial();
 function populateSocialSelects(){
  if(!$('scFormat'))return;
  $('scFormat').innerHTML='<option value="">Nessun format</option>'+formats.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join('');
+ const currentEvent=$('scEvent')?.value||'';
  $('scEvent').innerHTML='<option value="">Nessun evento</option>'+app.state.events.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<option value="${e.id}">${esc(e.name)} · ${fmtDate(e.date)}</option>`).join('');
+ if(currentEvent&&app.state.events.some(e=>e.id===currentEvent))$('scEvent').value=currentEvent;
  $('scAssigned').innerHTML='<option value="">Non assegnato</option>'+socialUsers.map(u=>`<option value="${u.user_id}">${esc(u.display_name||u.email)}</option>`).join('');
+ syncSocialEventPickerValue();
+}
+
+function socialEventById(id){return app.state.events.find(e=>String(e.id)===String(id))||null}
+function isSocialEventEnded(e){
+ if(!e)return false;
+ if(e.eventStatus)return e.eventStatus==='ended';
+ const end=e.endDate||e.date;if(!end)return false;
+ const now=new Date(),today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+ return end<today;
+}
+function socialEventDateText(e){
+ if(!e)return'';
+ const range=e.endDate&&e.endDate!==e.date?`${fmtDate(e.date)} → ${fmtDate(e.endDate)}`:fmtDate(e.date);
+ const time=e.time?String(e.time).slice(0,5):'';
+ return [range,time&&`ore ${time}`].filter(Boolean).join(' · ');
+}
+function syncSocialEventPickerValue(){
+ const btn=$('scEventPickerBtn'),label=$('scEventPickerValue');if(!btn||!label)return;
+ const e=socialEventById($('scEvent')?.value||'');
+ if(!e){label.textContent='Nessun evento';btn.classList.remove('has-value','ended');return}
+ label.textContent=`${e.name} · ${fmtDate(e.date)}`;
+ btn.classList.add('has-value');
+ btn.classList.toggle('ended',isSocialEventEnded(e));
+}
+function renderSocialEventPicker(){
+ const root=$('socialEventPickerList');if(!root)return;
+ const q=($('socialEventPickerSearch')?.value||'').trim().toLocaleLowerCase('it');
+ const includeEnded=$('socialEventIncludeEnded')?.checked===true;
+ const selectedId=$('scEvent')?.value||'';
+ const selected=socialEventById(selectedId);
+ let rows=app.state.events
+  .filter(e=>includeEnded||!isSocialEventEnded(e))
+  .filter(e=>!q||[e.name,e.place].some(v=>String(v||'').toLocaleLowerCase('it').includes(q)))
+  .sort((a,b)=>{
+    const ae=isSocialEventEnded(a),be=isSocialEventEnded(b);
+    if(ae!==be)return ae?1:-1;
+    return ae?b.date.localeCompare(a.date):a.date.localeCompare(b.date);
+  });
+
+ const current=$('socialEventCurrent');
+ if(current){
+  const showCurrent=!!selected&&isSocialEventEnded(selected)&&!includeEnded;
+  current.hidden=!showCurrent;
+  if(showCurrent)current.innerHTML=`<div><span>Evento attualmente collegato</span><b>${esc(selected.name)}</b><small>${esc(socialEventDateText(selected))}${selected.place?' · '+esc(selected.place):''} · Terminato</small></div>`;
+ }
+ if($('socialEventPickerCount'))$('socialEventPickerCount').textContent=`${rows.length} ${rows.length===1?'evento':'eventi'}`;
+ root.innerHTML=rows.length?rows.map(e=>{
+   const ended=isSocialEventEnded(e),active=String(e.id)===String(selectedId);
+   return `<button type="button" class="social-event-picker-card ${active?'selected ':''}${ended?'ended':''}" data-social-event-id="${e.id}">
+     <div class="social-event-picker-card-top"><span class="social-event-picker-status ${ended?'ended':'active'}">${ended?'Terminato':'Attivo'}</span>${active?'<span class="social-event-picker-selected">✓ Selezionato</span>':''}</div>
+     <b>${esc(e.name)}</b>
+     <span>${esc(socialEventDateText(e))}</span>
+     <small>${esc(e.place||'Luogo da definire')}</small>
+   </button>`;
+ }).join(''):'<div class="social-event-picker-empty">Nessun evento corrisponde ai filtri.</div>';
+
+ root.querySelectorAll('[data-social-event-id]').forEach(btn=>btn.onclick=()=>{
+   $('scEvent').value=btn.dataset.socialEventId;
+   syncSocialEventPickerValue();
+   $('socialEventPickerOverlay').hidden=true;
+   $('scEventPickerBtn')?.focus();
+ });
+}
+function openSocialEventPicker(){
+ if(!$('socialEventPickerOverlay'))return;
+ $('socialEventPickerSearch').value='';
+ $('socialEventIncludeEnded').checked=false;
+ $('socialEventPickerOverlay').hidden=false;
+ renderSocialEventPicker();
+ setTimeout(()=>$('socialEventPickerSearch')?.focus(),40);
+}
+function closeSocialEventPicker(){
+ if($('socialEventPickerOverlay'))$('socialEventPickerOverlay').hidden=true;
 }
 
 function renderSocial(){renderSocialMetrics();renderCalendar();renderPipeline();renderIdeas();renderAnalytics();showSocialTab(activeTab,false)}
@@ -380,6 +456,7 @@ function clearContentForm(){
  if($('socialIdeaVotePanelWrap'))$('socialIdeaVotePanelWrap').hidden=true;
  if($('socialIdeaVotePanel'))$('socialIdeaVotePanel').innerHTML='';
  checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=false});
+ syncSocialEventPickerValue();
 }
 window.newSocialContent=(date='')=>{clearContentForm();$('scDate').value=date;seedWeeklyDayFromStart();$('socialContentDlg').showModal()};
 window.newFromFormat=id=>{clearContentForm();const f=formats.find(x=>x.id===id);if(f){$('scFormat').value=f.id;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar;$('scTitle').value=f.name}$('socialContentDlg').showModal()};
@@ -400,6 +477,7 @@ window.openSocialContent=id=>{
   $('scTime').value=(c.scheduled_time||'').slice(0,5);
   $('scFormat').value=c.format_id||'';
   $('scEvent').value=c.event_id||'';
+  syncSocialEventPickerValue();
   $('scAssigned').value=c.assigned_to||'';
   $('scHook').value=c.hook||'';
   $('scCta').value=c.cta||'';
@@ -501,5 +579,11 @@ export function initSocial(){
  document.querySelectorAll('[data-recur-weekday]').forEach(x=>x.onchange=renderRecurrencePreview);
  $('scDate').addEventListener('change',()=>{if($('scRecurring').checked){seedWeeklyDayFromStart();syncRecurrenceUi()}});
  $('scStatus').addEventListener('change',renderSocialIdeaVotePanel);
+ $('scEventPickerBtn').onclick=openSocialEventPicker;
+ $('socialEventPickerClose').onclick=closeSocialEventPicker;
+ $('socialEventPickerSearch').addEventListener('input',renderSocialEventPicker);
+ $('socialEventIncludeEnded').addEventListener('change',renderSocialEventPicker);
+ $('socialEventClear').onclick=()=>{$('scEvent').value='';syncSocialEventPickerValue();closeSocialEventPicker();$('scEventPickerBtn')?.focus()};
+ $('socialEventPickerOverlay').addEventListener('click',ev=>{if(ev.target===$('socialEventPickerOverlay'))closeSocialEventPicker()});
  $('scFormat').onchange=()=>{const f=formats.find(x=>x.id===$('scFormat').value);if(!f)return;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar};
 }
