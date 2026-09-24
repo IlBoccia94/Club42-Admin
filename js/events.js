@@ -274,8 +274,7 @@ function ensureEventDetailUi(){
       <div class="event-hub-actions">
         <button type="button" class="btn" id="eventHubEdit">✎ Modifica evento</button>
         <button type="button" class="btn" id="eventHubAddPerson">＋ Iscritto</button>
-        <button type="button" class="btn" id="eventHubAudit">↺ Cronologia</button>
-        <button type="button" class="btn primary" id="eventHubOpenDay">✓ Modalità evento</button>
+        <button type="button" class="btn event-hub-audit-icon" id="eventHubAudit" title="Collegamenti e cronologia" aria-label="Collegamenti e cronologia">↺</button>
       </div>
       <div id="eventHubSummary" class="event-hub-summary"></div>
       <div class="event-hub-grid">
@@ -312,7 +311,6 @@ function ensureEventDetailUi(){
   $('eventHubEdit').onclick=()=>{const e=selectedEvent();if(e)openEvent(e.id)};
   $('eventHubAddPerson').onclick=()=>openPerson();
   $('eventHubAudit').onclick=()=>{const e=selectedEvent();if(e)window.club42EntityTools?.open('event',e.id,e.name,'audit')};
-  $('eventHubOpenDay').onclick=()=>showEventDetailMode('day');
   $('eventDayAddPerson').onclick=()=>openPerson();
   $('eventDaySearch').oninput=renderEventDay;
   document.querySelectorAll('[data-event-day-filter]').forEach(btn=>btn.onclick=()=>{
