@@ -154,9 +154,66 @@ function renderCalendar(){
  $('socialCalendar').innerHTML=html;
 }
 
+function pipelineIso(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
+function pipelinePresetRange(key){
+ const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+ if(key==='all')return{from:'',to:'',label:'Tutti'};
+ if(key==='year')return{from:`${y}-01-01`,to:`${y}-12-31`,label:"Quest'anno"};
+ if(key==='next3')return{from:pipelineIso(new Date(y,m,1,12)),to:pipelineIso(new Date(y,m+4,0,12)),label:'Questo mese + prossimi 3 mesi'};
+ if(key==='week'){
+  const start=new Date(y,m,now.getDate(),12),offset=(start.getDay()+6)%7;
+  start.setDate(start.getDate()-offset);
+  const end=new Date(start);end.setDate(end.getDate()+6);
+  return{from:pipelineIso(start),to:pipelineIso(end),label:'Questa settimana'};
+ }
+ return{from:pipelineIso(new Date(y,m,1,12)),to:pipelineIso(new Date(y,m+1,0,12)),label:'Questo mese'};
+}
+function pipelineFilterState(){
+ const preset=$('socialPipelinePeriod')?.value||'month';
+ const customFrom=$('socialPipelineFrom')?.value||'',customTo=$('socialPipelineTo')?.value||'';
+ const custom=!!(customFrom||customTo);
+ const base=pipelinePresetRange(preset);
+ return{
+  preset,custom,
+  from:custom?customFrom:base.from,
+  to:custom?customTo:base.to,
+  label:custom?'Intervallo personalizzato':base.label,
+  invalid:!!(customFrom&&customTo&&customFrom>customTo)
+ };
+}
+function matchesPipelineDate(content,state){
+ if(state.invalid)return false;
+ if(!state.custom&&state.preset==='all')return true;
+ const date=content.scheduled_date||'';
+ if(!date)return false;
+ if(state.from&&date<state.from)return false;
+ if(state.to&&date>state.to)return false;
+ return true;
+}
+function syncPipelineFilterUi(state,visibleCount){
+ const summary=$('socialPipelineFilterSummary');
+ if(summary){
+  if(state.invalid)summary.innerHTML='<b>Intervallo non valido</b><span>La data “Da” deve precedere la data “A”.</span>';
+  else{
+   const range=[state.from&&`dal ${fmtDate(state.from)}`,state.to&&`al ${fmtDate(state.to)}`].filter(Boolean).join(' ');
+   summary.innerHTML=`<b>${esc(state.label)}</b><span>${range?esc(range)+' · ':''}${visibleCount} ${visibleCount===1?'contenuto':'contenuti'}</span>`;
+  }
+ }
+ const clear=$('socialPipelineClearDates');if(clear)clear.disabled=!state.custom;
+ const from=$('socialPipelineFrom'),to=$('socialPipelineTo');
+ if(from)from.max=to?.value||'';
+ if(to)to.min=from?.value||'';
+}
 function renderPipeline(){
- if(!$('socialPipeline'))return;const stages=['idea','planned','production','review','ready','scheduled','published'];
- $('socialPipeline').innerHTML=stages.map(s=>{const rows=contents.filter(c=>c.status===s);return `<div class="social-column"><div class="social-column-head"><b>${statusLabels[s]}</b><span>${rows.length}</span></div><div class="social-column-body">${rows.map(c=>socialCard(c)).join('')||'<div class="social-empty-mini">Nessun contenuto</div>'}</div></div>`}).join('');
+ if(!$('socialPipeline'))return;
+ const stages=['idea','planned','production','review','ready','scheduled','published'];
+ const state=pipelineFilterState();
+ const filtered=contents.filter(item=>matchesPipelineDate(item,state));
+ $('socialPipeline').innerHTML=stages.map(s=>{
+  const rows=filtered.filter(item=>item.status===s);
+  return `<div class="social-column"><div class="social-column-head"><b>${statusLabels[s]}</b><span>${rows.length}</span></div><div class="social-column-body">${rows.map(item=>socialCard(item)).join('')||'<div class="social-empty-mini">Nessun contenuto</div>'}</div></div>`
+ }).join('');
+ syncPipelineFilterUi(state,filtered.filter(item=>stages.includes(item.status)).length);
 }
 function socialCard(c){return `<article class="social-card" onclick="openSocialContent('${c.id}')"><div class="social-card-top">${typeBadge(c.content_type)}<span class="priority priority-${c.priority}">${c.priority}</span></div><h4>${esc(c.title)}</h4><p>${c.scheduled_date?localDate(c.scheduled_date):'Data da definire'}${c.scheduled_time?' · '+c.scheduled_time.slice(0,5):''}</p><div class="social-card-meta"><span>${objectiveLabels[c.objective]}</span>${c.assigned_to?`<span>👤 ${esc(personName(c.assigned_to))}</span>`:''}</div></article>`}
 
@@ -569,6 +626,11 @@ export function initSocial(){
  $('socialPrevMonth').onclick=()=>{calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()-1,1);renderCalendar()};
  $('socialNextMonth').onclick=()=>{calendarCursor=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+1,1);renderCalendar()};
  $('socialToday').onclick=()=>{calendarCursor=new Date();renderCalendar()};
+ $('socialPipelinePeriod').value='month';
+ $('socialPipelinePeriod').addEventListener('change',renderPipeline);
+ $('socialPipelineFrom').addEventListener('change',renderPipeline);
+ $('socialPipelineTo').addEventListener('change',renderPipeline);
+ $('socialPipelineClearDates').onclick=()=>{$('socialPipelineFrom').value='';$('socialPipelineTo').value='';renderPipeline()};
  $('newSocialContentBtn').onclick=()=>window.newSocialContent();
  $('socialContentForm').addEventListener('submit',saveContent);
  $('socialDeleteBtn').onclick=deleteContent;
