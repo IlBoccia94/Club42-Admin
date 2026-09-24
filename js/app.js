@@ -4,6 +4,7 @@ import {initAuth,bootstrapAuth} from './auth.js?v=20260917-signup-newsletter1';
 import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa} from './pwa.js?v=20260918-freshassets1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
+import {initGlobalSearch,syncGlobalSearchAccess} from './global-search.js?v=20260924-search1';
 import {initEntityTools,entityTools} from './entity-tools.js?v=20260924-crosslinks2';
 import {initChat,loadChatForRole} from './chat.js?v=20260921-messageedit1';
 import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260924-crosslinks2';
@@ -52,6 +53,7 @@ function ensureReadabilityStyles(){
 
 async function onAuthorized(){
   applyRoleUi();
+  syncGlobalSearchAccess();
   if(app.currentProfile?.role==='guest'){
     await loadChatForRole();
     history.replaceState(null,'','#guest');
@@ -120,6 +122,7 @@ function initShell(){
 
 ensureSidebarLayout();
 initScrollTop();
+initGlobalSearch();
 initChat();
 initPwa();
 buildDashboardUi();
