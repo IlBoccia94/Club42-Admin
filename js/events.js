@@ -133,7 +133,7 @@ function ensureGuestFields(){
  if($('eGuestVisible'))return;
  const notes=$('eNotes')?.closest('.field');
  if(!notes)return;
- notes.insertAdjacentHTML('afterend',`<div class="field full guest-event-settings"><label>Pagina guest / area soci</label><label class="guest-visibility-check"><input id="eGuestVisible" type="checkbox"> Pubblica l'evento completo ai soci</label><label class="guest-visibility-check"><input id="eGuestTeaser" type="checkbox"> Mostra come “Prossimamente”</label><div class="guest-setting-hint">Le due modalità sono alternative. “Prossimamente” mostra soltanto titolo e descrizione, senza data, ora, luogo, prezzo, calendario o iscrizione.</div><label>Descrizione per i soci</label><textarea id="eGuestDescription" rows="3" placeholder="Testo pubblico dell'evento. Le note interne sopra non verranno mai mostrate ai Guest."></textarea></div>`);
+ notes.insertAdjacentHTML('afterend',`<div class="field full guest-event-settings"><label>Pagina guest / area soci</label><label class="guest-visibility-check"><input id="eGuestVisible" type="checkbox"> Pubblica l'evento completo ai soci</label><label class="guest-visibility-check"><input id="eGuestTeaser" type="checkbox"> Mostra come “Prossimamente”</label><div class="guest-setting-hint">Le due modalità sono alternative. “Prossimamente” mostra titolo, descrizione per i soci, data e luogo; restano nascosti ora, prezzo, calendario e iscrizione.</div><label>Descrizione per i soci</label><textarea id="eGuestDescription" rows="3" placeholder="Testo pubblico dell'evento. Le note interne sopra non verranno mai mostrate ai Guest."></textarea></div>`);
 }
 function selectedEventContactIds(){
   const el=$('eContacts');
