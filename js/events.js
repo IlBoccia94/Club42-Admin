@@ -4,10 +4,11 @@ import {showView} from './router.js';
 let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage',eventContactDraft=new Set();
 let eventDetailMode='hub',eventDayFilter='all',eventRealtimeChannel=null;
 let eventHubData={tasks:[],projects:[],social:[],cash:[]};
+let eventMemberPickerRows=[],eventMemberPickerSelection=new Set(),eventPersonMemberId=null;
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
 function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',eventStatus:r.event_status||'active',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
-function mapPerson(r){return{id:r.id,eventId:r.event_id,name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',attended:!!r.attended,checkedInAt:r.checked_in_at||'',checkedInBy:r.checked_in_by||'',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
+function mapPerson(r){return{id:r.id,eventId:r.event_id,memberId:r.member_id||'',name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',attended:!!r.attended,checkedInAt:r.checked_in_at||'',checkedInBy:r.checked_in_by||'',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
 function isEndedEvent(e){return e?.eventStatus==='ended'}
 function activeEvents(){return app.state.events.filter(e=>!isEndedEvent(e))}
 function historicalEvents(){return app.state.events.filter(isEndedEvent)}
@@ -676,17 +677,150 @@ export async function applyEventRoute(eventId){
 
 function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';if(e)window.club42EntityTools?.setTarget('eventDlg','event',id,e.name);else window.club42EntityTools?.clearTarget('eventDlg');$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
 async function deleteEvent(id){const e=app.state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni? Lo storico delle collaborazioni resterà conservato.`))return;const {error}=await db.from('events').delete().eq('id',id);if(error)return toast(error.message);toast('Evento eliminato');await loadRemote()}
-function openPerson(id=null){const e=selectedEvent();if(!e){openEvent();return}app.editPersonId=id;const p=id?app.state.people.find(x=>x.id===id):null;$('personDlgTitle').textContent=p?'Modifica iscritto':'Aggiungi iscritto';$('pName').value=p?.name||'';$('pPhone').value=p?.phone||'';$('pEmail').value=p?.email||'';$('pStatus').value=p?.status||'confirmed';$('pPaid').value=p?.paid||'no';$('pMember').value=p?.member||'no';$('pDiet').value=p?.diet||'';$('pNotes').value=p?.notes||'';$('personDlg').showModal()}
+function ensureEventMemberPickerUi(){
+  const form=$('personForm');if(!form||$('eventMemberPickerOverlay'))return;
+  const grid=form.querySelector('.form-grid');
+  if(grid&&!$('eventMemberSourceBox'))grid.insertAdjacentHTML('beforebegin',`
+    <div id="eventMemberSourceBox" class="event-member-source">
+      <div><b>Iscritto già socio?</b><span>Selezionalo dalla tabella Soci per compilare automaticamente i dati, anche in modalità multipla.</span></div>
+      <button type="button" class="btn" id="eventMemberPickerOpen">👥 Seleziona soci</button>
+    </div>`);
+  form.insertAdjacentHTML('beforeend',`
+    <section id="eventMemberPickerOverlay" class="event-member-picker-overlay" hidden aria-label="Seleziona soci da aggiungere all'evento">
+      <div class="event-member-picker-card">
+        <div class="event-member-picker-head">
+          <div><span>Tabella soci</span><h4>Seleziona iscritti</h4><p id="eventMemberPickerEvent"></p></div>
+          <button type="button" id="eventMemberPickerClose" aria-label="Chiudi">×</button>
+        </div>
+        <div class="event-member-picker-toolbar">
+          <input id="eventMemberPickerSearch" type="search" placeholder="🔎 Cerca nome, numero socio, telefono o email…" autocomplete="off">
+          <div id="eventMemberPickerCount" class="event-member-picker-count">0 selezionati</div>
+        </div>
+        <div id="eventMemberPickerList" class="event-member-picker-list"></div>
+        <div class="event-member-picker-actions">
+          <button type="button" class="btn" id="eventMemberPickerCancel">Annulla</button>
+          <button type="button" class="btn" id="eventMemberPickerUseForm" disabled>Usa nel modulo</button>
+          <button type="button" class="btn primary" id="eventMemberPickerBulk" disabled>Aggiungi selezionati</button>
+        </div>
+      </div>
+    </section>`);
+  $('eventMemberPickerOpen').onclick=openEventMemberPicker;
+  $('eventMemberPickerClose').onclick=closeEventMemberPicker;
+  $('eventMemberPickerCancel').onclick=closeEventMemberPicker;
+  $('eventMemberPickerSearch').oninput=renderEventMemberPicker;
+  $('eventMemberPickerUseForm').onclick=applySelectedMemberToForm;
+  $('eventMemberPickerBulk').onclick=bulkAddSelectedMembers;
+}
+function closeEventMemberPicker(){if($('eventMemberPickerOverlay'))$('eventMemberPickerOverlay').hidden=true}
+function memberFullName(m){return [m.first_name,m.last_name].filter(Boolean).join(' ').trim()}
+function normalizedPhone(v){return String(v||'').replace(/\D/g,'')}
+function memberAlreadyRegistered(m){
+  const e=selectedEvent();if(!e)return false;
+  const email=String(m.email||'').trim().toLowerCase(),phone=normalizedPhone(m.phone);
+  return list(e.id).some(p=>{
+    if(p.memberId&&p.memberId===m.id)return true;
+    if(email&&String(p.email||'').trim().toLowerCase()===email)return true;
+    if(phone&&normalizedPhone(p.phone)===phone)return true;
+    return false;
+  });
+}
+function memberFeeLabel(m){
+  if(m.payment_status==='paid')return'Quota pagata';
+  if(m.payment_status==='due')return'Quota da rinnovare';
+  if(m.payment_status==='waived')return'Quota esente';
+  return'Quota da verificare';
+}
+function renderEventMemberPicker(){
+  const root=$('eventMemberPickerList');if(!root)return;
+  const q=($('eventMemberPickerSearch')?.value||'').trim().toLocaleLowerCase('it');
+  let rows=eventMemberPickerRows;
+  if(q)rows=rows.filter(m=>[memberFullName(m),String(m.member_number||''),m.phone,m.email].some(v=>String(v||'').toLocaleLowerCase('it').includes(q)));
+  root.innerHTML=rows.length?rows.map(m=>{
+    const already=memberAlreadyRegistered(m),selected=eventMemberPickerSelection.has(m.id);
+    const contact=[m.phone,m.email].filter(Boolean).join(' · ')||'Nessun contatto salvato';
+    return `<label class="event-member-option ${selected?'selected':''} ${already?'already':''}">
+      <input type="checkbox" value="${m.id}" ${selected?'checked':''} ${already?'disabled':''}>
+      <span class="event-member-number">#${esc(String(m.member_number||'—'))}</span>
+      <span class="event-member-copy"><b>${esc(memberFullName(m))}</b><small>${esc(contact)}</small><span><i class="member-status member-status-${esc(m.status||'active')}">${esc(m.status==='active'?'Attivo':m.status||'—')}</i><i class="fee-status fee-status-${esc(m.payment_status||'unknown')}">${esc(memberFeeLabel(m))}</i>${already?'<i class="event-member-already">Già iscritto</i>':''}</span></span>
+    </label>`;
+  }).join(''):'<div class="event-member-picker-empty">Nessun socio trovato.</div>';
+  root.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(input=>input.onchange=()=>{
+    if(input.checked)eventMemberPickerSelection.add(input.value);else eventMemberPickerSelection.delete(input.value);
+    renderEventMemberPicker();
+  });
+  const n=eventMemberPickerSelection.size;
+  $('eventMemberPickerCount').textContent=`${n} ${n===1?'selezionato':'selezionati'}`;
+  $('eventMemberPickerUseForm').disabled=n!==1;
+  $('eventMemberPickerBulk').disabled=n===0;
+  $('eventMemberPickerBulk').textContent=n? `Aggiungi ${n} ${n===1?'socio':'soci'}`:'Aggiungi selezionati';
+}
+async function openEventMemberPicker(){
+  const e=selectedEvent();if(!e)return toast('Seleziona un evento');
+  ensureEventMemberPickerUi();
+  $('eventMemberPickerEvent').textContent=e.name;
+  $('eventMemberPickerSearch').value='';
+  eventMemberPickerSelection=new Set();
+  $('eventMemberPickerList').innerHTML='<div class="event-member-picker-loading">Caricamento soci…</div>';
+  $('eventMemberPickerOverlay').hidden=false;
+  const {data,error}=await db.rpc('club42_event_member_picker');
+  if(error){console.error(error);$('eventMemberPickerList').innerHTML='<div class="event-member-picker-empty">Impossibile caricare i soci.</div>';return}
+  eventMemberPickerRows=data||[];
+  renderEventMemberPicker();
+  setTimeout(()=>$('eventMemberPickerSearch')?.focus(),30);
+}
+function applySelectedMemberToForm(){
+  const id=[...eventMemberPickerSelection][0],m=eventMemberPickerRows.find(x=>x.id===id);if(!m)return;
+  eventPersonMemberId=m.id;
+  $('pName').value=memberFullName(m);
+  $('pPhone').value=m.phone||'';
+  $('pEmail').value=m.email||'';
+  $('pMember').value='yes';
+  closeEventMemberPicker();
+  toast(`${memberFullName(m)} caricato nel modulo`);
+}
+async function bulkAddSelectedMembers(){
+  const e=selectedEvent();if(!e)return toast('Seleziona un evento');
+  const rows=eventMemberPickerRows.filter(m=>eventMemberPickerSelection.has(m.id)&&!memberAlreadyRegistered(m)).sort((a,b)=>(a.member_number||0)-(b.member_number||0));
+  if(!rows.length)return toast('Nessun socio da aggiungere');
+  const confirmedNow=list(e.id).filter(p=>p.status==='confirmed').length;
+  const available=e.capacity?Math.max(0,e.capacity-confirmedNow):Number.POSITIVE_INFINITY;
+  const waitCount=Number.isFinite(available)?Math.max(0,rows.length-available):0;
+  if(waitCount&&!confirm(`Restano ${available} posti confermati. ${waitCount} ${waitCount===1?'socio verrà inserito':'soci verranno inseriti'} automaticamente in lista d'attesa. Continuare?`))return;
+  const payload=rows.map((m,index)=>({
+    event_id:e.id,
+    member_id:m.id,
+    name:memberFullName(m),
+    phone:m.phone||null,
+    email:m.email||null,
+    status:index<available?'confirmed':'waitlist',
+    paid:false,
+    member:true,
+    created_by:app.currentUser.id
+  }));
+  const button=$('eventMemberPickerBulk');button.disabled=true;button.textContent='Inserimento…';
+  const {error}=await db.from('event_registrations').insert(payload);
+  if(error){
+    console.error(error);button.disabled=false;renderEventMemberPicker();
+    if(error.code==='23505')return toast('Uno dei soci risulta già iscritto all’evento');
+    return toast(error.message);
+  }
+  closeEventMemberPicker();
+  if($('personDlg')?.open)$('personDlg').close();
+  toast(`${rows.length} ${rows.length===1?'socio aggiunto':'soci aggiunti'}${waitCount?` · ${waitCount} in lista d'attesa`:''}`);
+  await loadRemote();
+}
+
+function openPerson(id=null){const e=selectedEvent();if(!e){openEvent();return}ensureEventMemberPickerUi();closeEventMemberPicker();app.editPersonId=id;const p=id?app.state.people.find(x=>x.id===id):null;eventPersonMemberId=p?.memberId||null;$('personDlgTitle').textContent=p?'Modifica iscritto':'Aggiungi iscritto';$('pName').value=p?.name||'';$('pPhone').value=p?.phone||'';$('pEmail').value=p?.email||'';$('pStatus').value=p?.status||'confirmed';$('pPaid').value=p?.paid||'no';$('pMember').value=p?.member||'no';$('pDiet').value=p?.diet||'';$('pNotes').value=p?.notes||'';if($('eventMemberSourceBox'))$('eventMemberSourceBox').hidden=!!p;$('personDlg').showModal()}
 async function deletePerson(id){const p=app.state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;const {error}=await db.from('event_registrations').delete().eq('id',id);if(error)return toast(error.message);toast('Iscritto eliminato');await loadRemote()}
 
 export function initEvents(){
-  ensureEventContactsField();ensureGuestFields();ensureEventCalendarUi();ensureEventDetailUi();document.addEventListener('club42:contacts-changed',refreshEventContactData);
+  ensureEventContactsField();ensureGuestFields();ensureEventCalendarUi();ensureEventDetailUi();ensureEventMemberPickerUi();document.addEventListener('club42:contacts-changed',refreshEventContactData);
   $('eGuestVisible').onchange=()=>{if($('eGuestVisible').checked)$('eGuestTeaser').checked=false};
   $('eGuestTeaser').onchange=()=>{if($('eGuestTeaser').checked)$('eGuestVisible').checked=false};
   $('eFree').onchange=syncEventPriceControl;
   $('eDate').onchange=syncEndDateMin;
   window.selectEvent=selectEvent;window.openEvent=openEvent;window.deleteEvent=deleteEvent;window.openPerson=openPerson;window.deletePerson=deletePerson;window.openGoogleCalendarEvent=openGoogleCalendarEvent;window.setEventCalendarAdded=setEventCalendarAdded;window.openEventFromCalendar=openEventFromCalendar;
   $('eventForm').addEventListener('submit',async ev=>{ev.preventDefault();const startDate=$('eDate').value,endDate=$('eEndDate').value||null;if(endDate&&endDate<startDate)return toast('La data fine non può essere precedente alla data inizio');const isFree=$('eFree').checked;const base={name:$('eName').value.trim(),event_date:startDate,event_end_date:endDate,event_time:$('eTime').value||null,event_end_time:$('eEndTime').value||null,place:$('ePlace').value.trim()||null,capacity:Number($('eCapacity').value)||0,price:isFree?null:($('ePrice').value===''?null:Number($('ePrice').value)),is_free:isFree,notes:$('eNotes').value.trim()||null,guest_visible:$('eGuestVisible').checked,guest_teaser:$('eGuestTeaser').checked,guest_description:$('eGuestDescription').value.trim()||null};let result;if(app.editEventId)result=await db.from('events').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editEventId).select('id').single();else result=await db.from('events').insert({...base,created_by:app.currentUser.id}).select('id').single();if(result.error)return toast(result.error.message);try{await syncEventContacts(result.data.id,base)}catch(error){console.error(error);return toast('Evento salvato, ma errore nel collegamento collaboratori')}$('eventDlg').close();toast(app.editEventId?'Evento aggiornato':'Evento creato');await loadRemote()});
-  $('personForm').addEventListener('submit',async ev=>{ev.preventDefault();const e=selectedEvent();if(!e)return toast('Seleziona un evento');const base={event_id:e.id,name:$('pName').value.trim(),phone:$('pPhone').value.trim()||null,email:$('pEmail').value.trim()||null,status:$('pStatus').value,paid:$('pPaid').value==='yes',member:$('pMember').value==='yes',dietary_requirements:$('pDiet').value.trim()||null,notes:$('pNotes').value.trim()||null};let result;if(app.editPersonId)result=await db.from('event_registrations').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editPersonId);else result=await db.from('event_registrations').insert({...base,created_by:app.currentUser.id});if(result.error)return toast(result.error.message);$('personDlg').close();toast(app.editPersonId?'Iscritto aggiornato':'Iscritto aggiunto');await loadRemote()});
+  $('personForm').addEventListener('submit',async ev=>{ev.preventDefault();const e=selectedEvent();if(!e)return toast('Seleziona un evento');const isMember=$('pMember').value==='yes';const base={event_id:e.id,member_id:isMember?eventPersonMemberId:null,name:$('pName').value.trim(),phone:$('pPhone').value.trim()||null,email:$('pEmail').value.trim()||null,status:$('pStatus').value,paid:$('pPaid').value==='yes',member:isMember,dietary_requirements:$('pDiet').value.trim()||null,notes:$('pNotes').value.trim()||null};let result;if(app.editPersonId)result=await db.from('event_registrations').update({...base,updated_at:new Date().toISOString()}).eq('id',app.editPersonId);else result=await db.from('event_registrations').insert({...base,created_by:app.currentUser.id});if(result.error){if(result.error.code==='23505')return toast('Questo socio è già iscritto all’evento');return toast(result.error.message)}$('personDlg').close();toast(app.editPersonId?'Iscritto aggiornato':'Iscritto aggiunto');await loadRemote()});
   ['globalNewEvent','heroNewEvent','quickEvent','sideNewEvent'].forEach(id=>$(id).onclick=()=>openEvent());['addPerson','quickPerson'].forEach(id=>$(id).onclick=()=>openPerson());$('search').oninput=renderPeople;$('statusFilter').onchange=renderPeople;
 }
