@@ -274,6 +274,7 @@ function ensureEventDetailUi(){
       <div class="event-hub-actions">
         <button type="button" class="btn" id="eventHubEdit">✎ Modifica evento</button>
         <button type="button" class="btn" id="eventHubAddPerson">＋ Iscritto</button>
+        <button type="button" class="btn" id="eventHubAudit">↺ Cronologia</button>
         <button type="button" class="btn primary" id="eventHubOpenDay">✓ Modalità evento</button>
       </div>
       <div id="eventHubSummary" class="event-hub-summary"></div>
@@ -310,6 +311,7 @@ function ensureEventDetailUi(){
   document.querySelectorAll('[data-event-detail]').forEach(btn=>btn.onclick=()=>showEventDetailMode(btn.dataset.eventDetail));
   $('eventHubEdit').onclick=()=>{const e=selectedEvent();if(e)openEvent(e.id)};
   $('eventHubAddPerson').onclick=()=>openPerson();
+  $('eventHubAudit').onclick=()=>{const e=selectedEvent();if(e)window.club42EntityTools?.open('event',e.id,e.name,'audit')};
   $('eventHubOpenDay').onclick=()=>showEventDetailMode('day');
   $('eventDayAddPerson').onclick=()=>openPerson();
   $('eventDaySearch').oninput=renderEventDay;
@@ -674,7 +676,7 @@ export async function applyEventRoute(eventId){
   }
 }
 
-function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
+function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';if(e)window.club42EntityTools?.setTarget('eventDlg','event',id,e.name);else window.club42EntityTools?.clearTarget('eventDlg');$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
 async function deleteEvent(id){const e=app.state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni? Lo storico delle collaborazioni resterà conservato.`))return;const {error}=await db.from('events').delete().eq('id',id);if(error)return toast(error.message);toast('Evento eliminato');await loadRemote()}
 function openPerson(id=null){const e=selectedEvent();if(!e){openEvent();return}app.editPersonId=id;const p=id?app.state.people.find(x=>x.id===id):null;$('personDlgTitle').textContent=p?'Modifica iscritto':'Aggiungi iscritto';$('pName').value=p?.name||'';$('pPhone').value=p?.phone||'';$('pEmail').value=p?.email||'';$('pStatus').value=p?.status||'confirmed';$('pPaid').value=p?.paid||'no';$('pMember').value=p?.member||'no';$('pDiet').value=p?.diet||'';$('pNotes').value=p?.notes||'';$('personDlg').showModal()}
 async function deletePerson(id){const p=app.state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;const {error}=await db.from('event_registrations').delete().eq('id',id);if(error)return toast(error.message);toast('Iscritto eliminato');await loadRemote()}
