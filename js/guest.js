@@ -96,7 +96,9 @@ function regularCard(e){
   </article>`;
 }
 function teaserCard(e){
-  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}</article>`;
+  const date=e.event_date?dateRangeLabel(e):'Data da definire';
+  const place=e.place||'Luogo da definire';
+  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3><div class="guest-teaser-meta"><span><b>◫</b>${esc(date)}</span><span><b>⌖</b>${esc(place)}</span></div>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}</article>`;
 }
 function renderGuestEvents(){
   const root=$('guestEventsRoot');if(!root)return;
