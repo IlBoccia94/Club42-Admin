@@ -6,8 +6,8 @@ export function buildDashboardUi(){
     <section class="card dashboard-command">
       <div class="dashboard-command-copy">
         <div class="hero-eyebrow">Club42 · Centro operativo</div>
-        <h2>Che cosa richiede attenzione?</h2>
-        <p id="dashCommandSummary">Sto leggendo lo stato del Club…</p>
+        <h2>Tutto il Club, in un solo posto.</h2>
+        <p>Una base unica per coordinare eventi, soci, cassa, progetti e comunicazione.</p>
         <div class="dashboard-command-date" id="dashCommandDate"></div>
       </div>
       <div class="dashboard-quick-actions">
