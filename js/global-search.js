@@ -37,7 +37,7 @@ function ensureUi(){
     <dialog id="globalSearchDlg" class="global-search-dialog">
       <div class="global-search-shell">
         <div class="global-search-head">
-          <div class="global-search-input-wrap"><span>⌕</span><input id="globalSearchInput" type="search" autocomplete="off" placeholder="Cerca eventi, progetti, task, social, contatti, soci, cassa…"><button type="button" id="globalSearchClear" title="Cancella" aria-label="Cancella ricerca">×</button></div>
+          <div class="global-search-input-wrap"><span>⌕</span><input id="globalSearchInput" type="search" autocomplete="off" placeholder="Cerca eventi, progetti, task, social, contatti, soci, cassa…"></div>
           <button type="button" id="globalSearchClose" class="global-search-close" aria-label="Chiudi">×</button>
         </div>
         <div id="globalSearchFilters" class="global-search-filters"></div>
@@ -49,7 +49,6 @@ function ensureUi(){
   $('globalSearchOpen').onclick=open;
   $('globalSearchOpenMobile').onclick=open;
   $('globalSearchClose').onclick=close;
-  $('globalSearchClear').onclick=()=>{const input=$('globalSearchInput');input.value='';input.focus();resetResults()};
   $('globalSearchInput').oninput=()=>scheduleSearch();
   $('globalSearchInput').onkeydown=handleKeys;
   $('globalSearchDlg').addEventListener('click',ev=>{if(ev.target===$('globalSearchDlg'))close()});
