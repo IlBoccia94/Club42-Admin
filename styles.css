@@ -480,3 +480,54 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
   .event-cal-item.today-focus b{font-size:10.5px}
   .event-cal-today-detail{font-size:8px!important}
 }
+
+
+/* Calendar holidays + larger event cards */
+.event-cal-day-top{display:grid;gap:4px;align-content:start;margin-bottom:6px}
+.event-cal-observances{display:grid;gap:3px;min-width:0}
+.event-cal-observance{
+  display:block;width:100%;padding:3px 5px;border-radius:6px;
+  font-family:var(--font-subtitle);font-size:7.2px;font-weight:900;line-height:1.2;
+  white-space:normal;overflow-wrap:anywhere
+}
+.event-cal-observance.holiday{
+  background:rgba(250,107,99,.12);color:#9f4741;border:1px solid rgba(250,107,99,.14)
+}
+.event-cal-observance.recurrence{
+  background:rgba(255,198,11,.16);color:#7b660d;border:1px solid rgba(255,198,11,.18)
+}
+.event-cal-observance.local{
+  background:rgba(33,98,119,.10);color:var(--blue);border:1px solid rgba(33,98,119,.13)
+}
+
+/* Larger cards even when the monthly view is zoomed out */
+.event-cal-items{gap:6px}
+.event-cal-item{
+  min-height:48px;padding:8px 9px;border-radius:10px;
+  display:flex;flex-direction:column;justify-content:center
+}
+.event-cal-item span{font-size:8px;line-height:1.25}
+.event-cal-item b{
+  margin-top:2px;font-size:9.8px;line-height:1.28;
+  white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  overflow:hidden;text-overflow:ellipsis
+}
+.event-cal-item.start{border-radius:10px 4px 4px 10px}
+.event-cal-item.middle{border-radius:4px}
+.event-cal-item.end{border-radius:4px 10px 10px 4px}
+.event-cal-item.today-focus{min-height:64px;padding:10px 10px}
+.event-cal-item.today-focus b{font-size:11px;line-height:1.3}
+.event-cal-today-detail{font-size:8px!important}
+
+@media(max-width:760px){
+  .event-calendar-weekdays,.event-calendar-grid{min-width:790px}
+  .event-cal-day{min-height:124px;padding:8px 7px}
+  .event-cal-day.today{min-height:160px}
+  .event-cal-observance{font-size:7.5px;padding:4px 5px}
+  .event-cal-item{min-height:52px;padding:9px 9px}
+  .event-cal-item span{font-size:8.2px}
+  .event-cal-item b{font-size:10.2px}
+  .event-cal-item.today-focus{min-height:70px;padding:11px 10px}
+  .event-cal-item.today-focus b{font-size:11.4px}
+  .event-cal-today-detail{font-size:8.3px!important}
+}
