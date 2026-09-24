@@ -514,6 +514,7 @@ function clearContentForm(){
  if($('socialIdeaVotePanel'))$('socialIdeaVotePanel').innerHTML='';
  checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=false});
  syncSocialEventPickerValue();
+ window.club42EntityTools?.clearTarget('socialContentDlg');
 }
 window.newSocialContent=(date='')=>{clearContentForm();$('scDate').value=date;seedWeeklyDayFromStart();$('socialContentDlg').showModal()};
 window.newFromFormat=id=>{clearContentForm();const f=formats.find(x=>x.id===id);if(f){$('scFormat').value=f.id;$('scType').value=f.default_type;$('scObjective').value=f.default_objective;$('scPillar').value=f.default_pillar;$('scTitle').value=f.name}$('socialContentDlg').showModal()};
@@ -549,6 +550,7 @@ window.openSocialContent=id=>{
   checklistItems.forEach(([k])=>{const el=$('check_'+k);if(el)el.checked=!!c.checklist?.[k]});
   $('socialDeleteBtn').style.display='inline-flex';
   $('socialMetricsBtn').style.display=c.status==='published'?'inline-flex':'none';
+  window.club42EntityTools?.setTarget('socialContentDlg','social',id,c.title);
   if(dlg.open)dlg.close();
   dlg.showModal();
  }catch(error){
