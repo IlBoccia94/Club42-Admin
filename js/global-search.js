@@ -21,7 +21,7 @@ function roleCanSearch(){return !!app.currentUser&&['admin','staff','treasurer']
 
 function ensureUi(){
   if($('globalSearchDlg'))return;
-  if(!document.querySelector('link[href^="global-search.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='global-search.css?v=20260924-search1';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="global-search.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='global-search.css?v=20260924-search2';document.head.appendChild(l)}
   const actions=document.querySelector('.topbar-actions');
   const left=document.querySelector('.topbar-left');
   if(actions&&!$('globalSearchOpen')){
