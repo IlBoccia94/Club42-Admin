@@ -25,13 +25,13 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
 }
 .guest-teaser-card h3{position:relative;margin:10px 0 0;font-size:21px;line-height:1.14;color:var(--guest-deep)}
 .guest-teaser-card>p{
-  position:relative;margin:11px 0 0;font-size:11px;line-height:1.6;color:#647a81;white-space:pre-line
+  position:relative;margin:11px 0 0;font-size:11px;line-height:1.6;color:#fff;white-space:pre-line
 }
 .guest-teaser-meta{
   position:relative;display:flex;align-items:flex-start;gap:7px 13px;flex-wrap:wrap;margin-top:12px
 }
 .guest-teaser-meta span{
-  display:flex;align-items:center;gap:6px;font-size:10px;line-height:1.35;color:#526d76
+  display:flex;align-items:center;gap:6px;font-size:10px;line-height:1.35;color:#fff
 }
 .guest-teaser-meta b{
   width:23px;height:23px;flex:0 0 23px;display:inline-grid;place-items:center;
