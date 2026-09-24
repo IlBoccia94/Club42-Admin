@@ -742,6 +742,7 @@ function calendarObservancesForYear(year){
   add(isoDateUTC(year,3,19),'San Giuseppe · Festa del papà','local');
   add(nthWeekdayIso(year,5,0,2),'Festa della mamma','recurrence');
   add(isoDateUTC(year,10,2),'Festa dei nonni','recurrence');
+  add(isoDateUTC(year,10,31),'Halloween','recurrence');
   return map;
 }
 function renderCalendarObservances(rows=[]){
