@@ -195,6 +195,10 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
 .event-hub-panel{display:grid;gap:12px}
 .event-hub-panel[hidden],.event-day-panel[hidden],#eventPeoplePanel[hidden]{display:none!important}
 .event-hub-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.event-hub-audit-icon{
+  width:42px;min-width:42px;height:38px;padding:0;display:grid;place-items:center;
+  font-size:16px;font-weight:900
+}
 .event-hub-summary{
   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px
 }
@@ -302,9 +306,9 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
 @media(max-width:650px){
   .event-detail-tabs{top:4px;gap:4px;padding:4px}
   .event-detail-tab{min-height:36px;font-size:8.5px}
-  .event-hub-actions{display:grid;grid-template-columns:1fr 1fr}
-  .event-hub-actions .btn{width:100%;font-size:9px}
-  .event-hub-actions .btn.primary{grid-column:1/-1}
+  .event-hub-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 42px;gap:7px}
+  .event-hub-actions .btn{width:100%;min-width:0;font-size:9px}
+  .event-hub-actions .event-hub-audit-icon{width:42px;min-width:42px;padding:0;font-size:16px}
   .event-hub-summary{gap:6px}
   .event-hub-summary>div{padding:10px}
   .event-hub-summary b{font-size:23px}
