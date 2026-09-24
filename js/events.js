@@ -2,10 +2,12 @@ import {$,app,db,LEGACY_KEY,download,esc,selected,list,fmtDate,badge,toast,syncS
 import {showView} from './router.js';
 
 let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage',eventContactDraft=new Set();
+let eventDetailMode='hub',eventDayFilter='all',eventRealtimeChannel=null;
+let eventHubData={tasks:[],projects:[],social:[],cash:[]};
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
 function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',eventStatus:r.event_status||'active',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
-function mapPerson(r){return{id:r.id,eventId:r.event_id,name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
+function mapPerson(r){return{id:r.id,eventId:r.event_id,name:r.name,phone:r.phone||'',email:r.email||'',status:r.status,paid:r.paid?'yes':'no',member:r.member?'yes':'no',attended:!!r.attended,checkedInAt:r.checked_in_at||'',checkedInBy:r.checked_in_by||'',diet:r.dietary_requirements||'',notes:r.notes||'',createdAt:r.created_at}}
 function isEndedEvent(e){return e?.eventStatus==='ended'}
 function activeEvents(){return app.state.events.filter(e=>!isEndedEvent(e))}
 function historicalEvents(){return app.state.events.filter(isEndedEvent)}
@@ -249,6 +251,212 @@ function applyEventContactPicker(){
   if($('eventContactsDlg')?.open)$('eventContactsDlg').close();
 }
 
+function ensureEventDetailUi(){
+  if($('eventDetailTabs'))return;
+  const main=$('eventManagementPanel')?.querySelector('.event-main');
+  const hero=main?.querySelector('.event-hero');
+  const peoplePanel=$('people')?.closest('section.card.panel');
+  if(!main||!hero||!peoplePanel)return;
+
+  peoplePanel.id='eventPeoplePanel';
+  const stats=hero.querySelector('.event-stats');
+  if(stats&&!$('sPresent'))stats.insertAdjacentHTML('beforeend','<div class="event-stat"><span>✓ Presenti</span><b id="sPresent">0</b></div>');
+
+  hero.insertAdjacentHTML('afterend',`
+    <div class="event-detail-tabs" id="eventDetailTabs">
+      <button type="button" class="event-detail-tab active" data-event-detail="hub">Hub evento</button>
+      <button type="button" class="event-detail-tab" data-event-detail="people">Iscritti</button>
+      <button type="button" class="event-detail-tab event-day-tab" data-event-detail="day">✓ Modalità evento</button>
+    </div>`);
+
+  peoplePanel.insertAdjacentHTML('beforebegin',`
+    <section class="event-hub-panel" id="eventHubPanel">
+      <div class="event-hub-actions">
+        <button type="button" class="btn" id="eventHubEdit">✎ Modifica evento</button>
+        <button type="button" class="btn" id="eventHubAddPerson">＋ Iscritto</button>
+        <button type="button" class="btn primary" id="eventHubOpenDay">✓ Modalità evento</button>
+      </div>
+      <div id="eventHubSummary" class="event-hub-summary"></div>
+      <div class="event-hub-grid">
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>◇</span><div><b>Progetti</b><small>Progetti collegati all'evento</small></div></div><div id="eventHubProjects"></div></section>
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>✓</span><div><b>Task</b><small>Attività operative dell'evento</small></div></div><div id="eventHubTasks"></div></section>
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>◎</span><div><b>Social</b><small>Contenuti editoriali collegati</small></div></div><div id="eventHubSocial"></div></section>
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>€</span><div><b>Cassa</b><small>Movimenti economici collegati</small></div></div><div id="eventHubCash"></div></section>
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>☏</span><div><b>Collaboratori</b><small>Contatti coinvolti nell'evento</small></div></div><div id="eventHubContacts"></div></section>
+        <section class="card event-hub-card event-hub-notes-card"><div class="event-hub-card-head"><span>≡</span><div><b>Note evento</b><small>Promemoria interni</small></div></div><div id="eventHubNotes"></div></section>
+      </div>
+    </section>`);
+
+  peoplePanel.insertAdjacentHTML('afterend',`
+    <section class="card event-day-panel" id="eventDayPanel" hidden>
+      <div class="event-day-head">
+        <div><div class="panel-kicker">Modalità evento</div><h3 id="eventDayTitle">Evento</h3><p id="eventDayMeta"></p></div>
+        <button class="btn primary" type="button" id="eventDayAddPerson">＋ Aggiungi iscritto</button>
+      </div>
+      <div class="event-day-stats" id="eventDayStats"></div>
+      <div class="event-day-toolbar">
+        <input id="eventDaySearch" type="search" placeholder="🔎 Cerca partecipante, telefono, email…" autocomplete="off">
+        <div class="event-day-filters">
+          <button type="button" class="active" data-event-day-filter="all">Da accogliere</button>
+          <button type="button" data-event-day-filter="present">Presenti</button>
+          <button type="button" data-event-day-filter="unpaid">Da pagare</button>
+          <button type="button" data-event-day-filter="waitlist">Attesa</button>
+          <button type="button" data-event-day-filter="everyone">Tutti</button>
+        </div>
+      </div>
+      <div id="eventDayList" class="event-day-list"></div>
+    </section>`);
+
+  document.querySelectorAll('[data-event-detail]').forEach(btn=>btn.onclick=()=>showEventDetailMode(btn.dataset.eventDetail));
+  $('eventHubEdit').onclick=()=>{const e=selectedEvent();if(e)openEvent(e.id)};
+  $('eventHubAddPerson').onclick=()=>openPerson();
+  $('eventHubOpenDay').onclick=()=>showEventDetailMode('day');
+  $('eventDayAddPerson').onclick=()=>openPerson();
+  $('eventDaySearch').oninput=renderEventDay;
+  document.querySelectorAll('[data-event-day-filter]').forEach(btn=>btn.onclick=()=>{
+    eventDayFilter=btn.dataset.eventDayFilter;
+    document.querySelectorAll('[data-event-day-filter]').forEach(x=>x.classList.toggle('active',x.dataset.eventDayFilter===eventDayFilter));
+    renderEventDay();
+  });
+  showEventDetailMode(eventDetailMode,false);
+}
+function showEventDetailMode(mode='hub',renderNow=true){
+  eventDetailMode=['hub','people','day'].includes(mode)?mode:'hub';
+  const management=$('eventManagementPanel');
+  management?.classList.toggle('event-day-mode',eventDetailMode==='day');
+  document.querySelectorAll('[data-event-detail]').forEach(btn=>btn.classList.toggle('active',btn.dataset.eventDetail===eventDetailMode));
+  if($('eventHubPanel'))$('eventHubPanel').hidden=eventDetailMode!=='hub';
+  if($('eventPeoplePanel'))$('eventPeoplePanel').hidden=eventDetailMode!=='people';
+  if($('eventDayPanel'))$('eventDayPanel').hidden=eventDetailMode!=='day';
+  if(renderNow){
+    if(eventDetailMode==='hub')renderEventHub();
+    else if(eventDetailMode==='people')renderPeople();
+    else renderEventDay();
+  }
+}
+function euro(value){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(value)||0)}
+function eventHubEmpty(text='Nessun elemento collegato.'){return `<div class="event-hub-empty">${esc(text)}</div>`}
+function hubRow({icon,title,meta,type,id,tone=''}){return `<button type="button" class="event-hub-row ${tone}" onclick="openEventHubEntity('${type}','${id}')"><span class="event-hub-row-icon">${icon}</span><span><b>${esc(title)}</b><small>${esc(meta||'')}</small></span><i>›</i></button>`}
+window.openEventHubEntity=async(type,id)=>{
+  if(type==='contact'){
+    await window.club42?.openLinkedEntity?.('contact',id);
+    return;
+  }
+  if(type==='cash'){
+    await window.club42?.openLinkedEntity?.('cash',id);
+    return;
+  }
+  await window.club42?.openLinkedEntity?.(type,id);
+};
+function renderEventHub(){
+  if(!$('eventHubPanel'))return;
+  const e=selectedEvent();
+  const ids=['eventHubSummary','eventHubProjects','eventHubTasks','eventHubSocial','eventHubCash','eventHubContacts','eventHubNotes'];
+  if(!e){ids.forEach(id=>{if($(id))$(id).innerHTML=eventHubEmpty('Seleziona un evento.')});return}
+
+  const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed'),present=confirmed.filter(p=>p.attended),paid=confirmed.filter(p=>p.paid==='yes');
+  const projects=eventHubData.projects.filter(x=>x.event_id===e.id);
+  const tasks=eventHubData.tasks.filter(x=>x.event_id===e.id).sort((a,b)=>(a.status==='done')-(b.status==='done')||(a.due_date||'9999').localeCompare(b.due_date||'9999'));
+  const social=eventHubData.social.filter(x=>x.event_id===e.id).sort((a,b)=>(a.scheduled_date||'9999').localeCompare(b.scheduled_date||'9999'));
+  const cash=eventHubData.cash.filter(x=>x.event_id===e.id).sort((a,b)=>(b.movement_date||'').localeCompare(a.movement_date||''));
+  const contactIds=eventContactLinks.filter(x=>x.event_id===e.id).map(x=>String(x.contact_id));
+  const contacts=eventContacts.filter(x=>contactIds.includes(String(x.id)));
+  const income=cash.filter(x=>x.movement_type==='income').reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const expense=cash.filter(x=>x.movement_type==='expense').reduce((sum,x)=>sum+Number(x.amount||0),0);
+
+  $('eventHubSummary').innerHTML=`
+    <div><span>Confermati</span><b>${confirmed.length}${e.capacity?' / '+e.capacity:''}</b></div>
+    <div><span>Presenti</span><b>${present.length}</b><small>${confirmed.length?Math.round(present.length/confirmed.length*100):0}% check-in</small></div>
+    <div><span>Pagati</span><b>${paid.length}</b><small>${confirmed.length-paid.length} da pagare</small></div>
+    <div><span>Saldo evento</span><b>${esc(euro(income-expense))}</b><small>${cash.length} movimenti</small></div>`;
+
+  $('eventHubProjects').innerHTML=projects.length?projects.map(p=>hubRow({icon:'◇',title:p.title,meta:[p.status,p.target_date?fmtDate(p.target_date):''].filter(Boolean).join(' · '),type:'project',id:p.id})).join(''):eventHubEmpty();
+  $('eventHubTasks').innerHTML=tasks.length?tasks.slice(0,8).map(t=>hubRow({icon:t.status==='done'?'✓':'○',title:t.title,meta:[t.status,t.priority,t.due_date?fmtDate(t.due_date):''].filter(Boolean).join(' · '),type:'task',id:t.id,tone:t.status==='blocked'?'warn':''})).join(''):eventHubEmpty();
+  $('eventHubSocial').innerHTML=social.length?social.slice(0,8).map(s=>hubRow({icon:'◎',title:s.title,meta:[s.content_type,s.status,s.scheduled_date?fmtDate(s.scheduled_date):''].filter(Boolean).join(' · '),type:'social',id:s.id})).join(''):eventHubEmpty();
+  $('eventHubCash').innerHTML=cash.length?cash.slice(0,8).map(x=>hubRow({icon:x.movement_type==='income'?'+':'−',title:x.description,meta:`${x.movement_date?fmtDate(x.movement_date)+' · ':''}${euro(x.amount)} · ${x.movement_type==='income'?'Entrata':'Uscita'}`,type:'cash',id:x.id,tone:x.movement_type==='expense'?'expense':'income'})).join(''):eventHubEmpty();
+  $('eventHubContacts').innerHTML=contacts.length?contacts.map(x=>hubRow({icon:'☏',title:x.name,meta:x.organization||'Collaboratore',type:'contact',id:x.id})).join(''):eventHubEmpty();
+  $('eventHubNotes').innerHTML=e.notes?`<div class="event-hub-notes">${esc(e.notes).replaceAll('\n','<br>')}</div>`:eventHubEmpty('Nessuna nota interna.');
+}
+function renderEventDay(){
+  const root=$('eventDayList');if(!root)return;
+  const e=selectedEvent();
+  if(!e){root.innerHTML=eventHubEmpty('Seleziona un evento.');return}
+  $('eventDayTitle').textContent=e.name;
+  $('eventDayMeta').textContent=[eventDateLabel(e),eventTimeLabel(e),e.place].filter(Boolean).join(' · ');
+
+  const all=list(e.id),confirmed=all.filter(p=>p.status==='confirmed'),present=confirmed.filter(p=>p.attended),unpaid=confirmed.filter(p=>p.paid==='no'),wait=all.filter(p=>p.status==='waitlist');
+  $('eventDayStats').innerHTML=`
+    <div><span>Confermati</span><b>${confirmed.length}</b></div>
+    <div><span>Presenti</span><b>${present.length}</b></div>
+    <div><span>Da accogliere</span><b>${confirmed.length-present.length}</b></div>
+    <div><span>Da pagare</span><b>${unpaid.length}</b></div>`;
+
+  const q=($('eventDaySearch')?.value||'').trim().toLocaleLowerCase('it');
+  let rows;
+  if(eventDayFilter==='present')rows=present;
+  else if(eventDayFilter==='unpaid')rows=unpaid;
+  else if(eventDayFilter==='waitlist')rows=wait;
+  else if(eventDayFilter==='everyone')rows=all.filter(p=>p.status!=='cancelled');
+  else rows=confirmed.filter(p=>!p.attended);
+  if(q)rows=rows.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>String(v||'').toLocaleLowerCase('it').includes(q)));
+  rows=rows.slice().sort((a,b)=>a.name.localeCompare(b.name,'it'));
+
+  root.innerHTML=rows.length?rows.map(p=>`
+    <article class="event-day-person ${p.attended?'present':''} ${p.status!=='confirmed'?'secondary':''}">
+      <div class="event-day-person-main">
+        <div class="event-day-person-name"><b>${esc(p.name)}</b>${p.member==='yes'?'<span>Socio</span>':''}${p.status==='waitlist'?'<span class="wait">Attesa</span>':''}</div>
+        <p>${esc([p.phone,p.email].filter(Boolean).join(' · ')||'Nessun contatto')}</p>
+        ${p.diet?`<small>🍽 ${esc(p.diet)}</small>`:''}
+        ${p.notes?`<small>📝 ${esc(p.notes)}</small>`:''}
+      </div>
+      <div class="event-day-person-actions">
+        ${p.status==='confirmed'?`<button type="button" class="event-day-check ${p.attended?'active':''}" onclick="toggleEventAttendance('${p.id}')">${p.attended?'✓ Presente':'○ Da accogliere'}</button>`:''}
+        <button type="button" class="event-day-mini ${p.paid==='yes'?'active':''}" onclick="toggleEventPaid('${p.id}')">${p.paid==='yes'?'✓ Pagato':'€ Da pagare'}</button>
+        <button type="button" class="event-day-mini ${p.member==='yes'?'active':''}" onclick="toggleEventMember('${p.id}')">${p.member==='yes'?'✓ Socio':'○ Non socio'}</button>
+        <button type="button" class="event-day-edit" onclick="openPerson('${p.id}')">✎</button>
+      </div>
+    </article>`).join(''):`<div class="event-day-empty">Nessun partecipante corrisponde al filtro.</div>`;
+}
+async function patchEventRegistration(id,patch,success='Aggiornato'){
+  const person=app.state.people.find(x=>x.id===id);if(!person)return;
+  const {error}=await db.from('event_registrations').update({...patch,updated_at:new Date().toISOString()}).eq('id',id);
+  if(error)return toast(error.message);
+  if(Object.prototype.hasOwnProperty.call(patch,'attended'))person.attended=!!patch.attended;
+  if(Object.prototype.hasOwnProperty.call(patch,'checked_in_at'))person.checkedInAt=patch.checked_in_at||'';
+  if(Object.prototype.hasOwnProperty.call(patch,'checked_in_by'))person.checkedInBy=patch.checked_in_by||'';
+  if(Object.prototype.hasOwnProperty.call(patch,'paid'))person.paid=patch.paid?'yes':'no';
+  if(Object.prototype.hasOwnProperty.call(patch,'member'))person.member=patch.member?'yes':'no';
+  render();toast(success);
+}
+window.toggleEventAttendance=async id=>{
+  const p=app.state.people.find(x=>x.id===id);if(!p)return;
+  const next=!p.attended;
+  await patchEventRegistration(id,{attended:next,checked_in_at:next?new Date().toISOString():null,checked_in_by:next?app.currentUser?.id:null},next?'Check-in registrato':'Check-in annullato');
+};
+window.toggleEventPaid=async id=>{
+  const p=app.state.people.find(x=>x.id===id);if(!p)return;
+  await patchEventRegistration(id,{paid:p.paid!=='yes'},p.paid==='yes'?'Pagamento rimosso':'Pagamento registrato');
+};
+window.toggleEventMember=async id=>{
+  const p=app.state.people.find(x=>x.id===id);if(!p)return;
+  await patchEventRegistration(id,{member:p.member!=='yes'},p.member==='yes'?'Socio rimosso':'Segnato come socio');
+};
+function ensureEventRealtime(){
+  if(eventRealtimeChannel||!app.currentUser)return;
+  eventRealtimeChannel=db.channel(`club42-event-checkin-${app.currentUser.id}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'event_registrations'},payload=>{
+      const row=mapPerson(payload.new);if(!app.state.people.some(p=>p.id===row.id))app.state.people.push(row);render();
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'event_registrations'},payload=>{
+      const row=mapPerson(payload.new),i=app.state.people.findIndex(p=>p.id===row.id);
+      if(i>=0)app.state.people[i]=row;else app.state.people.push(row);render();
+    })
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'event_registrations'},payload=>{
+      const id=payload.old?.id;if(id)app.state.people=app.state.people.filter(p=>p.id!==id);render();
+    })
+    .subscribe();
+}
+
 function ensureEventCalendarUi(){
   const view=$('view-events'),grid=view?.querySelector('.module-grid');
   if(!view||!grid||$('eventCalendarPanel'))return;
@@ -358,10 +566,22 @@ async function syncEventContacts(eventId,base){
 
 export async function loadRemote(){
   syncStatus('loading','Sincronizzazione…');
-  const [er,pr,cr,hr]=await Promise.all([db.from('events').select('*').order('event_date'),db.from('event_registrations').select('*'),db.rpc('club42_event_contact_directory'),db.rpc('club42_event_contact_links')]);
+  const [er,pr,cr,hr,tr,jr,sr,car]=await Promise.all([
+    db.from('events').select('*').order('event_date'),
+    db.from('event_registrations').select('*'),
+    db.rpc('club42_event_contact_directory'),
+    db.rpc('club42_event_contact_links'),
+    db.from('project_tasks').select('id,event_id,title,status,priority,due_date,description,notes').not('event_id','is',null),
+    db.from('projects').select('id,event_id,title,status,priority,target_date,summary').not('event_id','is',null),
+    db.from('social_content').select('id,event_id,title,status,content_type,scheduled_date,scheduled_time').not('event_id','is',null),
+    db.from('cash_transactions').select('id,event_id,movement_date,movement_type,amount,description').not('event_id','is',null)
+  ]);
   if(er.error||pr.error||cr.error||hr.error){console.error(er.error||pr.error||cr.error||hr.error);syncStatus('error','Errore DB');toast('Errore nel caricamento dati');return}
+  [tr,jr,sr,car].forEach(r=>{if(r.error)console.warn('Event hub relation',r.error)});
   app.state.events=(er.data||[]).map(mapEvent);app.state.people=(pr.data||[]).map(mapPerson);eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();
+  eventHubData={tasks:tr.data||[],projects:jr.data||[],social:sr.data||[],cash:car.data||[]};
   syncEventSelectionForView(eventViewMode==='history'?'history':'manage');
+  ensureEventRealtime();
   syncStatus('ok','Sincronizzato');render();await offerLegacyImport();
 }
 
@@ -415,13 +635,19 @@ export function render(){
   if($('sideNewEvent'))$('sideNewEvent').hidden=history;
 
   renderDashboard();
-  if(!e){$('eventName').textContent=history?'Nessun evento terminato':'Nessun evento';$('eventMeta').textContent=history?'Lo storico è vuoto.':'Crea un evento per iniziare.';$('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';['sConfirmed','sWait','sPaid','sMembers'].forEach(id=>$(id).textContent='0');return}
+  if(!e){
+    $('eventName').textContent=history?'Nessun evento terminato':'Nessun evento';$('eventMeta').textContent=history?'Lo storico è vuoto.':'Crea un evento per iniziare.';
+    $('people').innerHTML='<tr><td colspan="7" class="empty">Nessun evento selezionato.</td></tr>';
+    ['sConfirmed','sWait','sPaid','sMembers','sPresent'].forEach(id=>{if($(id))$(id).textContent='0'});
+    renderEventHub();renderEventDay();return
+  }
 
   const collaborators=eventContactLinks.filter(x=>x.event_id===e.id).length;
   const guestState=e.guestTeaser?' · prossimamente ai soci':e.guestVisible?' · visibile ai soci':'';
   const timeLabel=eventTimeLabel(e),priceLabel=eventPriceLabel(e),calendarState=e.googleCalendarAdded?' · Calendar Club42 ✓':' · Calendar da inserire',lifecycle=isEndedEvent(e)?' · Terminato':'';
   $('eventName').textContent=e.name;$('eventMeta').textContent=`${eventDateLabel(e)}${timeLabel?' · '+timeLabel:''}${e.place?' · '+e.place:''}${priceLabel?' · '+priceLabel:''}${e.capacity?' · capienza '+e.capacity:''}${collaborators?' · '+collaborators+' collaboratori':''}${guestState}${calendarState}${lifecycle}`;
-  const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');$('sConfirmed').textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');$('sWait').textContent=pp.filter(p=>p.status==='waitlist').length;$('sPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('sMembers').textContent=confirmed.filter(p=>p.member==='yes').length;renderPeople();
+  const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed');$('sConfirmed').textContent=confirmed.length+(e.capacity?' / '+e.capacity:'');$('sWait').textContent=pp.filter(p=>p.status==='waitlist').length;$('sPaid').textContent=confirmed.filter(p=>p.paid==='yes').length;$('sMembers').textContent=confirmed.filter(p=>p.member==='yes').length;if($('sPresent'))$('sPresent').textContent=confirmed.filter(p=>p.attended).length;
+  renderPeople();renderEventHub();renderEventDay();showEventDetailMode(eventDetailMode,false);
 }
 
 export function renderPeople(){
@@ -432,7 +658,9 @@ export function renderPeople(){
 export async function selectEvent(id,openView=false){
   const e=app.state.events.find(x=>x.id===id);if(!e)return;
   app.state.selected=id;
+  eventDetailMode='hub';
   showEventView(isEndedEvent(e)?'history':'manage');
+  showEventDetailMode('hub');
   await showView('events',{eventId:id});
   if(openView)document.body.classList.remove('sidebar-open');
 }
@@ -452,7 +680,7 @@ function openPerson(id=null){const e=selectedEvent();if(!e){openEvent();return}a
 async function deletePerson(id){const p=app.state.people.find(x=>x.id===id);if(!p||!confirm(`Eliminare ${p.name}?`))return;const {error}=await db.from('event_registrations').delete().eq('id',id);if(error)return toast(error.message);toast('Iscritto eliminato');await loadRemote()}
 
 export function initEvents(){
-  ensureEventContactsField();ensureGuestFields();ensureEventCalendarUi();document.addEventListener('club42:contacts-changed',refreshEventContactData);
+  ensureEventContactsField();ensureGuestFields();ensureEventCalendarUi();ensureEventDetailUi();document.addEventListener('club42:contacts-changed',refreshEventContactData);
   $('eGuestVisible').onchange=()=>{if($('eGuestVisible').checked)$('eGuestTeaser').checked=false};
   $('eGuestTeaser').onchange=()=>{if($('eGuestTeaser').checked)$('eGuestVisible').checked=false};
   $('eFree').onchange=syncEventPriceControl;
