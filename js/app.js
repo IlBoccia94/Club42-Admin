@@ -13,7 +13,7 @@ import {initDashboard,loadDashboard} from './dashboard.js?v=20260924-operational
 import {buildNotificationsUi} from './notifications-ui.js?v=20260918-push-audit2';
 import {initNotifications,loadNotifications} from './notifications.js?v=20260918-taskattention1';
 import {buildSocialUi} from './social-ui.js?v=20260924-pipelinefilters1';
-import {initSocial,loadSocial} from './social.js?v=20260924-crosslinks1';
+import {initSocial,loadSocial} from './social.js?v=20260924-catvotes1';
 import {initSocialExtras} from './social-extras.js';
 import {initSocialFormats} from './social-formats.js?v=20260919-socialsingle1';
 import {buildMembersUi} from './members-ui.js?v=20260918-cycle1';
@@ -22,7 +22,7 @@ import {loadMembersForRole} from './member-access.js?v=20260920-richchat1';
 import {buildCashUi} from './cash-ui.js?v=20260918-reimburse1';
 import {initCash,loadCash} from './cash.js?v=20260924-crosslinks1';
 import {buildProjectsUi} from './projects-ui.js?v=20260919-carddesc1';
-import {initProjects,loadProjects} from './projects.js?v=20260924-crosslinks1';
+import {initProjects,loadProjects} from './projects.js?v=20260924-catvotes1';
 import {buildTasksUi} from './tasks-ui.js?v=20260919-kpifilters1';
 import {initTasks,loadTasks} from './tasks.js?v=20260924-crosslinks1';
 import {buildContactsUi} from './contacts-ui.js';
