@@ -5,7 +5,7 @@ import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa} from './pwa.js?v=20260918-freshassets1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
 import {initChat,loadChatForRole} from './chat.js?v=20260921-messageedit1';
-import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260921-historycalendar1';
+import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260924-eventhub1';
 import {initUsers,loadUsers} from './users.js?v=20260918-consentfix1';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260924-operational2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260924-operational2';
@@ -97,6 +97,10 @@ async function openLinkedEntity(type,id){
     if(type==='social'){
       await loadSocial();await showView('social');window.openSocialContent?.(id);
       return $('socialContentDlg')?.open===true;
+    }
+    if(type==='cash'){
+      await loadCash();await showView('cash');window.openCashTransaction?.(id);
+      return $('cashDlg')?.open===true;
     }
     return false;
   }catch(error){
