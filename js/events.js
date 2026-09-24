@@ -700,6 +700,54 @@ function eventOccursOn(e,key){
   const end=e.endDate||e.date;
   return !!e.date&&e.date<=key&&key<=end;
 }
+function isoDateUTC(year,month,day){
+  return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+function gregorianEasterIso(year){
+  const a=year%19,b=Math.floor(year/100),cc=year%100,d=Math.floor(b/4),e=b%4;
+  const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30,i=Math.floor(cc/4),k=cc%4;
+  const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+  const month=Math.floor((h+l-7*m+114)/31),day=((h+l-7*m+114)%31)+1;
+  return isoDateUTC(year,month,day);
+}
+function nthWeekdayIso(year,month,weekday,nth){
+  const first=new Date(Date.UTC(year,month-1,1));
+  const offset=(weekday-first.getUTCDay()+7)%7;
+  return isoDateUTC(year,month,1+offset+(nth-1)*7);
+}
+function calendarObservancesForYear(year){
+  const map={};
+  const add=(date,label,type='holiday')=>{
+    if(!map[date])map[date]=[];
+    map[date].push({label,type});
+  };
+  [
+    [1,1,'Capodanno'],
+    [1,6,'Epifania'],
+    [4,25,'Festa della Liberazione'],
+    [5,1,'Festa dei lavoratori'],
+    [6,2,'Festa della Repubblica'],
+    [8,15,'Ferragosto'],
+    [11,1,'Ognissanti'],
+    [12,8,'Immacolata Concezione'],
+    [12,25,'Natale'],
+    [12,26,'Santo Stefano']
+  ].forEach(([month,day,label])=>add(isoDateUTC(year,month,day),label,'holiday'));
+
+  const easter=gregorianEasterIso(year);
+  add(easter,'Pasqua','holiday');
+  add(addDaysIso(easter,1),'Pasquetta','holiday');
+
+  add(isoDateUTC(year,3,19),'San Giuseppe · Festa del papà','local');
+  add(nthWeekdayIso(year,5,0,2),'Festa della mamma','recurrence');
+  add(isoDateUTC(year,10,2),'Festa dei nonni','recurrence');
+  return map;
+}
+function renderCalendarObservances(rows=[]){
+  if(!rows.length)return'';
+  return `<div class="event-cal-observances">${rows.map(x=>`<span class="event-cal-observance ${x.type}" title="${esc(x.type==='holiday'?'Festività':x.type==='local'?'Ricorrenza locale':'Ricorrenza utile')}">${esc(x.label)}</span>`).join('')}</div>`;
+}
 function renderEventCalendar(){
   const root=$('eventCalendarGrid');if(!root)return;
   const y=eventCalendarCursor.getFullYear(),m=eventCalendarCursor.getMonth();
@@ -707,14 +755,16 @@ function renderEventCalendar(){
   $('eventMonthLabel').textContent=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(first);
   const start=(first.getDay()+6)%7,total=Math.ceil((start+last.getDate())/7)*7;
   const tp=datePartsInZone(new Date(),'Europe/Rome'),today=`${tp.year}-${String(tp.month).padStart(2,'0')}-${String(tp.day).padStart(2,'0')}`;
+  const observances=calendarObservancesForYear(y);
   let html='';
   for(let i=0;i<total;i++){
     const day=i-start+1;
     if(day<1||day>last.getDate()){html+='<div class="event-cal-day outside"></div>';continue}
     const key=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const isToday=key===today;
+    const dayObservances=observances[key]||[];
     const rows=app.state.events.filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
-    html+=`<div class="event-cal-day ${isToday?'today':''}" data-date="${key}"><div class="event-cal-day-num">${day}</div><div class="event-cal-items">${rows.map(e=>{
+    html+=`<div class="event-cal-day ${isToday?'today':''}" data-date="${key}"><div class="event-cal-day-top"><div class="event-cal-day-num">${day}</div>${renderCalendarObservances(dayObservances)}</div><div class="event-cal-items">${rows.map(e=>{
       const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date,ended=isEndedEvent(e);
       const phase=!multi?'':starts?' start':ends?' end':' middle';
       const time=starts&&e.time?e.time+' · ':'';
