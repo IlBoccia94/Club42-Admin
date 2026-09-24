@@ -45,7 +45,7 @@ export function buildNotificationsUi(){
           </div>
           <div class="notif-pref-list">
             ${prefRow('tasks','✓','Task','Assegnazioni, blocchi e scadenze')}
-            ${prefRow('events','◫','Eventi','Promemoria e capienza')}
+            ${prefRow('events','🐋','Eventi','Capienza, promemoria e apertura iscrizioni')}
             ${prefRow('social','◎','Social','Contenuti da pubblicare')}
             ${prefRow('cash','€','Cassa','Nuovi movimenti rilevanti')}
             ${prefRow('members','♙','Soci','Rinnovi da gestire')}
@@ -65,7 +65,7 @@ export function buildNotificationsUi(){
       </div>
 
       <section class="card notif-info-strip">
-        <div><strong>Come funzionano le push?</strong><span>Gli avvisi immediati vengono elaborati circa ogni minuto; quelli programmati alle 09:00 usano sempre il fuso Europe/Rome. Il browser li consegna tramite il service worker anche a pagina chiusa. Risparmio energetico o “Non disturbare” possono comunque ritardarne la visualizzazione sul dispositivo.</span></div>
+        <div><strong>Come funzionano le push?</strong><span>Gli avvisi immediati vengono elaborati circa ogni minuto; quelli programmati alle 09:00 usano sempre il fuso Europe/Rome. Tra questi c’è anche 🐋 il promemoria 7 giorni prima per gli eventi Guest ancora in “Prossimamente”. Il browser li consegna tramite il service worker anche a pagina chiusa. Risparmio energetico o “Non disturbare” possono comunque ritardarne la visualizzazione sul dispositivo.</span></div>
         <button class="btn" id="notifAllInfo">ⓘ Quando vengono inviate?</button>
       </section>
     </div>`;
