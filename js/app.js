@@ -28,7 +28,7 @@ import {buildTasksUi} from './tasks-ui.js?v=20260919-kpifilters1';
 import {initTasks,loadTasks} from './tasks.js?v=20260924-crosslinks1';
 import {buildContactsUi} from './contacts-ui.js';
 import {initContacts,loadContacts} from './contacts.js?v=20260924-crosslinks1';
-import {buildGuestUi} from './guest-ui.js?v=20260924-teaserdetails1';
+import {buildGuestUi} from './guest-ui.js?v=20260924-teasercontrast1';
 import {buildFeedbackUi} from './feedback-ui.js?v=20260919-edit1';
 import {initFeedback,loadFeedback} from './feedback.js?v=20260919-edit1';
 import {loadGuestPage} from './guest.js?v=20260924-teaserdetails2';
