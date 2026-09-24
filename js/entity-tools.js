@@ -244,16 +244,33 @@ function auditAction(row){
   if(row.action==='delete')return'eliminato';
   return'modificato';
 }
+function auditFieldSummary(row){
+  const fields=row.changed_fields||[];
+  if(!fields.length)return'';
+  const kinds=row.change_kinds||{};
+  const inserted=[],modified=[],removed=[];
+  for(const field of fields){
+    const label=labelField(field),kind=kinds[field]||(row.action==='insert'?'inserted':'modified');
+    if(kind==='inserted')inserted.push(label);
+    else if(kind==='removed')removed.push(label);
+    else modified.push(label);
+  }
+  const parts=[];
+  if(inserted.length)parts.push(`<span class="entity-audit-field-kind inserted">Inseriti</span> ${esc(inserted.join(', '))}`);
+  if(modified.length)parts.push(`<span class="entity-audit-field-kind modified">Modificati</span> ${esc(modified.join(', '))}`);
+  if(removed.length)parts.push(`<span class="entity-audit-field-kind removed">Rimossi</span> ${esc(removed.join(', '))}`);
+  return parts.join('<br>');
+}
 function renderAudit(rows){
   const root=$('club42EntityAudit');
-  if(!rows.length){root.innerHTML='<div class="entity-tools-empty"><b>Nessuna modifica registrata</b><span>La cronologia parte da quando è stato attivato l’audit log.</span></div>';return}
+  if(!rows.length){root.innerHTML='<div class="entity-tools-empty"><b>Nessuna attività registrata</b><span>Non risultano ancora creazioni o modifiche tracciabili per questo elemento.</span></div>';return}
   root.innerHTML=`<div class="entity-audit-list">${rows.map(row=>{
-    const m=meta(row.entity_type),fields=(row.changed_fields||[]).map(labelField);
+    const m=meta(row.entity_type),fieldSummary=auditFieldSummary(row);
     const context=row.entity_type!==current.type?`${m.label}: ${row.entity_title||'elemento'}`:row.entity_title||current.title;
     return `<article class="entity-audit-row">
       <span class="entity-audit-icon">${m.icon}</span>
       <div><p><b>${esc(row.actor_name||'Sistema Club42')}</b> ha ${auditAction(row)} <strong>${esc(context)}</strong></p>
-      ${fields.length?`<small>Campi: ${esc(fields.join(', '))}</small>`:''}
+      ${fieldSummary?`<small class="entity-audit-fields">${fieldSummary}</small>`:''}
       <time>${esc(fmtDateTime(row.occurred_at))}</time></div>
     </article>`;
   }).join('')}</div>`;
@@ -314,7 +331,7 @@ function clearTarget(dialogId){
 }
 
 export function initEntityTools(){
-  if(!document.querySelector('link[href^="entity-tools.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='entity-tools.css?v=20260924-links2';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="entity-tools.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='entity-tools.css?v=20260924-auditfields1';document.head.appendChild(l)}
   if(!$('club42EntityToolsOverlay'))document.body.insertAdjacentHTML('beforeend',`
     <section id="club42EntityToolsOverlay" class="entity-tools-overlay" hidden aria-label="Collegamenti e cronologia">
       <div class="entity-tools-panel">
