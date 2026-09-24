@@ -58,3 +58,13 @@
   .entity-tools-link{padding:9px}
   .entity-tools-launch{width:38px;min-width:38px;max-width:38px;order:initial;flex:0 0 38px}
 }
+
+
+.entity-audit-fields{display:block;margin-top:4px;line-height:1.55}
+.entity-audit-field-kind{
+  display:inline-flex;align-items:center;margin-right:4px;padding:1px 5px;border-radius:999px;
+  font:800 7px var(--font-subtitle);text-transform:uppercase;letter-spacing:.03em
+}
+.entity-audit-field-kind.inserted{background:#e8f5ec;color:#4a765a}
+.entity-audit-field-kind.modified{background:var(--blue-soft);color:var(--blue)}
+.entity-audit-field-kind.removed{background:var(--coral-soft);color:#9b3d38}
