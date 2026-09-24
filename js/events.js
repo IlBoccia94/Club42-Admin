@@ -5,6 +5,7 @@ let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventVi
 let eventDetailMode='hub',eventDayFilter='all',eventRealtimeChannel=null;
 let eventHubData={tasks:[],projects:[],social:[],cash:[]};
 let eventMemberPickerRows=[],eventMemberPickerSelection=new Set(),eventPersonMemberId=null;
+let eventCalendarZoom=1,eventCalendarPinchDistance=0,eventCalendarPinchZoom=1,eventCalendarDesktopDragId=null,eventCalendarTouchDrag=null,eventCalendarSuppressClickUntil=0;
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
 
 function mapEvent(r){return{id:r.id,name:r.name,date:r.event_date,endDate:r.event_end_date||'',time:r.event_time?.slice(0,5)||'',endTime:r.event_end_time?.slice(0,5)||'',eventStatus:r.event_status||'active',place:r.place||'',capacity:r.capacity||0,price:r.price??'',isFree:!!r.is_free,notes:r.notes||'',guestVisible:!!r.guest_visible,guestTeaser:!!r.guest_teaser,guestDescription:r.guest_description||'',googleCalendarAdded:!!r.google_calendar_added,googleCalendarAddedAt:r.google_calendar_added_at||''}}
@@ -458,6 +459,172 @@ function ensureEventRealtime(){
     .subscribe();
 }
 
+function clampEventCalendarZoom(value){return Math.min(1.75,Math.max(.7,Number(value)||1))}
+function setEventCalendarZoom(value){
+  eventCalendarZoom=clampEventCalendarZoom(value);
+  const canvas=$('eventCalendarCanvas');
+  if(canvas){
+    canvas.style.zoom=String(eventCalendarZoom);
+    canvas.style.setProperty('--event-calendar-zoom',String(eventCalendarZoom));
+  }
+  if($('eventCalendarZoomReset'))$('eventCalendarZoomReset').textContent=`${Math.round(eventCalendarZoom*100)}%`;
+}
+function touchDistance(touches){
+  if(!touches||touches.length<2)return 0;
+  const dx=touches[0].clientX-touches[1].clientX,dy=touches[0].clientY-touches[1].clientY;
+  return Math.hypot(dx,dy);
+}
+function clearEventCalendarDropTarget(){
+  document.querySelectorAll('#eventCalendarGrid .event-cal-day.drag-over').forEach(x=>x.classList.remove('drag-over'));
+}
+function setEventCalendarDropTargetAt(x,y){
+  clearEventCalendarDropTarget();
+  const day=document.elementFromPoint(x,y)?.closest?.('.event-cal-day[data-date]');
+  if(day)day.classList.add('drag-over');
+  return day?.dataset.date||null;
+}
+function cancelEventCalendarTouchDrag(){
+  if(!eventCalendarTouchDrag)return;
+  clearTimeout(eventCalendarTouchDrag.timer);
+  eventCalendarTouchDrag.source?.classList.remove('touch-dragging');
+  eventCalendarTouchDrag.ghost?.remove();
+  clearEventCalendarDropTarget();
+  eventCalendarTouchDrag=null;
+  document.body.classList.remove('event-calendar-drag-active');
+}
+function createEventCalendarDragGhost(source){
+  const ghost=document.createElement('div');
+  ghost.className='event-calendar-drag-ghost';
+  ghost.textContent=source.querySelector('b')?.textContent||'Evento';
+  document.body.appendChild(ghost);
+  return ghost;
+}
+function positionEventCalendarDragGhost(ghost,x,y){
+  if(!ghost)return;
+  ghost.style.left=`${x+14}px`;ghost.style.top=`${y+14}px`;
+}
+function isoDayDiff(from,to){
+  return Math.round((Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000);
+}
+async function moveEventCalendarEvent(id,targetDate){
+  const e=app.state.events.find(x=>x.id===id);if(!e||!targetDate||targetDate===e.date)return;
+  const delta=isoDayDiff(e.date,targetDate);
+  const newEnd=e.endDate?addDaysIso(e.endDate,delta):null;
+  const calendarWasSynced=!!e.googleCalendarAdded;
+  const {data,error}=await db.from('events').update({
+    event_date:targetDate,
+    event_end_date:newEnd,
+    google_calendar_added:false,
+    google_calendar_added_at:null,
+    updated_at:new Date().toISOString()
+  }).eq('id',id).select('*').single();
+  if(error){console.error(error);toast('Non sono riuscito a spostare l’evento');return}
+
+  const contactIds=eventContactLinks.filter(x=>x.event_id===id).map(x=>x.contact_id);
+  if(contactIds.length){
+    const {error:contactError}=await db.rpc('club42_sync_event_contacts',{
+      p_event_id:id,p_contact_ids:contactIds,p_title:e.name,p_collaboration_date:targetDate
+    });
+    if(contactError)console.warn('Aggiornamento data collaborazioni',contactError);
+  }
+
+  const index=app.state.events.findIndex(x=>x.id===id);
+  if(index>=0)app.state.events[index]=mapEvent(data);
+  render();
+  toast(`Evento spostato al ${fmtDate(targetDate)}${calendarWasSynced?' · Google Calendar da aggiornare':''}`);
+}
+function initEventCalendarInteractions(){
+  const viewport=$('eventCalendarViewport'),root=$('eventCalendarGrid');if(!viewport||!root||viewport.dataset.interactive==='1')return;
+  viewport.dataset.interactive='1';
+  setEventCalendarZoom(eventCalendarZoom);
+
+  viewport.addEventListener('touchstart',ev=>{
+    if(ev.touches.length===2){
+      cancelEventCalendarTouchDrag();
+      eventCalendarPinchDistance=touchDistance(ev.touches);
+      eventCalendarPinchZoom=eventCalendarZoom;
+    }
+  },{passive:true});
+  viewport.addEventListener('touchmove',ev=>{
+    if(ev.touches.length===2&&eventCalendarPinchDistance){
+      ev.preventDefault();
+      const ratio=touchDistance(ev.touches)/eventCalendarPinchDistance;
+      setEventCalendarZoom(eventCalendarPinchZoom*ratio);
+    }
+  },{passive:false});
+  viewport.addEventListener('touchend',ev=>{if(ev.touches.length<2)eventCalendarPinchDistance=0},{passive:true});
+  viewport.addEventListener('touchcancel',()=>{eventCalendarPinchDistance=0;cancelEventCalendarTouchDrag()},{passive:true});
+
+  root.addEventListener('dragstart',ev=>{
+    const item=ev.target.closest('.event-cal-item[data-event-id]');if(!item)return;
+    eventCalendarDesktopDragId=item.dataset.eventId;
+    item.classList.add('dragging');
+    ev.dataTransfer.effectAllowed='move';
+    ev.dataTransfer.setData('text/plain',eventCalendarDesktopDragId);
+  });
+  root.addEventListener('dragover',ev=>{
+    if(!eventCalendarDesktopDragId)return;
+    const day=ev.target.closest('.event-cal-day[data-date]');if(!day)return;
+    ev.preventDefault();ev.dataTransfer.dropEffect='move';
+    clearEventCalendarDropTarget();day.classList.add('drag-over');
+  });
+  root.addEventListener('drop',ev=>{
+    if(!eventCalendarDesktopDragId)return;
+    const day=ev.target.closest('.event-cal-day[data-date]');if(!day)return;
+    ev.preventDefault();
+    const id=eventCalendarDesktopDragId,target=day.dataset.date;
+    eventCalendarDesktopDragId=null;clearEventCalendarDropTarget();
+    root.querySelectorAll('.event-cal-item.dragging').forEach(x=>x.classList.remove('dragging'));
+    moveEventCalendarEvent(id,target);
+  });
+  root.addEventListener('dragend',()=>{
+    eventCalendarDesktopDragId=null;clearEventCalendarDropTarget();
+    root.querySelectorAll('.event-cal-item.dragging').forEach(x=>x.classList.remove('dragging'));
+  });
+
+  root.addEventListener('contextmenu',ev=>{if(ev.target.closest('.event-cal-item'))ev.preventDefault()});
+  root.addEventListener('touchstart',ev=>{
+    if(ev.touches.length!==1){cancelEventCalendarTouchDrag();return}
+    const item=ev.target.closest('.event-cal-item[data-event-id]');if(!item)return;
+    const t=ev.touches[0];
+    cancelEventCalendarTouchDrag();
+    eventCalendarTouchDrag={id:item.dataset.eventId,startX:t.clientX,startY:t.clientY,active:false,targetDate:null,source:item,ghost:null,timer:null};
+    eventCalendarTouchDrag.timer=setTimeout(()=>{
+      if(!eventCalendarTouchDrag||eventCalendarTouchDrag.source!==item)return;
+      eventCalendarTouchDrag.active=true;
+      eventCalendarSuppressClickUntil=Date.now()+900;
+      item.classList.add('touch-dragging');
+      eventCalendarTouchDrag.ghost=createEventCalendarDragGhost(item);
+      positionEventCalendarDragGhost(eventCalendarTouchDrag.ghost,t.clientX,t.clientY);
+      eventCalendarTouchDrag.targetDate=item.closest('.event-cal-day[data-date]')?.dataset.date||null;
+      document.body.classList.add('event-calendar-drag-active');
+      navigator.vibrate?.(20);
+    },420);
+  },{passive:true});
+  root.addEventListener('touchmove',ev=>{
+    const drag=eventCalendarTouchDrag;if(!drag||ev.touches.length!==1)return;
+    const t=ev.touches[0],distance=Math.hypot(t.clientX-drag.startX,t.clientY-drag.startY);
+    if(!drag.active){
+      if(distance>10)cancelEventCalendarTouchDrag();
+      return;
+    }
+    ev.preventDefault();
+    positionEventCalendarDragGhost(drag.ghost,t.clientX,t.clientY);
+    drag.targetDate=setEventCalendarDropTargetAt(t.clientX,t.clientY);
+  },{passive:false});
+  root.addEventListener('touchend',ev=>{
+    const drag=eventCalendarTouchDrag;if(!drag)return;
+    clearTimeout(drag.timer);
+    if(drag.active){
+      ev.preventDefault();
+      const id=drag.id,target=drag.targetDate;
+      eventCalendarSuppressClickUntil=Date.now()+700;
+      cancelEventCalendarTouchDrag();
+      if(target)moveEventCalendarEvent(id,target);
+    }else cancelEventCalendarTouchDrag();
+  },{passive:false});
+}
+
 function ensureEventCalendarUi(){
   const view=$('view-events'),grid=view?.querySelector('.module-grid');
   if(!view||!grid||$('eventCalendarPanel'))return;
@@ -485,14 +652,21 @@ function ensureEventCalendarUi(){
           <button class="btn" id="eventToday" type="button">Oggi</button>
         </div>
       </div>
-      <div class="event-calendar-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
-      <div class="event-calendar-grid" id="eventCalendarGrid"></div>
+      <div class="event-calendar-mobile-hint"><span>Pizzica per zoom · tieni premuto un evento per spostarlo</span><button type="button" id="eventCalendarZoomReset" title="Ripristina zoom">100%</button></div>
+      <div class="event-calendar-viewport" id="eventCalendarViewport">
+        <div class="event-calendar-canvas" id="eventCalendarCanvas">
+          <div class="event-calendar-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
+          <div class="event-calendar-grid" id="eventCalendarGrid"></div>
+        </div>
+      </div>
     </section>`);
 
   view.querySelectorAll('[data-event-view]').forEach(btn=>btn.addEventListener('click',()=>showEventView(btn.dataset.eventView)));
   $('eventPrevMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()-1,1);renderEventCalendar()};
   $('eventNextMonth').onclick=()=>{eventCalendarCursor=new Date(eventCalendarCursor.getFullYear(),eventCalendarCursor.getMonth()+1,1);renderEventCalendar()};
   $('eventToday').onclick=()=>{eventCalendarCursor=new Date();renderEventCalendar()};
+  $('eventCalendarZoomReset').onclick=()=>setEventCalendarZoom(1);
+  initEventCalendarInteractions();
   showEventView(eventViewMode);
 }
 function showEventView(mode='manage'){
@@ -538,18 +712,23 @@ function renderEventCalendar(){
     const day=i-start+1;
     if(day<1||day>last.getDate()){html+='<div class="event-cal-day outside"></div>';continue}
     const key=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isToday=key===today;
     const rows=app.state.events.filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
-    html+=`<div class="event-cal-day ${key===today?'today':''}"><div class="event-cal-day-num">${day}</div><div class="event-cal-items">${rows.map(e=>{
+    html+=`<div class="event-cal-day ${isToday?'today':''}" data-date="${key}"><div class="event-cal-day-num">${day}</div><div class="event-cal-items">${rows.map(e=>{
       const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date,ended=isEndedEvent(e);
       const phase=!multi?'':starts?' start':ends?' end':' middle';
       const time=starts&&e.time?e.time+' · ':'';
       const meta=`${ended?'Terminato · ':''}${time}${multi&&!starts?'↳ ':''}`;
-      return `<button type="button" class="event-cal-item${phase} ${e.googleCalendarAdded?'calendar-synced ':''}${ended?'ended':''}" onclick="openEventFromCalendar('${e.id}')"><span>${esc(meta)}</span><b>${esc(e.name)}</b></button>`;
+      const confirmed=list(e.id).filter(p=>p.status==='confirmed').length;
+      const todayDetail=isToday?`<small class="event-cal-today-detail">${esc([eventTimeLabel(e),e.place,e.capacity?`${confirmed}/${e.capacity} posti`:`${confirmed} confermati`].filter(Boolean).join(' · '))}</small>`:'';
+      return `<button type="button" draggable="true" data-event-id="${e.id}" class="event-cal-item${phase} ${e.googleCalendarAdded?'calendar-synced ':''}${ended?'ended ':''}${isToday?'today-focus':''}" onclick="openEventFromCalendar('${e.id}')"><span>${esc(meta)}</span><b>${esc(e.name)}</b>${todayDetail}</button>`;
     }).join('')}</div></div>`;
   }
   root.innerHTML=html;
+  setEventCalendarZoom(eventCalendarZoom);
 }
 async function openEventFromCalendar(id){
+  if(Date.now()<eventCalendarSuppressClickUntil)return;
   const e=app.state.events.find(x=>x.id===id);
   if(e){
     const d=new Date(e.date+'T12:00:00');
