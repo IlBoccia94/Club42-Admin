@@ -1,6 +1,6 @@
 import {$,db,esc,fmtDate} from './core.js';
 
-let current={type:null,id:null,title:'',tab:'links',sourceDialogId:null};
+let current={type:null,id:null,title:'',tab:'links',sourceDialogId:null,sourceWasOpen:false};
 let auditChannel=null;
 
 const typeMeta={
@@ -260,9 +260,7 @@ function renderAudit(rows){
 }
 
 async function openRelation(type,id){
-  close();
-  const source=current.sourceDialogId?$(current.sourceDialogId):null;
-  if(source?.open)source.close();
+  close(false);
   if(type==='event'){
     await window.selectEvent?.(id,true);
     return;
@@ -277,7 +275,10 @@ function setTab(tab){
 }
 async function open(type,id,title='',tab='links',sourceDialogId=null){
   if(!type||!id)return;
-  current={type,id,title:title||meta(type).label,tab:tab==='audit'?'audit':'links',sourceDialogId};
+  const source=sourceDialogId?$(sourceDialogId):null;
+  const sourceWasOpen=source?.open===true;
+  if(sourceWasOpen)source.close();
+  current={type,id,title:title||meta(type).label,tab:tab==='audit'?'audit':'links',sourceDialogId,sourceWasOpen};
   $('club42EntityToolsTitle').textContent=current.title;
   $('club42EntityToolsKicker').textContent=`${meta(type).label} · contesto operativo`;
   $('club42EntityToolsOverlay').hidden=false;
@@ -285,15 +286,19 @@ async function open(type,id,title='',tab='links',sourceDialogId=null){
   setTab(current.tab);
   await Promise.all([loadLinks(),loadAudit()]);
 }
-function close(){
+function close(restoreSource=true){
   const overlay=$('club42EntityToolsOverlay');if(overlay)overlay.hidden=true;
   document.body.classList.remove('entity-tools-open');
+  if(restoreSource&&current.sourceWasOpen&&current.sourceDialogId){
+    const source=$(current.sourceDialogId);
+    if(source&&!source.open)setTimeout(()=>source.showModal(),0);
+  }
 }
 function ensureLaunchButton(dialogId){
   const dlg=$(dialogId),actions=dlg?.querySelector('.modal-actions');if(!dlg||!actions)return null;
   let btn=actions.querySelector('[data-entity-tools-launch]');
   if(!btn){
-    btn=document.createElement('button');btn.type='button';btn.className='btn entity-tools-launch';btn.dataset.entityToolsLaunch='';btn.textContent='↗ Collegamenti & cronologia';btn.hidden=true;
+    btn=document.createElement('button');btn.type='button';btn.className='btn entity-tools-launch';btn.dataset.entityToolsLaunch='';btn.textContent='↺';btn.title='Collegamenti e cronologia';btn.setAttribute('aria-label','Collegamenti e cronologia');btn.hidden=true;
     const cancel=actions.querySelector('[id$="Cancel"],[data-social-close],button:not(.danger)');
     if(cancel)actions.insertBefore(btn,cancel);else actions.appendChild(btn);
   }
@@ -309,7 +314,7 @@ function clearTarget(dialogId){
 }
 
 export function initEntityTools(){
-  if(!document.querySelector('link[href^="entity-tools.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='entity-tools.css?v=20260924-links1';document.head.appendChild(l)}
+  if(!document.querySelector('link[href^="entity-tools.css"]')){const l=document.createElement('link');l.rel='stylesheet';l.href='entity-tools.css?v=20260924-links2';document.head.appendChild(l)}
   if(!$('club42EntityToolsOverlay'))document.body.insertAdjacentHTML('beforeend',`
     <section id="club42EntityToolsOverlay" class="entity-tools-overlay" hidden aria-label="Collegamenti e cronologia">
       <div class="entity-tools-panel">
