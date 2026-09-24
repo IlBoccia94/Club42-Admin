@@ -415,3 +415,68 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
   .event-member-picker-actions .btn{width:100%;min-width:0}
   #eventMemberPickerCancel{grid-column:1/-1;order:3}
 }
+
+
+/* Interactive event calendar */
+.event-calendar-mobile-hint{display:none}
+.event-calendar-viewport{
+  width:100%;max-width:100%;overflow:auto;overscroll-behavior-x:contain;
+  touch-action:pan-x pan-y;border-radius:0 0 13px 13px
+}
+.event-calendar-canvas{
+  width:100%;transform-origin:top left;
+  --event-calendar-zoom:1
+}
+.event-calendar-zoom-reset{display:none}
+.event-cal-day[data-date]{transition:background .12s,box-shadow .12s}
+.event-cal-day.drag-over{
+  background:#edf7f8!important;
+  box-shadow:inset 0 0 0 3px rgba(33,98,119,.38)
+}
+.event-cal-item[draggable="true"]{cursor:grab}
+.event-cal-item.dragging{opacity:.45;cursor:grabbing}
+.event-cal-item.touch-dragging{
+  opacity:.58;box-shadow:0 0 0 2px rgba(250,107,99,.35),0 8px 18px rgba(33,98,119,.12)
+}
+.event-calendar-drag-active{user-select:none}
+.event-calendar-drag-ghost{
+  position:fixed;z-index:4000;max-width:220px;pointer-events:none;
+  padding:8px 10px;border-radius:10px;background:var(--blue);color:#fff;
+  box-shadow:0 10px 28px rgba(18,46,56,.28);font-family:var(--font-subtitle);
+  font-size:10px;font-weight:900;line-height:1.25;opacity:.94
+}
+.event-cal-item.today-focus{
+  padding:8px 9px;border-radius:10px;
+  background:linear-gradient(135deg,#fff3bd,#fff9e8);
+  border-color:rgba(204,153,0,.28);
+  box-shadow:0 5px 15px rgba(165,128,0,.09)
+}
+.event-cal-item.today-focus span{font-size:7.5px}
+.event-cal-item.today-focus b{
+  margin-top:2px;font-size:10px;line-height:1.28;
+  white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2
+}
+.event-cal-today-detail{
+  display:block;margin-top:5px!important;font-family:var(--font-body)!important;
+  font-size:7.5px!important;font-weight:600!important;line-height:1.35!important;
+  color:#6b765e!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important
+}
+@media(max-width:760px){
+  .event-calendar-panel{overflow:visible}
+  .event-calendar-mobile-hint{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin:-3px 0 8px;padding:7px 8px;border-radius:10px;background:#f5f8f7;
+    color:var(--muted);font-size:7.8px;line-height:1.35
+  }
+  .event-calendar-mobile-hint button{
+    flex:0 0 auto;min-width:48px;height:29px;border:1px solid rgba(33,98,119,.15);
+    border-radius:9px;background:#fff;color:var(--blue);font-family:var(--font-subtitle);
+    font-size:8px;font-weight:900;padding:0 7px
+  }
+  .event-calendar-weekdays,.event-calendar-grid{min-width:720px}
+  .event-calendar-viewport{margin:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  .event-cal-day.today{min-height:142px}
+  .event-cal-item.today-focus{padding:9px}
+  .event-cal-item.today-focus b{font-size:10.5px}
+  .event-cal-today-detail{font-size:8px!important}
+}
