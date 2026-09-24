@@ -7,7 +7,7 @@ import {initScrollTop} from './scroll-top.js?v=20260917-1';
 import {initGlobalSearch,syncGlobalSearchAccess} from './global-search.js?v=20260924-search3';
 import {initEntityTools,entityTools} from './entity-tools.js?v=20260924-auditfields1';
 import {initChat,loadChatForRole} from './chat.js?v=20260921-messageedit1';
-import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260924-teaserdetails1';
+import {initEvents,loadRemote,render,applyEventRoute} from './events.js?v=20260924-teaserdetails2';
 import {initUsers,loadUsers} from './users.js?v=20260918-consentfix1';
 import {buildDashboardUi} from './dashboard-ui.js?v=20260924-operational2';
 import {initDashboard,loadDashboard} from './dashboard.js?v=20260924-operational2';
@@ -31,7 +31,7 @@ import {initContacts,loadContacts} from './contacts.js?v=20260924-crosslinks1';
 import {buildGuestUi} from './guest-ui.js?v=20260924-teaserdetails1';
 import {buildFeedbackUi} from './feedback-ui.js?v=20260919-edit1';
 import {initFeedback,loadFeedback} from './feedback.js?v=20260919-edit1';
-import {loadGuestPage} from './guest.js?v=20260924-teaserdetails1';
+import {loadGuestPage} from './guest.js?v=20260924-teaserdetails2';
 import {buildNewsletterUi} from './newsletter-ui.js?v=20260918-recipients1';
 import {initNewsletter,loadNewsletter} from './newsletter.js?v=20260918-recipients1';
 
