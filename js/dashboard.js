@@ -162,15 +162,8 @@ function renderPulse(cash,projects,social,tasks,events,fees,today,year){
   ].join('');
 }
 
-function renderCommandSummary(attentionCount,tasks,today){
+function renderCommandSummary(){
   $('dashCommandDate').textContent=fullTodayLabel();
-  const todayMine=tasks.filter(t=>openTask(t)&&t.assigned_to===app.currentUser?.id&&t.due_date===today).length;
-  const overdueMine=tasks.filter(t=>openTask(t)&&t.assigned_to===app.currentUser?.id&&t.due_date&&t.due_date<today).length;
-  let text='';
-  if(attentionCount===0)text='Il quadro operativo è pulito: non risultano criticità immediate.';
-  else text=`${attentionCount} ${attentionCount===1?'elemento richiede':'elementi richiedono'} attenzione`;
-  if(todayMine||overdueMine)text+=` · per te: ${todayMine} oggi${overdueMine?', '+overdueMine+' in ritardo':''}`;
-  $('dashCommandSummary').textContent=text;
 }
 
 export async function loadDashboard(){
@@ -194,11 +187,10 @@ export async function loadDashboard(){
     renderMyTasks(tasks,today);
     renderWeekAgenda(events,tasks,social,today);
     renderPulse(cash,projects,social,tasks,events,fees,today,year);
-    renderCommandSummary(attentionCount,tasks,today);
+    renderCommandSummary();
     bindLinks();
   }catch(error){
     console.error(error);
-    $('dashCommandSummary').textContent='Non sono riuscito a leggere tutti i dati operativi.';
     $('dashAttentionList').innerHTML='<div class="dash-empty"><strong>Dati non disponibili</strong>Riapri la Dashboard per riprovare.</div>';
     $('dashMyTasks').innerHTML='<div class="dash-empty">Impossibile caricare i task.</div>';
     $('dashWeekAgenda').innerHTML='<div class="dash-empty">Impossibile caricare l’agenda.</div>';
