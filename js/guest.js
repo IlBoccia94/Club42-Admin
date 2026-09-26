@@ -1,6 +1,6 @@
 import {$,app,db,download,esc,toast} from './core.js';
 
-let guestEvents=[];
+let guestEvents=[],guestInterestByEvent=new Map();
 
 function dateParts(value){
   const d=new Date(`${value}T12:00:00`);
@@ -74,8 +74,9 @@ function canSelfRegister(){
 function registrationButton(e){
   if(e.registration_status==='confirmed')return `<div class="guest-registration-state"><button type="button" class="guest-register-btn registered" disabled><span>✓</span> Sei iscritto</button><button type="button" class="guest-unregister-btn" onclick="unregisterGuestEvent('${e.id}',this)"><span>×</span> Disiscriviti</button></div>`;
   if(e.registration_status==='waitlist')return `<div class="guest-registration-state"><button type="button" class="guest-register-btn waitlisted" disabled><span>⏳</span> In lista d’attesa</button><button type="button" class="guest-unregister-btn" onclick="unregisterGuestEvent('${e.id}',this)"><span>×</span> Esci dalla lista</button></div>`;
+  if(e.registration_status==='declined')return `<div class="guest-registration-state"><button type="button" class="guest-decline-btn selected" disabled><span>😿</span> Stavolta non ci sono</button><button type="button" class="guest-register-btn reconsider" onclick="registerGuestEvent('${e.id}',this)"><span>🐋</span> Invece ci sono!</button></div>`;
   if(!canSelfRegister())return '<button type="button" class="guest-register-btn" disabled><span>＋</span> Iscriviti</button>';
-  return `<button type="button" class="guest-register-btn" data-register-event="${e.id}" onclick="registerGuestEvent('${e.id}',this)"><span>＋</span> Iscriviti</button>`;
+  return `<div class="guest-registration-choice"><button type="button" class="guest-register-btn" data-register-event="${e.id}" onclick="registerGuestEvent('${e.id}',this)"><span>🐋</span> Iscriviti</button><button type="button" class="guest-decline-btn" onclick="declineGuestEvent('${e.id}',this)"><span>😿</span> Stavolta non ci sono</button></div>`;
 }
 function eventActions(e){return `<div class="guest-event-actions">${registrationButton(e)}${calendarButton(e)}</div>`}
 
@@ -95,11 +96,16 @@ function regularCard(e){
     <div class="guest-event-copy"><div class="guest-event-when">${esc(whenLabel(e))} · ${esc(dateRangeLabel(e))}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
   </article>`;
 }
+function teaserInterest(e){
+  const stats=guestInterestByEvent.get(e.id)||{positive_count:0,negative_count:0,my_vote:null};
+  const positive=Number(stats.positive_count||0),negative=Number(stats.negative_count||0),mine=Number(stats.my_vote||0);
+  return `<div class="guest-interest"><div class="guest-interest-question">Ti ispira?</div><div class="guest-interest-actions"><button type="button" class="guest-interest-btn positive ${mine===1?'selected':''}" onclick="setGuestEventInterest('${e.id}',1,this)"><span>😺</span> Mi interessa <b>${positive}</b></button><button type="button" class="guest-interest-btn negative ${mine===-1?'selected':''}" onclick="setGuestEventInterest('${e.id}',-1,this)"><span>😿</span> Non fa per me <b>${negative}</b></button></div></div>`;
+}
 function teaserCard(e){
   const date=e.event_date?dateRangeLabel(e):'Data da definire';
   const time=timeLabel(e)||'Ora da definire';
   const place=e.place||'Luogo da definire';
-  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3><div class="guest-teaser-meta"><span><b>◫</b>${esc(date)}</span><span><b>◷</b>${esc(time)}</span><span><b>⌖</b>${esc(place)}</span></div>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}</article>`;
+  return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3><div class="guest-teaser-meta"><span><b>◫</b>${esc(date)}</span><span><b>◷</b>${esc(time)}</span><span><b>⌖</b>${esc(place)}</span></div>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}${teaserInterest(e)}</article>`;
 }
 function renderGuestEvents(){
   const root=$('guestEventsRoot');if(!root)return;
@@ -141,6 +147,26 @@ window.addGuestEventToCalendar=id=>{
   lines.push('END:VEVENT','END:VCALENDAR');
   download(`club42-${e.event_date}-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.ics`,lines.join('\r\n'),'text/calendar;charset=utf-8');
 };
+window.setGuestEventInterest=async(id,vote,button)=>{
+  if(!canSelfRegister())return toast('Questo profilo non può esprimere una reazione.');
+  const current=Number(guestInterestByEvent.get(id)?.my_vote||0);
+  const next=current===vote?0:vote;
+  if(button){button.disabled=true}
+  const {error}=await db.rpc('club42_guest_set_event_interest',{p_event_id:id,p_vote:next});
+  if(error){console.error(error);toast(error.message||'Non è stato possibile salvare la reazione');if(button)button.disabled=false;return}
+  toast(next===1?'😺 Segnato: ti interessa!':next===-1?'😿 Segnato: non fa per te':'Reazione rimossa');
+  await loadGuestPage();
+};
+window.declineGuestEvent=async(id,button)=>{
+  if(!canSelfRegister())return toast('Questo profilo non può rispondere all’evento.');
+  const e=guestEvents.find(x=>x.id===id);
+  if(!confirm(`Confermi che stavolta non ci sarai a “${e?.name||'questo evento'}”?`))return;
+  if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Salvataggio';}
+  const {error}=await db.rpc('club42_guest_decline_event',{p_event_id:id});
+  if(error){console.error(error);toast(error.message||'Non è stato possibile salvare la risposta');await loadGuestPage();return}
+  toast('😿 Ricevuto, stavolta non ci sei.');
+  await loadGuestPage();
+};
 window.previewGuestRegistration=()=>toast('Iscrizione non disponibile per questo profilo.');
 window.registerGuestEvent=async(id,button)=>{
   if(!canSelfRegister())return toast('Questo profilo non può iscriversi all’evento.');
@@ -167,7 +193,13 @@ window.unregisterGuestEvent=async(id,button)=>{
 
 export async function loadGuestPage(){
   const root=$('guestEventsRoot');if(root)root.innerHTML='<div class="guest-loading">Caricamento appuntamenti…</div>';
-  const {data,error}=await db.rpc('club42_guest_events');
-  if(error){console.error(error);if(root)root.innerHTML='<section class="guest-empty"><h2>Non riusciamo a caricare gli eventi.</h2><p>Riprova tra poco.</p></section>';return}
-  guestEvents=data||[];renderGuestEvents();
+  const [eventsResult,interestResult]=await Promise.all([
+    db.rpc('club42_guest_events'),
+    db.rpc('club42_guest_event_interest_summary')
+  ]);
+  if(eventsResult.error){console.error(eventsResult.error);if(root)root.innerHTML='<section class="guest-empty"><h2>Non riusciamo a caricare gli eventi.</h2><p>Riprova tra poco.</p></section>';return}
+  if(interestResult.error)console.warn('Interesse eventi Guest',interestResult.error);
+  guestEvents=eventsResult.data||[];
+  guestInterestByEvent=new Map((interestResult.data||[]).map(x=>[x.event_id,x]));
+  renderGuestEvents();
 }
