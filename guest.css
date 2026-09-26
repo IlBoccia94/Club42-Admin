@@ -42,3 +42,39 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
   .guest-teaser-card h3{font-size:20px}
   .guest-teaser-meta{display:grid;gap:7px}
 }
+
+
+/* Guest registration cancellation */
+.guest-event-actions{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:16px
+}
+.guest-event-actions .guest-calendar-btn{margin-top:0}
+.guest-registration-state{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap
+}
+.guest-register-btn{
+  border:0;border-radius:13px;padding:10px 14px;
+  background:var(--guest-blue);color:#fff;font:inherit;font-size:10px;font-weight:800;
+  cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease
+}
+.guest-register-btn.registered{
+  background:#e8f5ec;color:#3f7453
+}
+.guest-register-btn.waitlisted{
+  background:#fff4c9;color:#7c6508
+}
+.guest-register-btn:disabled{cursor:default}
+.guest-unregister-btn{
+  border:1px solid rgba(250,107,99,.24);border-radius:13px;padding:9px 12px;
+  background:#fff6f4;color:#a84640;font:inherit;font-size:9px;font-weight:800;
+  cursor:pointer;transition:background .15s ease,transform .15s ease
+}
+.guest-unregister-btn:hover{background:#ffe9e5;transform:translateY(-1px)}
+.guest-unregister-btn:disabled{opacity:.55;cursor:default;transform:none}
+.guest-unregister-btn span{font-size:12px;margin-right:3px}
+@media(max-width:620px){
+  .guest-event-actions{align-items:stretch}
+  .guest-registration-state{width:100%}
+  .guest-registration-state .guest-register-btn{flex:1 1 auto}
+  .guest-unregister-btn{flex:0 0 auto}
+}
