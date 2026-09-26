@@ -6,7 +6,12 @@ let authMode='login';
 function ensureSignupControls(){
   if($('authSignupConsent'))return;
   const actions=document.querySelector('#authForm .auth-actions');
-  if(!actions)return;
+  const emailField=$('authEmail')?.closest('.field');
+  if(!actions||!emailField)return;
+  emailField.insertAdjacentHTML('beforebegin',`<div class="auth-signup-name" id="authSignupName" hidden>
+    <div class="field"><label>Nome</label><input id="authFirstName" type="text" autocomplete="given-name" maxlength="80"></div>
+    <div class="field"><label>Cognome</label><input id="authLastName" type="text" autocomplete="family-name" maxlength="80"></div>
+  </div>`);
   actions.insertAdjacentHTML('beforebegin',`<div class="auth-signup-consent" id="authSignupConsent" hidden>
     <label class="auth-newsletter-check"><input id="authNewsletterActive" type="checkbox" checked><span>Newsletter attiva</span></label>
     <p>Accetto di ricevere comunicazioni e newsletter di Club42. Puoi togliere la spunta se non vuoi riceverle.</p>
@@ -18,17 +23,23 @@ function setAuthMode(mode='login',resetConsent=false){
   authMode=mode==='signup'?'signup':'login';
   const signup=authMode==='signup';
   const consent=$('authSignupConsent');
+  const nameFields=$('authSignupName');
+  const firstName=$('authFirstName');
+  const lastName=$('authLastName');
   const checkbox=$('authNewsletterActive');
   const submit=document.querySelector('#authForm button[type="submit"]');
   const toggle=$('signupBtn');
   const note=document.querySelector('#authFormWrap .auth-note');
   if(consent)consent.hidden=!signup;
+  if(nameFields)nameFields.hidden=!signup;
+  if(firstName)firstName.required=signup;
+  if(lastName)lastName.required=signup;
   if(signup&&resetConsent&&checkbox)checkbox.checked=true;
   if(submit)submit.textContent=signup?'Crea account':'Accedi';
   if(toggle)toggle.textContent=signup?'← Ho già un account':'Crea account';
   if($('authPassword'))$('authPassword').autocomplete=signup?'new-password':'current-password';
   if(note)note.textContent=signup
-    ?'Il nuovo account verrà creato come Guest. Dopo la conferma email resterà in attesa di approvazione.'
+    ?'Inserisci nome e cognome: verranno usati come nome utente nell’app. Il nuovo account sarà creato come Guest e, dopo la conferma email, resterà in attesa di approvazione.'
     :'Puoi creare un account liberamente, ma l’accesso ai dati richiede l’approvazione del direttivo.';
 }
 
@@ -100,7 +111,11 @@ export function initAuth(onAuthorized){
     const password=$('authPassword').value;
 
     if(authMode==='signup'){
+      const firstName=($('authFirstName')?.value||'').trim().replace(/\s+/g,' ');
+      const lastName=($('authLastName')?.value||'').trim().replace(/\s+/g,' ');
+      if(!firstName||!lastName)return showAuth('Inserisci nome e cognome.','signup');
       if(!email||password.length<6)return showAuth('Inserisci email e una password di almeno 6 caratteri.','signup');
+      const displayName=`${firstName} ${lastName}`;
       const newsletterActive=$('authNewsletterActive')?.checked===true;
       const {error}=await db.auth.signUp({
         email,
@@ -108,7 +123,9 @@ export function initAuth(onAuthorized){
         options:{
           emailRedirectTo:APP_URL,
           data:{
-            display_name:email.split('@')[0],
+            first_name:firstName,
+            last_name:lastName,
+            display_name:displayName,
             newsletter_active:newsletterActive
           }
         }
