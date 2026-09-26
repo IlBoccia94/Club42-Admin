@@ -1,6 +1,6 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260918-newsletter-recipients1';
-import {initAuth,bootstrapAuth} from './auth.js?v=20260917-signup-newsletter1';
+import {initAuth,bootstrapAuth} from './auth.js?v=20260926-signupname1';
 import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa} from './pwa.js?v=20260918-freshassets1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
