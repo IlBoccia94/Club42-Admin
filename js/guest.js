@@ -72,8 +72,8 @@ function canSelfRegister(){
   return ['admin','staff','treasurer','guest'].includes(app.currentProfile?.role||'');
 }
 function registrationButton(e){
-  if(e.registration_status==='confirmed')return '<button type="button" class="guest-register-btn registered" disabled><span>✓</span> Sei iscritto</button>';
-  if(e.registration_status==='waitlist')return '<button type="button" class="guest-register-btn waitlisted" disabled><span>⏳</span> In lista d’attesa</button>';
+  if(e.registration_status==='confirmed')return `<div class="guest-registration-state"><button type="button" class="guest-register-btn registered" disabled><span>✓</span> Sei iscritto</button><button type="button" class="guest-unregister-btn" onclick="unregisterGuestEvent('${e.id}',this)"><span>×</span> Disiscriviti</button></div>`;
+  if(e.registration_status==='waitlist')return `<div class="guest-registration-state"><button type="button" class="guest-register-btn waitlisted" disabled><span>⏳</span> In lista d’attesa</button><button type="button" class="guest-unregister-btn" onclick="unregisterGuestEvent('${e.id}',this)"><span>×</span> Esci dalla lista</button></div>`;
   if(!canSelfRegister())return '<button type="button" class="guest-register-btn" disabled><span>＋</span> Iscriviti</button>';
   return `<button type="button" class="guest-register-btn" data-register-event="${e.id}" onclick="registerGuestEvent('${e.id}',this)"><span>＋</span> Iscriviti</button>`;
 }
@@ -150,6 +150,18 @@ window.registerGuestEvent=async(id,button)=>{
   const result=Array.isArray(data)?data[0]:data;
   if(result?.registration_status==='waitlist')toast('Posti esauriti: sei stato inserito in lista d’attesa');
   else toast(result?.already_registered?'Risulti già iscritto a questo evento':'Iscrizione confermata!');
+  await loadGuestPage();
+};
+window.unregisterGuestEvent=async(id,button)=>{
+  if(!canSelfRegister())return toast('Questo profilo non può modificare l’iscrizione.');
+  const e=guestEvents.find(x=>x.id===id);
+  const label=e?.registration_status==='waitlist'?'uscire dalla lista d’attesa':'annullare la tua iscrizione';
+  if(!confirm(`Vuoi davvero ${label} a “${e?.name||'questo evento'}”?`))return;
+  if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Annullamento';}
+  const {data,error}=await db.rpc('club42_guest_unregister_event',{p_event_id:id});
+  if(error){console.error(error);toast(error.message||'Non è stato possibile annullare l’iscrizione');await loadGuestPage();return}
+  const result=Array.isArray(data)?data[0]:data;
+  toast(result?.previous_status==='waitlist'?'Sei uscito dalla lista d’attesa':'Iscrizione annullata');
   await loadGuestPage();
 };
 
