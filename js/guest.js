@@ -147,6 +147,13 @@ window.addGuestEventToCalendar=id=>{
   lines.push('END:VEVENT','END:VCALENDAR');
   download(`club42-${e.event_date}-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.ics`,lines.join('\r\n'),'text/calendar;charset=utf-8');
 };
+async function reloadGuestPagePreservingScroll(){
+  const x=window.scrollX||0,y=window.scrollY||document.documentElement.scrollTop||0;
+  await loadGuestPage({showLoading:false});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    window.scrollTo({left:x,top:y,behavior:'auto'});
+  }));
+}
 window.setGuestEventInterest=async(id,vote,button)=>{
   if(!canSelfRegister())return toast('Questo profilo non può esprimere una reazione.');
   const current=Number(guestInterestByEvent.get(id)?.my_vote||0);
@@ -155,7 +162,7 @@ window.setGuestEventInterest=async(id,vote,button)=>{
   const {error}=await db.rpc('club42_guest_set_event_interest',{p_event_id:id,p_vote:next});
   if(error){console.error(error);toast(error.message||'Non è stato possibile salvare la reazione');if(button)button.disabled=false;return}
   toast(next===1?'😺 Segnato: ti interessa!':next===-1?'😿 Segnato: non fa per te':'Reazione rimossa');
-  await loadGuestPage();
+  await reloadGuestPagePreservingScroll();
 };
 window.declineGuestEvent=async(id,button)=>{
   if(!canSelfRegister())return toast('Questo profilo non può rispondere all’evento.');
@@ -163,20 +170,20 @@ window.declineGuestEvent=async(id,button)=>{
   if(!confirm(`Confermi che stavolta non ci sarai a “${e?.name||'questo evento'}”?`))return;
   if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Salvataggio';}
   const {error}=await db.rpc('club42_guest_decline_event',{p_event_id:id});
-  if(error){console.error(error);toast(error.message||'Non è stato possibile salvare la risposta');await loadGuestPage();return}
+  if(error){console.error(error);toast(error.message||'Non è stato possibile salvare la risposta');await reloadGuestPagePreservingScroll();return}
   toast('😿 Ricevuto, stavolta non ci sei.');
-  await loadGuestPage();
+  await reloadGuestPagePreservingScroll();
 };
 window.previewGuestRegistration=()=>toast('Iscrizione non disponibile per questo profilo.');
 window.registerGuestEvent=async(id,button)=>{
   if(!canSelfRegister())return toast('Questo profilo non può iscriversi all’evento.');
   if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Iscrizione in corso';}
   const {data,error}=await db.rpc('club42_guest_register_event',{p_event_id:id});
-  if(error){console.error(error);toast(error.message||'Non è stato possibile completare l’iscrizione');await loadGuestPage();return}
+  if(error){console.error(error);toast(error.message||'Non è stato possibile completare l’iscrizione');await reloadGuestPagePreservingScroll();return}
   const result=Array.isArray(data)?data[0]:data;
   if(result?.registration_status==='waitlist')toast('Posti esauriti: sei stato inserito in lista d’attesa');
   else toast(result?.already_registered?'Risulti già iscritto a questo evento':'Iscrizione confermata!');
-  await loadGuestPage();
+  await reloadGuestPagePreservingScroll();
 };
 window.unregisterGuestEvent=async(id,button)=>{
   if(!canSelfRegister())return toast('Questo profilo non può modificare l’iscrizione.');
@@ -185,14 +192,14 @@ window.unregisterGuestEvent=async(id,button)=>{
   if(!confirm(`Vuoi davvero ${label} a “${e?.name||'questo evento'}”?`))return;
   if(button){button.disabled=true;button.classList.add('loading');button.innerHTML='<span>…</span> Annullamento';}
   const {data,error}=await db.rpc('club42_guest_unregister_event',{p_event_id:id});
-  if(error){console.error(error);toast(error.message||'Non è stato possibile annullare l’iscrizione');await loadGuestPage();return}
+  if(error){console.error(error);toast(error.message||'Non è stato possibile annullare l’iscrizione');await reloadGuestPagePreservingScroll();return}
   const result=Array.isArray(data)?data[0]:data;
   toast(result?.previous_status==='waitlist'?'Sei uscito dalla lista d’attesa':'Iscrizione annullata');
-  await loadGuestPage();
+  await reloadGuestPagePreservingScroll();
 };
 
-export async function loadGuestPage(){
-  const root=$('guestEventsRoot');if(root)root.innerHTML='<div class="guest-loading">Caricamento appuntamenti…</div>';
+export async function loadGuestPage({showLoading=true}={}){
+  const root=$('guestEventsRoot');if(root&&showLoading)root.innerHTML='<div class="guest-loading">Caricamento appuntamenti…</div>';
   const [eventsResult,interestResult]=await Promise.all([
     db.rpc('club42_guest_events'),
     db.rpc('club42_guest_event_interest_summary')
