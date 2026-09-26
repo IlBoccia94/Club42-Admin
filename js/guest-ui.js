@@ -1,6 +1,6 @@
 export function buildGuestUi(){
   if(!document.querySelector('link[href^="guest.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='guest.css?v=20260926-unregister1';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='guest.css?v=20260926-eventrsvp1';document.head.appendChild(l);
   }
   if(!document.querySelector('link[href^="guest-actions.css"]')){
     const l=document.createElement('link');l.rel='stylesheet';l.href='guest-actions.css?v=20260917-1';document.head.appendChild(l);
