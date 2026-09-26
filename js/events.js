@@ -3,7 +3,7 @@ import {showView} from './router.js';
 
 let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage',eventContactDraft=new Set();
 let eventDetailMode='hub',eventDayFilter='all',eventRealtimeChannel=null;
-let eventHubData={tasks:[],projects:[],social:[],cash:[]};
+let eventHubData={tasks:[],projects:[],social:[],cash:[],interestDetails:[]};
 let eventMemberPickerRows=[],eventMemberPickerSelection=new Set(),eventPersonMemberId=null;
 let eventCalendarZoom=1,eventCalendarPinchDistance=0,eventCalendarPinchZoom=1,eventCalendarDesktopDragId=null,eventCalendarTouchDrag=null,eventCalendarSuppressClickUntil=0;
 const CLUB_CALENDAR_EMAIL='club42.laspezia@gmail.com';
@@ -285,6 +285,7 @@ function ensureEventDetailUi(){
         <section class="card event-hub-card"><div class="event-hub-card-head"><span>◎</span><div><b>Social</b><small>Contenuti editoriali collegati</small></div></div><div id="eventHubSocial"></div></section>
         <section class="card event-hub-card"><div class="event-hub-card-head"><span>€</span><div><b>Cassa</b><small>Movimenti economici collegati</small></div></div><div id="eventHubCash"></div></section>
         <section class="card event-hub-card"><div class="event-hub-card-head"><span>☏</span><div><b>Collaboratori</b><small>Contatti coinvolti nell'evento</small></div></div><div id="eventHubContacts"></div></section>
+        <section class="card event-hub-card"><div class="event-hub-card-head"><span>😺</span><div><b>Community</b><small>Interesse e indisponibilità espresse dai Guest</small></div></div><div id="eventHubCommunity"></div></section>
         <section class="card event-hub-card event-hub-notes-card"><div class="event-hub-card-head"><span>≡</span><div><b>Note evento</b><small>Promemoria interni</small></div></div><div id="eventHubNotes"></div></section>
       </div>
     </section>`);
@@ -350,13 +351,36 @@ window.openEventHubEntity=async(type,id)=>{
   }
   await window.club42?.openLinkedEntity?.(type,id);
 };
+async function refreshEventInterestDetails(eventId){
+  eventHubData.interestDetails=[];
+  if(!eventId)return;
+  const {data,error}=await db.rpc('club42_event_interest_details',{p_event_id:eventId});
+  if(error){console.warn('Interesse Guest evento',error);return}
+  eventHubData.interestDetails=data||[];
+}
+function eventCommunityBlock(title,icon,rows,emptyText){
+  return `<div class="event-community-group"><div class="event-community-title"><span>${icon}</span><b>${esc(title)}</b><i>${rows.length}</i></div>${rows.length?`<div class="event-community-names">${rows.map(x=>`<span>${esc(x.display_name||x.name||'Utente')}</span>`).join('')}</div>`:`<div class="event-community-empty">${esc(emptyText)}</div>`}</div>`;
+}
+function eventPersonVisualStatus(p,e){
+  if(p.status!=='confirmed')return p.status;
+  if(p.attended)return'present';
+  if(isEndedEvent(e))return'no_show';
+  return'confirmed';
+}
+function eventPersonBadge(p,e){
+  const status=eventPersonVisualStatus(p,e);
+  if(status==='present')return'<span class="badge ok">Presente</span>';
+  if(status==='no_show')return'<span class="badge no-show">Assente</span>';
+  if(status==='declined')return'<span class="badge declined">Non partecipa</span>';
+  return badge(status);
+}
 function renderEventHub(){
   if(!$('eventHubPanel'))return;
   const e=selectedEvent();
-  const ids=['eventHubSummary','eventHubProjects','eventHubTasks','eventHubSocial','eventHubCash','eventHubContacts','eventHubNotes'];
+  const ids=['eventHubSummary','eventHubProjects','eventHubTasks','eventHubSocial','eventHubCash','eventHubContacts','eventHubCommunity','eventHubNotes'];
   if(!e){ids.forEach(id=>{if($(id))$(id).innerHTML=eventHubEmpty('Seleziona un evento.')});return}
 
-  const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed'),present=confirmed.filter(p=>p.attended),paid=confirmed.filter(p=>p.paid==='yes');
+  const pp=list(e.id),confirmed=pp.filter(p=>p.status==='confirmed'),present=confirmed.filter(p=>p.attended),paid=confirmed.filter(p=>p.paid==='yes'),declined=pp.filter(p=>p.status==='declined');
   const projects=eventHubData.projects.filter(x=>x.event_id===e.id);
   const tasks=eventHubData.tasks.filter(x=>x.event_id===e.id).sort((a,b)=>(a.status==='done')-(b.status==='done')||(a.due_date||'9999').localeCompare(b.due_date||'9999'));
   const social=eventHubData.social.filter(x=>x.event_id===e.id).sort((a,b)=>(a.scheduled_date||'9999').localeCompare(b.scheduled_date||'9999'));
@@ -377,6 +401,12 @@ function renderEventHub(){
   $('eventHubSocial').innerHTML=social.length?social.slice(0,8).map(s=>hubRow({icon:'◎',title:s.title,meta:[s.content_type,s.status,s.scheduled_date?fmtDate(s.scheduled_date):''].filter(Boolean).join(' · '),type:'social',id:s.id})).join(''):eventHubEmpty();
   $('eventHubCash').innerHTML=cash.length?cash.slice(0,8).map(x=>hubRow({icon:x.movement_type==='income'?'+':'−',title:x.description,meta:`${x.movement_date?fmtDate(x.movement_date)+' · ':''}${euro(x.amount)} · ${x.movement_type==='income'?'Entrata':'Uscita'}`,type:'cash',id:x.id,tone:x.movement_type==='expense'?'expense':'income'})).join(''):eventHubEmpty();
   $('eventHubContacts').innerHTML=contacts.length?contacts.map(x=>hubRow({icon:'☏',title:x.name,meta:x.organization||'Collaboratore',type:'contact',id:x.id})).join(''):eventHubEmpty();
+  const interested=eventHubData.interestDetails.filter(x=>Number(x.vote)===1),notInterested=eventHubData.interestDetails.filter(x=>Number(x.vote)===-1);
+  $('eventHubCommunity').innerHTML=[
+    eventCommunityBlock('Mi interessa','😺',interested,'Nessuna reazione positiva.'),
+    eventCommunityBlock('Non fa per me','😿',notInterested,'Nessuna reazione negativa.'),
+    eventCommunityBlock('Non partecipa','😿',declined.map(x=>({display_name:x.name})),'Nessuno ha indicato indisponibilità.')
+  ].join('');
   $('eventHubNotes').innerHTML=e.notes?`<div class="event-hub-notes">${esc(e.notes).replaceAll('\n','<br>')}</div>`:eventHubEmpty('Nessuna nota interna.');
 }
 function renderEventDay(){
@@ -398,7 +428,7 @@ function renderEventDay(){
   if(eventDayFilter==='present')rows=present;
   else if(eventDayFilter==='unpaid')rows=unpaid;
   else if(eventDayFilter==='waitlist')rows=wait;
-  else if(eventDayFilter==='everyone')rows=all.filter(p=>p.status!=='cancelled');
+  else if(eventDayFilter==='everyone')rows=all.filter(p=>p.status==='confirmed'||p.status==='waitlist');
   else rows=confirmed.filter(p=>!p.attended);
   if(q)rows=rows.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>String(v||'').toLocaleLowerCase('it').includes(q)));
   rows=rows.slice().sort((a,b)=>a.name.localeCompare(b.name,'it'));
@@ -455,6 +485,10 @@ function ensureEventRealtime(){
     })
     .on('postgres_changes',{event:'DELETE',schema:'public',table:'event_registrations'},payload=>{
       const id=payload.old?.id;if(id)app.state.people=app.state.people.filter(p=>p.id!==id);render();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'event_interest_votes'},async payload=>{
+      const eventId=payload.new?.event_id||payload.old?.event_id;
+      if(eventId&&eventId===app.state.selected){await refreshEventInterestDetails(eventId);renderEventHub()}
     })
     .subscribe();
 }
@@ -810,8 +844,9 @@ export async function loadRemote(){
   if(er.error||pr.error||cr.error||hr.error){console.error(er.error||pr.error||cr.error||hr.error);syncStatus('error','Errore DB');toast('Errore nel caricamento dati');return}
   [tr,jr,sr,car].forEach(r=>{if(r.error)console.warn('Event hub relation',r.error)});
   app.state.events=(er.data||[]).map(mapEvent);app.state.people=(pr.data||[]).map(mapPerson);eventContacts=cr.data||[];eventContactLinks=hr.data||[];fillEventContacts();
-  eventHubData={tasks:tr.data||[],projects:jr.data||[],social:sr.data||[],cash:car.data||[]};
+  eventHubData={tasks:tr.data||[],projects:jr.data||[],social:sr.data||[],cash:car.data||[],interestDetails:[]};
   syncEventSelectionForView(eventViewMode==='history'?'history':'manage');
+  await refreshEventInterestDetails(app.state.selected);
   ensureEventRealtime();
   syncStatus('ok','Sincronizzato');render();await offerLegacyImport();
 }
@@ -882,8 +917,14 @@ export function render(){
 }
 
 export function renderPeople(){
-  const e=selectedEvent();if(!e)return;const q=$('search').value.toLowerCase().trim(),sf=$('statusFilter').value;let pp=list(e.id);if(sf!=='all')pp=pp.filter(p=>p.status===sf);if(q)pp=pp.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>(v||'').toLowerCase().includes(q)));pp.sort((a,b)=>a.name.localeCompare(b.name,'it'));
-  $('people').innerHTML=pp.length?pp.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.phone||'')}${p.phone&&p.email?'<br>':''}${esc(p.email||'')}</td><td>${badge(p.status)}</td><td>${p.member==='yes'?'<span class="badge ok">Socio</span>':'<span class="badge off">No</span>'}</td><td>${p.paid==='yes'?'<span class="badge ok">Pagato</span>':'<span class="badge warn">Da pagare</span>'}</td><td>${p.diet?`🍽 ${esc(p.diet)}<br>`:''}<span class="muted">${esc(p.notes||'')}</span></td><td><div class="row"><button class="icon-btn" onclick="openPerson('${p.id}')">✎</button><button class="icon-btn" onclick="deletePerson('${p.id}')">×</button></div></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Nessun iscritto trovato.</td></tr>';
+  const e=selectedEvent();if(!e)return;
+  const q=$('search').value.toLowerCase().trim(),sf=$('statusFilter').value;let pp=list(e.id);
+  if(sf==='no_show')pp=pp.filter(p=>eventPersonVisualStatus(p,e)==='no_show');
+  else if(sf==='present')pp=pp.filter(p=>eventPersonVisualStatus(p,e)==='present');
+  else if(sf!=='all')pp=pp.filter(p=>p.status===sf);
+  if(q)pp=pp.filter(p=>[p.name,p.phone,p.email,p.notes,p.diet].some(v=>(v||'').toLowerCase().includes(q)));
+  pp.sort((a,b)=>a.name.localeCompare(b.name,'it'));
+  $('people').innerHTML=pp.length?pp.map(p=>`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.phone||'')}${p.phone&&p.email?'<br>':''}${esc(p.email||'')}</td><td>${eventPersonBadge(p,e)}</td><td>${p.member==='yes'?'<span class="badge ok">Socio</span>':'<span class="badge off">No</span>'}</td><td>${p.paid==='yes'?'<span class="badge ok">Pagato</span>':'<span class="badge warn">Da pagare</span>'}</td><td>${p.diet?`🍽 ${esc(p.diet)}<br>`:''}<span class="muted">${esc(p.notes||'')}</span></td><td><div class="row"><button class="icon-btn" onclick="openPerson('${p.id}')">✎</button><button class="icon-btn" onclick="deletePerson('${p.id}')">×</button></div></td></tr>`).join(''):'<tr><td colspan="7" class="empty">Nessun iscritto trovato.</td></tr>';
 }
 
 export async function selectEvent(id,openView=false){
@@ -891,6 +932,7 @@ export async function selectEvent(id,openView=false){
   app.state.selected=id;
   eventDetailMode='hub';
   showEventView(isEndedEvent(e)?'history':'manage');
+  await refreshEventInterestDetails(id);
   showEventDetailMode('hub');
   await showView('events',{eventId:id});
   if(openView)document.body.classList.remove('sidebar-open');
