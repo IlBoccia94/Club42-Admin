@@ -78,3 +78,49 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
   .guest-registration-state .guest-register-btn{flex:1 1 auto}
   .guest-unregister-btn{flex:0 0 auto}
 }
+
+
+/* Guest event interest + RSVP */
+.guest-interest{
+  position:relative;margin-top:16px;padding-top:13px;border-top:1px solid rgba(255,255,255,.20)
+}
+.guest-interest-question{
+  margin-bottom:8px;color:#fff;font-family:var(--font-subtitle);font-size:9px;font-weight:900
+}
+.guest-interest-actions{
+  display:flex;gap:7px;flex-wrap:wrap
+}
+.guest-interest-btn{
+  min-height:37px;display:inline-flex;align-items:center;gap:6px;padding:7px 10px;
+  border:1px solid rgba(255,255,255,.22);border-radius:12px;background:rgba(255,255,255,.10);
+  color:#fff;font:inherit;font-size:9px;font-weight:850;cursor:pointer;transition:.15s
+}
+.guest-interest-btn:hover{background:rgba(255,255,255,.17);transform:translateY(-1px)}
+.guest-interest-btn.selected{background:#fff;color:var(--guest-deep);border-color:#fff;box-shadow:0 5px 15px rgba(0,0,0,.12)}
+.guest-interest-btn span{font-size:15px}
+.guest-interest-btn b{
+  min-width:20px;height:20px;display:grid;place-items:center;border-radius:999px;
+  background:rgba(255,255,255,.16);font-size:7.5px
+}
+.guest-interest-btn.selected b{background:var(--guest-blue-soft);color:var(--guest-blue)}
+
+.guest-registration-choice{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap
+}
+.guest-decline-btn{
+  border:1px solid rgba(250,107,99,.24);border-radius:13px;padding:9px 12px;
+  background:#fff6f4;color:#a84640;font:inherit;font-size:9px;font-weight:800;
+  cursor:pointer;transition:.15s
+}
+.guest-decline-btn:hover{background:#ffe9e5;transform:translateY(-1px)}
+.guest-decline-btn.selected{background:#f4eeee;color:#815d5a;border-color:#e7d9d6}
+.guest-decline-btn:disabled{cursor:default;transform:none}
+.guest-register-btn.reconsider{background:var(--guest-blue)}
+@media(max-width:620px){
+  .guest-interest-actions{display:grid;grid-template-columns:1fr 1fr}
+  .guest-interest-btn{justify-content:center;min-width:0;padding:7px 6px}
+  .guest-registration-choice{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .guest-registration-choice>button{width:100%;min-width:0}
+  .guest-registration-state{display:grid;grid-template-columns:1fr 1fr}
+  .guest-registration-state>button{width:100%;min-width:0}
+}
