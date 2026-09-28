@@ -38,7 +38,7 @@ export function buildGuestUi(){
         <div class="guest-push-icon" aria-hidden="true">🔔</div>
         <div class="guest-push-copy">
           <strong id="guestPushTitle">Non perderti le iscrizioni</strong>
-          <span id="guestPushText">Attiva le notifiche per sapere quando apriamo le iscrizioni ai nuovi eventi.</span>
+          <span id="guestPushText">Attiva le notifiche per sapere quando apriamo le iscrizioni e ricevere un promemoria prima degli eventi.</span>
         </div>
         <button type="button" class="guest-push-btn" id="guestEnablePushBtn">Attiva notifiche</button>
       </section>
