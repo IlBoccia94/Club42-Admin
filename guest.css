@@ -124,3 +124,27 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
   .guest-registration-state{display:grid;grid-template-columns:1fr 1fr}
   .guest-registration-state>button{width:100%;min-width:0}
 }
+
+
+/* Guest event push opt-in */
+.guest-push-prompt{
+  margin-top:18px;padding:16px 18px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;
+  border:1px solid rgba(29,93,112,.16);border-radius:18px;background:var(--guest-paper);
+  box-shadow:0 8px 28px rgba(21,62,76,.07)
+}
+.guest-push-prompt[hidden]{display:none!important}
+.guest-push-icon{
+  width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#edf5f6;font-size:19px
+}
+.guest-push-copy{display:grid;gap:3px}
+.guest-push-copy strong{font-size:12px;color:var(--guest-deep)}
+.guest-push-copy span{font-size:10px;line-height:1.5;color:#66818a}
+.guest-push-btn{
+  border:0;border-radius:12px;padding:10px 14px;background:var(--guest-blue);color:#fff;
+  font:inherit;font-size:9px;font-weight:850;white-space:nowrap;cursor:pointer
+}
+.guest-push-btn:hover{transform:translateY(-1px)}
+@media(max-width:620px){
+  .guest-push-prompt{grid-template-columns:auto 1fr;padding:14px}
+  .guest-push-btn{grid-column:1/-1;width:100%}
+}
