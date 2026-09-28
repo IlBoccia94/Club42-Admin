@@ -65,7 +65,7 @@ export function buildNotificationsUi(){
       </div>
 
       <section class="card notif-info-strip">
-        <div><strong>Come funzionano le push?</strong><span>Gli avvisi immediati vengono elaborati circa ogni minuto; quelli programmati alle 09:00 usano sempre il fuso Europe/Rome. Tra questi c’è anche 🐋 il promemoria 7 giorni prima per gli eventi Guest ancora in “Prossimamente”. Il browser li consegna tramite il service worker anche a pagina chiusa. Risparmio energetico o “Non disturbare” possono comunque ritardarne la visualizzazione sul dispositivo.</span></div>
+        <div><strong>Come funzionano le push?</strong><span>Gli avvisi immediati vengono elaborati circa ogni minuto; quando un evento passa da “Prossimamente” a iscrizioni aperte parte 🐋 una notifica a tutti gli utenti attivi con la categoria Eventi abilitata. Quelli programmati alle 09:00 usano sempre il fuso Europe/Rome e comprendono anche il promemoria 7 giorni prima per gli eventi ancora in “Prossimamente”. Il browser li consegna tramite il service worker anche a pagina chiusa. Risparmio energetico o “Non disturbare” possono comunque ritardarne la visualizzazione sul dispositivo.</span></div>
         <button class="btn" id="notifAllInfo">ⓘ Quando vengono inviate?</button>
       </section>
     </div>`;
