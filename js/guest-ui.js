@@ -1,6 +1,6 @@
 export function buildGuestUi(){
   if(!document.querySelector('link[href^="guest.css"]')){
-    const l=document.createElement('link');l.rel='stylesheet';l.href='guest.css?v=20260926-eventrsvp1';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='stylesheet';l.href='guest.css?v=20260928-guestpush1';document.head.appendChild(l);
   }
   if(!document.querySelector('link[href^="guest-actions.css"]')){
     const l=document.createElement('link');l.rel='stylesheet';l.href='guest-actions.css?v=20260917-1';document.head.appendChild(l);
@@ -32,6 +32,15 @@ export function buildGuestUi(){
           <p>Eventi, incontri e occasioni da vivere insieme. Qui trovi soltanto gli appuntamenti che il Club ha scelto di condividere con i soci.</p>
         </div>
         <div class="guest-hero-mark" aria-hidden="true"><span>42</span></div>
+      </section>
+
+      <section class="guest-push-prompt" id="guestPushPrompt" hidden>
+        <div class="guest-push-icon" aria-hidden="true">🔔</div>
+        <div class="guest-push-copy">
+          <strong id="guestPushTitle">Non perderti le iscrizioni</strong>
+          <span id="guestPushText">Attiva le notifiche per sapere quando apriamo le iscrizioni ai nuovi eventi.</span>
+        </div>
+        <button type="button" class="guest-push-btn" id="guestEnablePushBtn">Attiva notifiche</button>
       </section>
 
       <div id="guestEventsRoot"><div class="guest-loading">Caricamento appuntamenti…</div></div>
