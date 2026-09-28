@@ -112,6 +112,107 @@ async function enablePush(){
   await refreshPushStatus();
 }
 
+async function saveGuestEventPreference(){
+  if(app.currentProfile?.role!=='guest'||!app.currentUser)return;
+  const {error}=await db.from('notification_preferences').upsert({
+    user_id:app.currentUser.id,
+    events:true,
+    timezone:timezone(),
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+  if(error)console.error('Preferenza notifiche Guest',error);
+}
+
+function renderGuestPushPrompt({visible,title='Non perderti le iscrizioni',text='Attiva le notifiche per sapere quando apriamo le iscrizioni ai nuovi eventi.',button=true}={}){
+  const card=$('guestPushPrompt'),titleEl=$('guestPushTitle'),textEl=$('guestPushText'),btn=$('guestEnablePushBtn');
+  if(!card)return;
+  card.hidden=!visible;
+  if(titleEl)titleEl.textContent=title;
+  if(textEl)textEl.textContent=text;
+  if(btn)btn.hidden=!button;
+}
+
+async function registerGuestPushSubscription(){
+  const reg=await getServiceWorkerRegistration();
+  if(!reg?.pushManager)throw new Error('Service worker non disponibile');
+  let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(VAPID_PUBLIC_KEY)});
+  const data=sub.toJSON();
+  const {error}=await db.from('push_subscriptions').upsert({
+    user_id:app.currentUser.id,
+    endpoint:data.endpoint,
+    p256dh:data.keys?.p256dh,
+    auth:data.keys?.auth,
+    user_agent:navigator.userAgent,
+    enabled:true,
+    last_seen_at:new Date().toISOString()
+  },{onConflict:'endpoint'});
+  if(error)throw error;
+}
+
+export async function syncGuestNotifications({requestPermission=false}={}){
+  if(app.currentProfile?.role!=='guest'||!app.currentUser){
+    renderGuestPushPrompt({visible:false});
+    return;
+  }
+
+  await saveGuestEventPreference();
+
+  const supported='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+  if(!supported){
+    renderGuestPushPrompt({
+      visible:true,
+      title:'Notifiche non disponibili',
+      text:'Questo browser non supporta le notifiche push di Club42.',
+      button:false
+    });
+    return;
+  }
+
+  if(isIos()&&!isStandalone()){
+    renderGuestPushPrompt({
+      visible:true,
+      title:'Attiva gli avvisi di Club42',
+      text:'Su iPhone o iPad aggiungi prima Club42 alla schermata Home dal menu Condividi, poi riaprilo da lì per attivare le notifiche.',
+      button:false
+    });
+    return;
+  }
+
+  let permission=Notification.permission;
+  if(permission==='default'&&requestPermission)permission=await Notification.requestPermission();
+
+  if(permission==='denied'){
+    renderGuestPushPrompt({
+      visible:true,
+      title:'Notifiche bloccate',
+      text:'Le notifiche sono state bloccate sul dispositivo. Puoi riattivarle dalle impostazioni del browser o del sistema.',
+      button:false
+    });
+    return;
+  }
+
+  if(permission!=='granted'){
+    renderGuestPushPrompt({visible:true,button:true});
+    return;
+  }
+
+  try{
+    await registerGuestPushSubscription();
+    renderGuestPushPrompt({visible:false});
+    if(requestPermission)toast('Notifiche eventi attivate');
+  }catch(error){
+    console.error('Notifiche Guest',error);
+    renderGuestPushPrompt({
+      visible:true,
+      title:'Attiva gli avvisi di Club42',
+      text:'Non siamo riusciti a registrare questo dispositivo. Riprova tra poco.',
+      button:true
+    });
+    if(requestPermission)toast('Attivazione notifiche non riuscita');
+  }
+}
+
 async function disablePush(){
   const sub=await getBrowserSubscription();
   if(!sub)return refreshPushStatus();
@@ -184,5 +285,7 @@ export function initNotifications(){
   $('notifDisablePush').onclick=disablePush;
   $('notifTestPush').onclick=testPush;
   $('notifInstallPwa').onclick=installPwa;
-  document.addEventListener('club42:pwa-install-state',renderInstallState);
+  const guestPushBtn=$('guestEnablePushBtn');
+  if(guestPushBtn)guestPushBtn.onclick=()=>syncGuestNotifications({requestPermission:true});
+  document.addEventListener('club42:pwa-install-state',()=>{renderInstallState();syncGuestNotifications();});
 }
