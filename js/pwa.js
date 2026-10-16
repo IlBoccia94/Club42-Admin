@@ -58,6 +58,58 @@ export async function promptInstallPwa(){
   return choice;
 }
 
+function guestInstallHelpMessage(){
+  if(isIos())return 'Su iPhone o iPad apri Club42 in Safari, tocca Condividi e scegli “Aggiungi alla schermata Home”.';
+  return 'Apri il menu del browser e scegli “Installa app” oppure “Aggiungi alla schermata Home”.';
+}
+
+export function syncGuestInstallUi(){
+  const card=document.getElementById('guestInstallPrompt');
+  const button=document.getElementById('guestInstallBtn');
+  const help=document.getElementById('guestInstallHelp');
+  if(!card||!button)return;
+  const installed=isStandalone();
+  card.hidden=installed;
+  if(installed)return;
+  button.textContent=canPromptInstall()?'Installa Club42':isIos()?'Come installarla':'Installa Club42';
+  if(help&&help.dataset.visible==='1'){
+    help.textContent=guestInstallHelpMessage();
+    help.hidden=false;
+  }
+}
+
+export function initGuestInstall(){
+  const button=document.getElementById('guestInstallBtn');
+  const help=document.getElementById('guestInstallHelp');
+  if(!button||button.dataset.bound==='1')return;
+  button.dataset.bound='1';
+  button.addEventListener('click',async()=>{
+    if(isStandalone()){syncGuestInstallUi();return}
+    if(canPromptInstall()){
+      button.disabled=true;
+      const result=await promptInstallPwa();
+      button.disabled=false;
+      if(result?.outcome==='accepted'||isStandalone()){
+        if(help){help.hidden=true;help.dataset.visible='0'}
+        syncGuestInstallUi();
+        return;
+      }
+    }
+    if(help){
+      help.textContent=guestInstallHelpMessage();
+      help.hidden=false;
+      help.dataset.visible='1';
+    }
+    syncGuestInstallUi();
+  });
+  document.addEventListener('club42:pwa-install-state',syncGuestInstallUi);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncGuestInstallUi()});
+  try{
+    window.matchMedia('(display-mode: standalone)').addEventListener('change',syncGuestInstallUi);
+  }catch{}
+  syncGuestInstallUi();
+}
+
 export async function initPwa(){
   ensureHeadLinks();
   window.addEventListener('beforeinstallprompt',event=>{
