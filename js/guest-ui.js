@@ -43,6 +43,16 @@ export function buildGuestUi(){
         <button type="button" class="guest-push-btn" id="guestEnablePushBtn">Attiva notifiche</button>
       </section>
 
+      <section class="guest-install-prompt" id="guestInstallPrompt" hidden>
+        <div class="guest-install-icon" aria-hidden="true">📲</div>
+        <div class="guest-install-copy">
+          <strong>Porta Club42 sul telefono</strong>
+          <span>Installa Club42 come una vera app: la trovi nella schermata Home e si apre senza passare dal browser.</span>
+          <small id="guestInstallHelp" hidden></small>
+        </div>
+        <button type="button" class="guest-install-btn" id="guestInstallBtn">Installa Club42</button>
+      </section>
+
       <div id="guestEventsRoot"><div class="guest-loading">Caricamento appuntamenti…</div></div>
 
       <footer class="guest-footer"><div><strong>Club42</strong><span>Associazione culturale · La Spezia</span></div><span>Ci vediamo al prossimo evento.</span></footer>
