@@ -1,5 +1,6 @@
 import {$,app,db,LEGACY_KEY,download,esc,selected,list,fmtDate,badge,toast,syncStatus} from './core.js';
 import {showView} from './router.js';
+import {canManageEvents} from './permissions.js';
 
 let eventContacts=[],eventContactLinks=[],eventCalendarCursor=new Date(),eventViewMode='manage',eventContactDraft=new Set();
 let eventDetailMode='hub',eventDayFilter='all',eventRealtimeChannel=null;
@@ -607,6 +608,7 @@ function initEventCalendarInteractions(){
     const day=ev.target.closest('.event-cal-day[data-date]');if(!day)return;
     ev.preventDefault();
     const id=eventCalendarDesktopDragId,target=day.dataset.date;
+    eventCalendarSuppressClickUntil=Date.now()+400;
     eventCalendarDesktopDragId=null;clearEventCalendarDropTarget();
     root.querySelectorAll('.event-cal-item.dragging').forEach(x=>x.classList.remove('dragging'));
     moveEventCalendarEvent(id,target);
@@ -614,6 +616,15 @@ function initEventCalendarInteractions(){
   root.addEventListener('dragend',()=>{
     eventCalendarDesktopDragId=null;clearEventCalendarDropTarget();
     root.querySelectorAll('.event-cal-item.dragging').forEach(x=>x.classList.remove('dragging'));
+  });
+
+  // Clicking a day creates an event on that date; event cards keep their own action.
+  // Delegation also works when the monthly grid is re-rendered.
+  root.addEventListener('click',ev=>{
+    if(!canManageEvents()||Date.now()<eventCalendarSuppressClickUntil)return;
+    if(ev.target.closest('.event-cal-item[data-event-id]'))return;
+    const day=ev.target.closest('.event-cal-day[data-date]');
+    if(day)openEvent(null,day.dataset.date);
   });
 
   root.addEventListener('contextmenu',ev=>{if(ev.target.closest('.event-cal-item'))ev.preventDefault()});
@@ -686,7 +697,7 @@ function ensureEventCalendarUi(){
           <button class="btn" id="eventToday" type="button">Oggi</button>
         </div>
       </div>
-      <div class="event-calendar-mobile-hint"><span>Pizzica per zoom · tieni premuto un evento per spostarlo</span><button type="button" id="eventCalendarZoomReset" title="Ripristina zoom">100%</button></div>
+      <div class="event-calendar-mobile-hint"><span>Tocca un giorno per creare un evento · pizzica per zoom · tieni premuto un evento per spostarlo</span><button type="button" id="eventCalendarZoomReset" title="Ripristina zoom">100%</button></div>
       <div class="event-calendar-viewport" id="eventCalendarViewport">
         <div class="event-calendar-canvas" id="eventCalendarCanvas">
           <div class="event-calendar-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span></div>
@@ -799,7 +810,10 @@ function renderEventCalendar(){
     const isToday=key===today;
     const dayObservances=observances[key]||[];
     const rows=app.state.events.filter(e=>eventOccursOn(e,key)).sort((a,b)=>(a.time||'').localeCompare(b.time||'')||a.name.localeCompare(b.name,'it'));
-    html+=`<div class="event-cal-day ${isToday?'today':''}" data-date="${key}"><div class="event-cal-day-top"><div class="event-cal-day-num">${day}</div>${renderCalendarObservances(dayObservances)}</div><div class="event-cal-items">${rows.map(e=>{
+    const addButton=canManageEvents()
+      ?`<button type="button" class="event-cal-day-add" aria-label="Aggiungi evento il ${day}/${m+1}/${y}" title="Aggiungi evento il ${day}/${m+1}/${y}">+</button>`
+      :'';
+    html+=`<div class="event-cal-day ${isToday?'today':''}" data-date="${key}"><div class="event-cal-day-top"><div class="event-cal-day-header"><div class="event-cal-day-num">${day}</div>${addButton}</div>${renderCalendarObservances(dayObservances)}</div><div class="event-cal-items">${rows.map(e=>{
       const starts=e.date===key,ends=(e.endDate||e.date)===key,multi=(e.endDate||e.date)!==e.date,ended=isEndedEvent(e);
       const phase=!multi?'':starts?' start':ends?' end':' middle';
       const time=starts&&e.time?e.time+' · ':'';
@@ -947,7 +961,7 @@ export async function applyEventRoute(eventId){
   }
 }
 
-function openEvent(id=null){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';if(e)window.club42EntityTools?.setTarget('eventDlg','event',id,e.name);else window.club42EntityTools?.clearTarget('eventDlg');$('eName').value=e?.name||'';$('eDate').value=e?.date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
+function openEvent(id=null,date=''){app.editEventId=id;const e=id?app.state.events.find(x=>x.id===id):null;$('eventDlgTitle').textContent=e?'Modifica evento':'Nuovo evento';if(e)window.club42EntityTools?.setTarget('eventDlg','event',id,e.name);else window.club42EntityTools?.clearTarget('eventDlg');$('eName').value=e?.name||'';$('eDate').value=e?.date||date||'';$('eEndDate').value=e?.endDate||'';$('eTime').value=e?.time||'';$('eEndTime').value=e?.endTime||'';$('ePlace').value=e?.place||'';$('eCapacity').value=e?.capacity??0;$('ePrice').value=e?.price??'';$('eFree').checked=!!e?.isFree;syncEventPriceControl();syncEndDateMin();$('eNotes').value=e?.notes||'';$('eGuestVisible').checked=!!e?.guestVisible;$('eGuestTeaser').checked=!!e?.guestTeaser;$('eGuestDescription').value=e?.guestDescription||'';fillEventContacts();setEventContactSelection(id);$('eventDlg').showModal()}
 async function deleteEvent(id){const e=app.state.events.find(x=>x.id===id);if(!e||!confirm(`Eliminare “${e.name}” e tutte le relative iscrizioni? Lo storico delle collaborazioni resterà conservato.`))return;const {error}=await db.from('events').delete().eq('id',id);if(error)return toast(error.message);toast('Evento eliminato');await loadRemote()}
 function ensureEventMemberPickerUi(){
   const form=$('personForm');if(!form||$('eventMemberPickerOverlay'))return;
