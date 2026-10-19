@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#216277">
 <title>Club42 Admin</title>
 <link rel="stylesheet" href="styles.css?v=20260926-eventrsvp1">
-<link rel="stylesheet" href="admin.css?v=20260926-signupname1">
+<link rel="stylesheet" href="admin.css?v=20261019-password1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -18,7 +18,14 @@
       <form class="auth-form" id="authForm">
         <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="email" required></div>
         <div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" minlength="6" required></div>
+        <button class="auth-forgot-link" id="forgotPasswordBtn" type="button">Password dimenticata?</button>
         <div class="auth-actions"><button class="btn primary" type="submit">Accedi</button><button class="btn" type="button" id="signupBtn">Crea account</button></div>
+      </form>
+      <form class="auth-form" id="forgotPasswordForm" hidden>
+        <p class="auth-reset-intro">Inserisci l'indirizzo email del tuo account Club42 per ricevere il link di recupero.</p>
+        <div class="field"><label for="forgotPasswordEmail">Email</label><input id="forgotPasswordEmail" type="email" autocomplete="email" required></div>
+        <p id="forgotPasswordMessage" class="auth-reset-message" role="status" aria-live="polite" hidden></p>
+        <div class="auth-actions"><button class="btn primary" id="sendRecoveryBtn" type="submit">Invia link di recupero</button><button class="btn" id="backToLoginBtn" type="button">Torna all'accesso</button></div>
       </form>
       <div class="auth-note">Puoi creare un account liberamente, ma l'accesso ai dati richiede l'approvazione del direttivo.</div>
     </div>
@@ -46,7 +53,7 @@
       <button class="nav-item" data-view="contacts"><span class="nav-icon">☏</span>Contatti <span class="nav-badge">Presto</span></button>
     </nav>
     <div class="sidebar-spacer"></div>
-    <div class="sidebar-foot"><div class="user-chip" id="sidebarUser"><b id="sidebarUserName">Utente</b><span id="sidebarUserEmail"></span><span class="role" id="sidebarUserRole">—</span></div><button class="btn" id="logoutBtn" style="width:100%">Esci</button></div>
+    <div class="sidebar-foot"><div class="user-chip" id="sidebarUser"><b id="sidebarUserName">Utente</b><span id="sidebarUserEmail"></span><span class="role" id="sidebarUserRole">—</span></div><button class="btn" id="changePasswordBtn" type="button" style="width:100%;margin-bottom:8px">Cambia password</button><button class="btn" id="logoutBtn" style="width:100%">Esci</button></div>
   </aside>
 
   <main class="content">
@@ -75,9 +82,9 @@
 <dialog id="personDlg"><form class="modal" id="personForm"><div class="modal-head"><h3 id="personDlgTitle">Aggiungi iscritto</h3><button type="button" class="close" data-close="personDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome e cognome *</label><input id="pName" required></div><div class="field"><label>Telefono</label><input id="pPhone"></div><div class="field"><label>Email</label><input id="pEmail" type="email"></div><div class="field"><label>Stato</label><select id="pStatus"><option value="confirmed">Confermato</option><option value="waitlist">Lista d'attesa</option><option value="declined">Non partecipa</option><option value="cancelled">Annullato</option></select></div><div class="field"><label>Pagamento</label><select id="pPaid"><option value="no">Da pagare</option><option value="yes">Pagato</option></select></div><div class="field"><label>Socio Club42</label><select id="pMember"><option value="no">No</option><option value="yes">Sì</option></select></div><div class="field"><label>Esigenze alimentari</label><input id="pDiet" placeholder="Celiachia, vegetariano…"></div><div class="field full"><label>Note</label><textarea id="pNotes" rows="3"></textarea></div></div><div class="modal-actions"><button type="button" class="btn" data-close="personDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
 <dialog id="userDlg"><form class="modal" id="userForm"><div class="modal-head"><h3>Modifica utente</h3><button type="button" class="close" data-close="userDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome visualizzato</label><input id="uName" required></div><div class="field"><label>Ruolo</label><select id="uRole"><option value="admin">Admin</option><option value="staff">Staff</option></select></div><div class="field"><label>Stato</label><select id="uStatus"><option value="active">Attivo</option><option value="pending">In attesa</option><option value="disabled">Disabilitato</option></select></div><div class="field full"><label>Email</label><input id="uEmail" disabled></div></div><div class="modal-actions"><button type="button" class="btn" data-close="userDlg">Annulla</button><button class="btn primary">Salva</button></div></form></dialog>
 <dialog id="inviteDlg"><form class="modal" id="inviteForm"><div class="modal-head"><h3>Aggiungi utente</h3><button type="button" class="close" data-close="inviteDlg">×</button></div><div class="form-grid"><div class="field full"><label>Nome visualizzato *</label><input id="iName" required></div><div class="field full"><label>Email *</label><input id="iEmail" type="email" required></div><div class="field"><label>Ruolo</label><select id="iRole"><option value="staff">Staff</option><option value="admin">Admin</option></select></div><div class="field full"><div class="form-hint">L'utente riceverà un invito via email. Dopo aver aperto il link potrà impostare la propria password.</div></div></div><div class="modal-actions"><button type="button" class="btn" data-close="inviteDlg">Annulla</button><button class="btn primary">Invia invito</button></div></form></dialog>
-<dialog id="passwordDlg"><form class="modal" id="passwordForm"><div class="modal-head"><h3>Imposta password</h3></div><p class="muted">Hai aperto un invito Club42. Scegli ora la password del tuo account.</p><div class="form-grid"><div class="field full"><label>Nuova password</label><input id="newPassword" type="password" minlength="8" required></div><div class="field full"><label>Ripeti password</label><input id="newPassword2" type="password" minlength="8" required></div></div><div class="modal-actions"><button class="btn primary">Salva password</button></div></form></dialog>
+<dialog id="passwordDlg"><form class="modal" id="passwordForm"><div class="modal-head"><h3 id="passwordDlgTitle">Imposta password</h3></div><p class="muted" id="passwordDlgText">Scegli una nuova password per il tuo account Club42.</p><div class="auth-error" id="passwordError" role="alert" aria-live="polite"></div><div class="form-grid"><div class="field full"><label for="newPassword">Nuova password</label><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></div><div class="field full"><label for="newPassword2">Ripeti password</label><input id="newPassword2" type="password" autocomplete="new-password" minlength="8" required></div></div><div class="modal-actions"><button class="btn" type="button" id="passwordCancelBtn">Annulla</button><button class="btn primary" id="passwordSaveBtn" type="submit">Salva password</button></div></form></dialog>
 <div class="toast" id="toast"></div>
 
-<script type="module" src="js/app.js?v=20261016-install1"></script>
+<script type="module" src="js/app.js?v=20261019-password1"></script>
 </body>
 </html>
