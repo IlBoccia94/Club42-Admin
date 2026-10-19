@@ -551,3 +551,20 @@ dialog{border:0;border-radius:22px;background:var(--cream);color:var(--ink);padd
   color:#5d7177;font-size:7.8px;font-weight:750
 }
 .event-community-empty{margin-top:5px;color:var(--muted);font-size:8px}
+
+
+/* Create an event directly from a day in the month calendar. */
+.event-cal-day[data-date]{cursor:pointer}
+.event-cal-day[data-date]:hover{background:#f0f7f7}
+.event-cal-day.today[data-date]:hover{background:#fff5d8}
+.event-cal-day-header{display:flex;align-items:center;justify-content:space-between;gap:5px;min-height:27px}
+.event-cal-day-add{
+  display:grid;place-items:center;flex:0 0 auto;width:27px;height:27px;
+  border:1px solid rgba(33,98,119,.2);border-radius:9px;
+  background:var(--blue-soft);color:var(--blue);
+  font-size:19px;font-weight:700;line-height:1;cursor:pointer
+}
+.event-cal-day-add:hover,.event-cal-day-add:focus-visible{
+  background:var(--blue);color:#fff;border-color:var(--blue)
+}
+.event-cal-day-add:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
