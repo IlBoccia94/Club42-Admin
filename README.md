@@ -100,6 +100,36 @@ L'app è pubblicata come **PWA** su GitHub Pages e usa **Supabase** come backend
 - Gestione ruoli e stato account
 - Disabilitazione ed eliminazione utenti
 
+## Recupero e cambio password
+
+Il recupero password usa **Supabase Auth** e la configurazione email del progetto:
+
+1. Dalla schermata di accesso apri **Password dimenticata?**, inserisci l'indirizzo email e invia la richiesta. L'app mostra un messaggio neutro per non rivelare se esiste un account.
+2. La mail contiene il link di recupero che torna all'app. Supabase verifica il link e la schermata di impostazione password consente di inserire due volte una nuova password di almeno 8 caratteri.
+3. Gli utenti autenticati possono usare **Cambia password** nella barra laterale; nell'area Guest il comando si trova in alto accanto a **Esci**.
+4. Gli inviti amministrativi usano lo stesso modulo di impostazione password.
+
+### Configurazione Supabase da verificare
+
+In **Authentication → URL Configuration** la URL di produzione deve essere presente fra quelle consentite:
+
+```text
+https://ilboccia94.github.io/Club42-Admin/
+```
+
+La mail di recupero deve usare il link generato da Supabase (ad esempio il template con `{{ .ConfirmationURL }}`), in modo che la destinazione `redirectTo` sia rispettata. Nessuna credenziale SMTP o chiave privilegiata deve essere inserita nel client.
+
+### Verifica manuale dopo il deploy
+
+- Richiedere il recupero per una email valida e per una email sconosciuta: entrambi i casi devono mostrare lo stesso messaggio.
+- Aprire il link valido da un browser senza sessione, impostare una password di almeno 8 caratteri e accedere con quella nuova.
+- Provare password discordanti, link scaduto e secondo utilizzo dello stesso link.
+- Verificare un invito Guest o Staff appena ricevuto.
+- Provare **Cambia password** sia come Staff/Admin sia come Guest già autenticato.
+- Verificare che un Guest rimanga Guest e che un account sospeso o in attesa conservi il proprio stato dopo il recupero.
+
+Non vengono modificate tabelle, policy, ruoli o stati degli utenti.
+
 ## Ruoli
 
 Il gestionale utilizza quattro ruoli:

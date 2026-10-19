@@ -1,6 +1,6 @@
 import {$,app,download,list} from './core.js';
 import {initRouter,configureRouter,restoreRoute,showView,parseRoute} from './router.js?v=20260918-newsletter-recipients1';
-import {initAuth,bootstrapAuth} from './auth.js?v=20260926-signupname1';
+import {initAuth,bootstrapAuth} from './auth.js?v=20261019-password1';
 import {applyRoleUi} from './permissions.js?v=20260918-newsletter-recipients1';
 import {initPwa,initGuestInstall} from './pwa.js?v=20261016-install1';
 import {initScrollTop} from './scroll-top.js?v=20260917-1';
@@ -62,11 +62,9 @@ async function onAuthorized(){
     return;
   }
   await loadRemote();
-  const route=parseRoute();
   await restoreRoute();
   await loadChatForRole();
-  if(route.authCallback&&location.hash.includes('type=invite'))setTimeout(()=>{if(!$('passwordDlg').open)$('passwordDlg').showModal()},200);
-}
+ }
 
 async function openLinkedEntity(type,id){
   if(!id)return false;
