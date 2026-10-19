@@ -3,6 +3,20 @@ export const SUPABASE_KEY='sb_publishable_N9hO5f1-Z4iDBLOJhxlnsA_UAfHsxhC';
 export const APP_URL='https://ilboccia94.github.io/Club42-Admin/';
 export const LEGACY_KEY='club42_iscrizioni_v2';
 
+// Capture only the authentication callback metadata before Supabase consumes the URL.
+function readAuthCallback(){
+  const hash=new URLSearchParams(location.hash.replace(/^#/,''));
+  const query=new URLSearchParams(location.search);
+  const get=name=>hash.get(name)||query.get(name);
+  const type=get('type');
+  return {
+    type:type==='invite'||type==='recovery'?type:null,
+    accessToken:get('access_token'),
+    error:get('error_code')||get('error')
+  };
+}
+export const initialAuthCallback=readAuthCallback();
+
 export const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 export const app={
