@@ -255,13 +255,13 @@ export function initAuth(onAuthorized){
     button.disabled=true;
     try{
       const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:APP_URL});
-      if(error)throw error;
-      $('forgotPasswordMessage').textContent=RECOVERY_SENT_MESSAGE;
-      $('forgotPasswordMessage').hidden=false;
+      if(error)console.error('Errore invio recupero password',error);
     }catch(error){
       console.error('Errore invio recupero password',error);
-      showAuthError('Non è stato possibile inviare la richiesta. Riprova più tardi.');
     }finally{
+      // Same user-visible response regardless of whether the address exists.
+      $('forgotPasswordMessage').textContent=RECOVERY_SENT_MESSAGE;
+      $('forgotPasswordMessage').hidden=false;
       button.disabled=false;
     }
   });
@@ -291,6 +291,7 @@ export function initAuth(onAuthorized){
     passwordMode=null;
     $('passwordDlg').close();
     if(mode!=='change'){
+      recoverySessionUserId=null;
       cleanCallbackUrl();
       await db.auth.signOut();
       app.currentUser=null;
@@ -318,11 +319,19 @@ export function initAuth(onAuthorized){
       if(error)throw error;
       const completedMode=passwordMode;
       passwordMode=null;
+      recoverySessionUserId=null;
       $('passwordForm').reset();
       $('passwordDlg').close();
       if(completedMode!=='change'){
         cleanCallbackUrl();
-        await handleSession(data.user||user,onAuthorized);
+        // Password is already saved: a later profile loading issue must not
+        // be mistaken for a failed password update.
+        try{
+          await handleSession(data.user||user,onAuthorized);
+        }catch(profileError){
+          console.error('Password salvata, errore caricamento area personale',profileError);
+          showAuth('Password aggiornata. Ricarica la pagina per accedere alla tua area.');
+        }
       }
       toast(completedMode==='recovery'
         ?'🐋 Password aggiornata! Ora puoi accedere con la nuova password.'
@@ -335,6 +344,7 @@ export function initAuth(onAuthorized){
   });
 
   const logout=async()=>{
+    recoverySessionUserId=null;
     await db.auth.signOut();
     app.currentUser=null;app.currentProfile=null;
     app.state={events:[],people:[],selected:null};
