@@ -181,3 +181,34 @@ body[data-club42-role="guest"]{background:#f7f4ec}body[data-club42-role="guest"]
   .guest-install-prompt{grid-template-columns:auto 1fr;padding:14px}
   .guest-install-btn{grid-column:1/-1;width:100%}
 }
+
+
+/* Pagina Guest: giorno della settimana sempre leggibile accanto alla data. */
+.guest-featured-date .guest-date-weekday,
+.guest-event-date .guest-date-weekday{
+  display:block;
+  color:var(--guest-deep);
+  font-size:11px;
+  font-weight:800;
+  line-height:1.25;
+  text-transform:capitalize;
+  text-align:center;
+  letter-spacing:0;
+}
+.guest-featured-date .guest-date-weekday{margin-top:5px}
+.guest-featured-date .guest-date-relative{margin-top:5px}
+.guest-event-date .guest-date-weekday{
+  font-size:9px;
+  margin-top:9px;
+  overflow-wrap:anywhere;
+}
+.guest-event-when{
+  text-transform:none;
+  line-height:1.5;
+}
+@media(max-width:760px){
+  .guest-featured-date{flex-wrap:wrap;row-gap:4px}
+  .guest-featured-date .guest-date-weekday{margin-left:auto;margin-top:0}
+  .guest-featured-date .guest-date-relative{margin-left:0;margin-top:0}
+  .guest-event-date .guest-date-weekday{font-size:9px;margin-top:8px}
+}

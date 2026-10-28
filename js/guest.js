@@ -24,6 +24,25 @@ function dateRangeLabel(e){
   return `${start.long} – ${end.long}`;
 }
 
+// Giorni della settimana espliciti su tutte le card, anche quando la data è relativa
+// (oggi/domani) e quando l'evento occupa più giorni.
+function eventWeekday(e){
+  if(!e?.event_date)return '';
+  return dateParts(e.event_date).weekday;
+}
+function dateWithWeekdays(e){
+  if(!e?.event_date)return '';
+  const start=dateParts(e.event_date);
+  if(!e.event_end_date || e.event_end_date===e.event_date){
+    return `${start.weekday} ${start.long}`;
+  }
+  const end=dateParts(e.event_end_date);
+  return `${start.weekday} ${start.long} – ${end.weekday} ${end.long}`;
+}
+function relativeDateLabel(e){
+  const relative=whenLabel(e);
+  return relative===eventWeekday(e)?'':relative;
+}
 function compactDateBadge(e){
   const start=dateParts(e.event_date);
   if(!e.event_end_date||e.event_end_date===e.event_date)return{day:start.day,month:start.month,range:false,crossMonth:false};
@@ -61,7 +80,7 @@ function timeLabel(e){
 }
 function eventMeta(e,includeDateRange=false){
   const bits=[];
-  if(includeDateRange&&e.event_end_date&&e.event_end_date!==e.event_date)bits.push(`<span><b>◫</b>${esc(dateRangeLabel(e))}</span>`);
+  if(includeDateRange&&e.event_end_date&&e.event_end_date!==e.event_date)bits.push(`<span><b>◫</b>${esc(dateWithWeekdays(e))}</span>`);
   const time=timeLabel(e);if(time)bits.push(`<span><b>◷</b>${esc(time)}</span>`);
   if(e.place)bits.push(`<span><b>⌖</b>${esc(e.place)}</span>`);
   const price=priceLabel(e);if(price)bits.push(`<span><b>€</b>${esc(price)}</span>`);
@@ -84,7 +103,7 @@ function featuredCard(e){
   const p=compactDateBadge(e);
   const cls=p.crossMonth?'guest-date-cross':p.range?'guest-date-range':'';
   return `<article class="guest-featured-card">
-    <div class="guest-featured-date ${p.crossMonth?'cross-month':''}"><span>${esc(p.month)}</span><strong class="${cls}">${esc(p.day)}</strong><small>${esc(whenLabel(e))}</small></div>
+    <div class="guest-featured-date ${p.crossMonth?'cross-month':''}"><span>${esc(p.month)}</span><strong class="${cls}">${esc(p.day)}</strong><small class="guest-date-weekday">${esc(eventWeekday(e))}</small>${relativeDateLabel(e)?`<small class="guest-date-relative">${esc(relativeDateLabel(e))}</small>`:''}</div>
     <div class="guest-featured-body"><div class="guest-next-pill">PROSSIMO EVENTO</div><h2>${esc(e.name)}</h2>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e,true)}</div>${eventActions(e)}</div>
   </article>`;
 }
@@ -92,8 +111,8 @@ function regularCard(e){
   const p=compactDateBadge(e);
   const cls=p.crossMonth?'guest-date-cross':p.range?'guest-date-range':'';
   return `<article class="guest-event-card">
-    <div class="guest-event-date"><strong class="${cls}">${esc(p.day)}</strong><span>${esc(p.month)}</span></div>
-    <div class="guest-event-copy"><div class="guest-event-when">${esc(whenLabel(e))} · ${esc(dateRangeLabel(e))}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
+    <div class="guest-event-date"><strong class="${cls}">${esc(p.day)}</strong><span>${esc(p.month)}</span><small class="guest-date-weekday">${esc(eventWeekday(e))}</small></div>
+    <div class="guest-event-copy"><div class="guest-event-when">${relativeDateLabel(e)?`${esc(relativeDateLabel(e))} · `:''}${esc(dateWithWeekdays(e))}</div><h3>${esc(e.name)}</h3>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}<div class="guest-meta">${eventMeta(e)}</div>${eventActions(e)}</div>
   </article>`;
 }
 function teaserInterest(e){
@@ -102,7 +121,7 @@ function teaserInterest(e){
   return `<div class="guest-interest"><div class="guest-interest-question">Ti ispira?</div><div class="guest-interest-actions"><button type="button" class="guest-interest-btn positive ${mine===1?'selected':''}" onclick="setGuestEventInterest('${e.id}',1,this)"><span>😺</span> Mi interessa <b>${positive}</b></button><button type="button" class="guest-interest-btn negative ${mine===-1?'selected':''}" onclick="setGuestEventInterest('${e.id}',-1,this)"><span>😿</span> Non fa per me <b>${negative}</b></button></div></div>`;
 }
 function teaserCard(e){
-  const date=e.event_date?dateRangeLabel(e):'Data da definire';
+  const date=e.event_date?dateWithWeekdays(e):'Data da definire';
   const time=timeLabel(e)||'Ora da definire';
   const place=e.place||'Luogo da definire';
   return `<article class="guest-teaser-card"><div class="guest-teaser-glow" aria-hidden="true"></div><div class="guest-coming-pill">PROSSIMAMENTE</div><h3>${esc(e.name)}</h3><div class="guest-teaser-meta"><span><b>◫</b>${esc(date)}</span><span><b>◷</b>${esc(time)}</span><span><b>⌖</b>${esc(place)}</span></div>${e.guest_description?`<p>${esc(e.guest_description)}</p>`:''}${teaserInterest(e)}</article>`;
