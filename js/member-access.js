@@ -1,5 +1,4 @@
 import {$,app,db,esc,fmtDate,toast} from './core.js';
-import {loadMembers} from './members.js?v=20260918-cycle1';
 import {isAdmin} from './permissions.js';
 
 const statusLabels={active:'Attivo',suspended:'Sospeso',resigned:'Dimesso',expired:'Scaduto'};
@@ -45,7 +44,10 @@ window.focusLimitedMember=id=>{
 };
 
 export async function loadMembersForRole(){
-  if(isAdmin())return loadMembers();
+  if(isAdmin()){
+    if(typeof window.club42LoadMembers==='function')return window.club42LoadMembers();
+    return toast('Modulo Soci non disponibile: ricarica la pagina.');
+  }
   const [directoryResult,cycleResult]=await Promise.all([
     db.rpc('club42_member_directory'),
     db.rpc('club42_membership_cycle')
