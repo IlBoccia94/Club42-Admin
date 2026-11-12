@@ -18,8 +18,8 @@ import {initSocial,loadSocial} from './social.js?v=20260924-catvotes1';
 import {initSocialExtras} from './social-extras.js';
 import {initSocialFormats} from './social-formats.js?v=20260919-socialsingle1';
 import {buildMembersUi} from './members-ui.js?v=20260918-cycle1';
-import {initMembers} from './members.js?v=20260924-crosslinks1';
-import {loadMembersForRole} from './member-access.js?v=20260920-richchat1';
+import {initMembers,loadMembers} from './members.js?v=20261112-membereditfix1';
+import {loadMembersForRole} from './member-access.js?v=20261112-membereditfix1';
 import {buildCashUi} from './cash-ui.js?v=20260918-reimburse1';
 import {initCash,loadCash} from './cash.js?v=20260924-crosslinks1';
 import {buildProjectsUi} from './projects-ui.js?v=20260919-carddesc1';
@@ -118,6 +118,8 @@ function initShell(){
   $('backupBtn').onclick=()=>download(`club42-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(app.state,null,2),'application/json');
   $('exportCsv').onclick=()=>{const e=app.state.events.find(x=>x.id===app.state.selected);if(!e)return;const rows=[['Nome','Telefono','Email','Stato','Socio','Pagamento','Esigenze alimentari','Note'],...list(e.id).map(p=>[p.name,p.phone,p.email,p.status,p.member,p.paid,p.diet,p.notes])];const csv=rows.map(r=>r.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');download(`iscritti-${e.name.toLowerCase().replace(/[^a-z0-9]+/gi,'-')}.csv`,csv,'text/csv;charset=utf-8')};
 }
+
+window.club42LoadMembers=loadMembers;
 
 ensureSidebarLayout();
 initScrollTop();
